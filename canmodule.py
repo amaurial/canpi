@@ -17,7 +17,6 @@ incan = []
 class CanManager(threading.Thread):
 
     running = True
-    device = ""
 
     # CAN frame packing/unpacking (see `struct can_frame` in <linux/can.h>)
     can_frame_fmt = "=IB3x8s"
@@ -123,6 +122,7 @@ class BufferWriter(threading.Thread):
             self.canManager.send(data)
             time.sleep(1)
     def put(self,data):
+        logging.debug("inserting data % in buffer" %data)
         self.outcan.append(data)
 
     #stop the thread

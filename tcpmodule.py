@@ -3,6 +3,7 @@ __author__ = 'amaurial'
 
 import socket
 import threading
+import edprocess
 import canmodule
 import logging
 import select
@@ -26,14 +27,14 @@ class TcpServer(threading.Thread):
         self.sock.close()
 
     def run(self):
-        logging.debug("starting tcp server on %[self.host]s port = %[self.port]d " % locals())
+        logging.debug('starting tcp server on %s port = %d ' % (self.host, self.port))
         self.sock.listen(5)
         while self.running:
             client, address = self.sock.accept()
             client.settimeout(60)
             #self.clients.append(client)
             logging.debug("new tcp client")
-            clientHandler = TcpClientHandler(self.bufferWriter,client,address)
+            clientHandler = edprocess.TcpClientHandler(client,address,self.bufferWriter)
             self.clients.append(clientHandler)
             clientHandler.start()
             #threading.Thread(target = self.listenToClient,args = (client,address)).start()

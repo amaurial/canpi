@@ -9,7 +9,7 @@ import time
 import signal
 
 
-logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(name)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG,format='%(levelname)s - %(asctime)s - %(filename)s - %(funcName)s - %(message)s')
 
 running=True
 

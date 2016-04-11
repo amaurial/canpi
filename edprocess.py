@@ -16,6 +16,7 @@ class TcpClientHandler(threading.Thread):
         threading.Thread.__init__(self)
         self.client = client
         self.can = canwriter
+        self.address = address
         self.canmsg = []
         self.sessions = [] #array of sessions
         self.running = True
@@ -33,7 +34,7 @@ class TcpClientHandler(threading.Thread):
         self.running = False
 
     def run(self):
-        logging.debug("serving the tcp client %[self.address]s" %locals())
+        logging.debug("serving the tcp client %s" % self.address[0])
         size = 1024
         while self.running:
             try:
@@ -42,7 +43,8 @@ class TcpClientHandler(threading.Thread):
                     data = self.client.recv(size)
                     if data:
                         response = data
-                        self.client.send(response)
+                        logging.debug("client sent: %s" %data.decode("utf-8"))
+                        #self.client.send(response)
                     else:
                         raise Exception('Client disconnected')
             except:
@@ -50,7 +52,7 @@ class TcpClientHandler(threading.Thread):
                 self.client.close()
                 raise
                 return False
-        logging.debug("Tcp server closing client socket for %[self.address]s " %locals())
+        logging.debug("Tcp server closing client socket for %(self.address)s " %locals())
         self.client.close()
 
 
