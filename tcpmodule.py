@@ -23,11 +23,11 @@ class TcpServer(threading.Thread):
 
     def stop(self):
         self.running = False;
-        logging.debug("Tcp server stopping")
+        logging.info("Tcp server stopping")
         self.sock.close()
 
     def run(self):
-        logging.debug('starting tcp server on %s port = %d ' % (self.host, self.port))
+        logging.info('starting tcp server on %s port = %d ' % (self.host, self.port))
         self.sock.listen(5)
         while self.running:
             client, address = self.sock.accept()

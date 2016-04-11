@@ -13,6 +13,7 @@ cantimeout = 0.01 #seconds
 recbuffer = 16
 incan = []
 
+# this component is responsable to read the can messages and put them in the incan buffer
 
 class CanManager(threading.Thread):
 
@@ -28,8 +29,9 @@ class CanManager(threading.Thread):
         self.device = device
         self.opencan(self.device)
 
+    #major thread function. reads the data and send to the registered tcp servers
     def run(self):
-        logging.debug("starting canmanager")
+        logging.info("starting canmanager")
         #reads the incomming messages
         while self.running:
             #ready = select.select([self.can],[],[],cantimeout)
@@ -41,11 +43,12 @@ class CanManager(threading.Thread):
             #logging.debug("sending")
         self.can.close();
 
-     #open the socket
+     #open the can socket
     def opencan(self,device):
        self.can = socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW)
        self.can.bind((device, ))
 
+    #send the can data
     def send(self,data):
         logging.debug("sending:" + data)
 
@@ -54,6 +57,7 @@ class CanManager(threading.Thread):
         self.running = False
 
 
+# component that consumes the content of incan buffer and send them to the registered tcpservers
 class BufferReader(threading.Thread):
 
     # CAN frame packing/unpacking (see `struct can_frame` in <linux/can.h>)
@@ -74,6 +78,7 @@ class BufferReader(threading.Thread):
                 canid,candlc,data= self.dissect_can_frame(cf)
                 datahex=":".join("{:02x}".format(c) for c in data)
                 logging.debug('Received: can_id=%x, size=%x, data=%s' %(canid, candlc, datahex) )
+                #send to the tcp servers
                 if len(self.tcpclients) > 0:
                     for client in self.tcpclients:
                         client.put(canid,candlc,datahex)
@@ -81,10 +86,10 @@ class BufferReader(threading.Thread):
     #stop the thread
     def stop(self):
         self.running = False
-    #register a client
+    #allow a tcp server to register
     def register(self,client):
         self.tcpclients.append(client)
-    #unregister a client
+    #unregister a tcp server
     def unregister(self,client):
         for i in range(0,len(self.tcpclients)):
             if self.tcpclients[i].getName() == client.getName():
@@ -101,6 +106,7 @@ class BufferReader(threading.Thread):
        return (can_id, can_dlc, data[:can_dlc])
 
 
+# this component consumes the messages that will be sent to CBUS
 class BufferWriter(threading.Thread):
     # CAN frame packing/unpacking (see `struct can_frame` in <linux/can.h>)
     can_frame_fmt = "=IB3x8s"

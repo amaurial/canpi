@@ -34,7 +34,7 @@ class TcpClientHandler(threading.Thread):
         self.running = False
 
     def run(self):
-        logging.debug("serving the tcp client %s" % self.address[0])
+        logging.info("serving the tcp client %s" % self.address[0])
         size = 1024
         while self.running:
             try:
@@ -43,7 +43,7 @@ class TcpClientHandler(threading.Thread):
                     data = self.client.recv(size)
                     if data:
                         response = data
-                        logging.debug("client sent: %s" %data.decode("utf-8"))
+                        self.handleEdMessages(data.decode("utf-8"))
                         #self.client.send(response)
                     else:
                         raise Exception('Client disconnected')
@@ -55,6 +55,8 @@ class TcpClientHandler(threading.Thread):
         logging.debug("Tcp server closing client socket for %(self.address)s " %locals())
         self.client.close()
 
+    def handleEdMessages(self,message):
+        logging.debug("handling the client message :%" %message)
 
 class EdSession:
     def __init__(self,sessionid):
