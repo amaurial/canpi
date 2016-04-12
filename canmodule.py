@@ -12,6 +12,7 @@ import time
 cantimeout = 0.01 #seconds
 recbuffer = 16
 incan = []
+canid = 110
 
 # this component is responsable to read the can messages and put them in the incan buffer
 

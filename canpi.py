@@ -57,7 +57,7 @@ bufferReader.stop()
 bufferWriter.stop()
 
 logging.info("Finishing %i" %os.getpid())
-
+logging.shutdown()
 #for some reason the tcp server is not dying gracefully. so we kill it
 os.kill(os.getpid(), 9)
 #sys.exit()

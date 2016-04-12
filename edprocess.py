@@ -10,7 +10,7 @@ import canmodule
 
 SOFT_VERSION = "VN2.0"
 ROASTER_INFO = "RL0]|[" #no locos
-START_INFO = "VN2.0\n\rRL0]|[\n\rPPA1\n\rPTT]|[\n\rPRT]|[\n\rRCC0\n\rPW080\n\r"
+START_INFO = "VN2.0\n\rRL0]|[\n\rPPA1\n\rPTT]|[\n\rPRT]|[\n\rRCC0\n\rPW12080\n\r"
 DELIM_BRACET = "]|["
 DELIM_BTLT = "<;>"
 DELIM_KEY = "}|{"
@@ -72,17 +72,20 @@ class TcpClientHandler(threading.Thread):
     def handleEdMessages(self, message):
         logging.debug("handling the client message :%" %message)
         #get the name
-        if message[0] == 'A':
+        if message[0] == 'N':
             self.edname = message[1:]
-            #send the can data
-            logging.debug("put CAN session set timer in queue")
-            #TODO
-            self.can.put("*10") #keep alive each 10 seconds
+            logging.debug("ED name: %s" % self.edname)
+
             return
 
         #get hardware info
-        if message[0:1] == "HU"
+        if message[0:1] == "HU":
             self.hwinfo = message[2:]
+            logging.debug("received Hardware info: %s" % self.hwinfo)
+            #TODO
+            #send the can data
+            logging.debug("put CAN session set timer in queue")
+            self.can.put("*10") #keep alive each 10 seconds
             return
 
         #get the session request
@@ -99,7 +102,7 @@ class TcpClientHandler(threading.Thread):
                     #send the can data
                     logging.debug("put CAN session request in the queue")
                     #TODO
-                    self.can.put("request session")
+                    self.can.put(OPC_RLOC + b'\x00' + loco)
                     return
 
 
@@ -116,9 +119,9 @@ class EdSession:
         self.loco = loco
         self.adtype = adtype #S =short address or L = long adress
 
-        def getSessionId:
+        def getSessionId(self):
             return self.sessionid
-        def getLoco:
+        def getLoco(self):
             return self.loco
-        def getAdType:
+        def getAdType(self):
             return self.adtype
