@@ -2,6 +2,7 @@
 import logging
 import threading
 import select
+import opc
 import time
 import tcpmodule
 import canmodule
@@ -18,6 +19,9 @@ EMPTY_LABES = "<;>]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\
 
 
 class TcpClientHandler(threading.Thread):
+
+    STATES = {'START': 255, 'WAITING_ED_RESP': 0, 'WAITING_SESS_RESP': 1}
+    STATE = ''
 
     # client is the tcp client
     # canwriter is the BufferWriter
@@ -75,7 +79,6 @@ class TcpClientHandler(threading.Thread):
         if message[0] == 'N':
             self.edname = message[1:]
             logging.debug("ED name: %s" % self.edname)
-
             return
 
         #get hardware info
@@ -92,7 +95,7 @@ class TcpClientHandler(threading.Thread):
         if message[0:1] == "MT": #multi throttle
             #MT+S3<;>
             if message[2] == '+': #create session
-                if message[3] in ["S","s","L","l"]:
+                if message[3] in ["S", "s", "L", "l"]:
                     adtype = message[3]
                     #get loco
                     i = message.find("<")
@@ -102,12 +105,9 @@ class TcpClientHandler(threading.Thread):
                     #send the can data
                     logging.debug("put CAN session request in the queue")
                     #TODO
-                    self.can.put(OPC_RLOC + b'\x00' + loco)
+                    self.STATE = self.STATES['WAITING_SESS_RESP']
+                    self.can.put(opc.OPC_RLOC + b'\x00' + loco)
                     return
-
-
-
-
 
     def sendClientMessage(self, message):
         self.client.sendall(message)
@@ -125,3 +125,14 @@ class EdSession:
             return self.loco
         def getAdType(self):
             return self.adtype
+
+class State:
+    def __init__(self,name):
+        self.name = name
+    def __str__(self):
+        return self.name
+
+    def next(self,input):
+        logging.debug("state")
+
+
