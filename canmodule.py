@@ -51,7 +51,12 @@ class CanManager(threading.Thread):
 
     #send the can data
     def send(self,data):
-        logging.debug("sending:" + data)
+        logging.debug("sending CBUS:%s" % data)
+        try:
+            self.can.send(data)
+        except socket.error:
+            logging.debug('Error sending CAN frame %s' % data)
+
 
     #stop the thread
     def stop(self):
@@ -78,11 +83,11 @@ class BufferReader(threading.Thread):
                 cf = incan.pop()
                 canid,candlc,data= self.dissect_can_frame(cf)
                 datahex=":".join("{:02x}".format(c) for c in data)
-                logging.debug('Received: can_id=%x, size=%x, data=%s' %(canid, candlc, datahex) )
+                logging.debug('Received: can_id=%x, size=%x, data=%s , datahex=%s' %(canid, candlc, data, datahex) )
                 #send to the tcp servers
                 if len(self.tcpclients) > 0:
                     for client in self.tcpclients:
-                        client.put(canid,candlc,datahex)
+                        client.put(canid,candlc,data)
 
     #stop the thread
     def stop(self):
@@ -122,15 +127,14 @@ class BufferWriter(threading.Thread):
 
     def run(self):
         logging.debug("start writing outgoing buffer")
-        data = "aaa"
         while self.running:
-            #if len(self.outcan) > 0:
-            #    data = self.outcan.pop()
-            self.canManager.send(data)
-            time.sleep(1)
+            if len(self.outcan) > 0:
+                data = self.outcan.pop()
+                self.canManager.send(data)
+            #time.sleep(1)
     def put(self,data):
-        logging.debug("inserting data % in buffer" %data)
-        self.outcan.append(data)
+        logging.debug("inserting data %s in buffer" % data)
+        self.outcan.append(self.build_can_frame(canid,data))
 
     #stop the thread
     def stop(self):
