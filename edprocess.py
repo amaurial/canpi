@@ -39,7 +39,7 @@ class TcpClientHandler(threading.Thread):
         self.running = False
 
     def run(self):
-        logging.info("serving the tcp client %s" % self.address[0])
+        logging.info("Serving the tcp client %s" % self.address[0])
 
         #send the version software info and the throttle data
         logging.debug("Sending start info :%s" %START_INFO)
@@ -67,11 +67,12 @@ class TcpClientHandler(threading.Thread):
 
     #receive all the can message
     def canmessage(self,canid,size,data):
+
         #put message on the buffer
         #self.canmsg.append(data)
-        logging.debug("tcpclient received can msg: %s" % data)
+        logging.debug("Tcpclient received can msg: %s" % data)
 
-        logging.debug("opc: %s" % hex(data[0]))
+        logging.debug("Opc: %s" % hex(data[0]))
         opc = data[0]
 
         if opc == OPC_PLOC[0]:
@@ -84,8 +85,22 @@ class TcpClientHandler(threading.Thread):
             f1 = data[7]
             edsession = EdSession(session, loco, "S")
             self.sessions[session] = edsession
-            logging.debug("ack client session created %d for loco %d" % (session, loco))
+            logging.debug("Aack client session created %d for loco %d" % (session, loco))
             self.client.sendClientMessage("MT+S" + str(loco).decode('ascii') + "<;>\n")
+
+        if opc == OPC_ERR[0]:
+            logging.debug("OPC: ERR")
+            session = int(data[1])
+            loco = int(data[3])
+            err = int(data[4])
+            if err == 1:
+                logging.debug("Can not create session. Reason: stack full")
+            elif err==2:
+                logging.debug("Err: Loco %d TAKEN" % loco)
+            elif err==3:
+                logging.debug("Err: No session %d" % loco)
+            else:
+                logging.debug("Err code: %d" % err)
 
         #self.client.send(str(canid).encode(encoding='ascii'))
         #self.client.send(b'-')
@@ -93,7 +108,7 @@ class TcpClientHandler(threading.Thread):
         #self.client.send(b'\n')
 
     def handleEdMessages(self, message):
-        logging.debug("handling the client message :%s" % message)
+        logging.debug("Handling the client message :%s" % message)
         #get the name
         if message[0] == 'N':
             self.edname = message[1:]
@@ -103,21 +118,21 @@ class TcpClientHandler(threading.Thread):
         #get hardware info
         if message[0:1] == "HU":
             self.hwinfo = message[2:]
-            logging.debug("received Hardware info: %s" % self.hwinfo)
+            logging.debug("Received Hardware info: %s" % self.hwinfo)
             #TODO
             #send the can data
-            logging.debug("put CAN session set timer in queue")
+            logging.debug("Put CAN session set timer in queue")
             self.can.put("*10") #keep alive each 10 seconds
             return
 
         #get the session request
 
         messages = message.split("\n")
-        logging.debug("split message: %s" % messages)
+        logging.debug("Split message: %s" % messages)
 
         for msg in messages:
-            logging.debug("processing message: %s" % msg)
-            logging.debug("expected:%s" % msg[0:3])
+            logging.debug("Processing message: %s" % msg)
+            logging.debug("Expected:%s" % msg[0:3])
             if msg[0:3] in ["MT+","MS+"]: #multi throttle
                 #MT+S3<;>
                 logging.debug("MT+ found")
@@ -127,10 +142,10 @@ class TcpClientHandler(threading.Thread):
                     adtype = message[3]
                     #get loco
                     i = msg.find("<")
-                    logging.debug("extracted loco: %s" % msg[4:i])
+                    logging.debug("Extracted loco: %s" % msg[4:i])
                     loco = int(msg[4:i])
                     #send the can data
-                    logging.debug("put CAN session request in the queue for loco %d" % loco)
+                    logging.debug("Put CAN session request in the queue for loco %d" % loco)
                     #TODO
                     self.STATE = self.STATES['WAITING_SESS_RESP']
                     self.can.put(OPC_RLOC + b'\x00' + bytes([loco]))

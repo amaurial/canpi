@@ -32,7 +32,7 @@ class CanManager(threading.Thread):
 
     #major thread function. reads the data and send to the registered tcp servers
     def run(self):
-        logging.info("starting canmanager")
+        logging.info("Starting canmanager")
         #reads the incomming messages
         while self.running:
             #ready = select.select([self.can],[],[],cantimeout)
@@ -51,7 +51,7 @@ class CanManager(threading.Thread):
 
     #send the can data
     def send(self,data):
-        logging.debug("sending CBUS:%s" % data)
+        logging.debug("Sending CBUS:%s" % data)
         try:
             self.can.send(data)
         except socket.error:
@@ -77,7 +77,7 @@ class BufferReader(threading.Thread):
         self.tcpclients = []
 
     def run(self):
-        logging.debug("start reading incomming buffer")
+        logging.debug("Start reading incomming buffer")
         while self.running:
             if len(incan) > 0:
                 cf = incan.pop()
@@ -126,14 +126,14 @@ class BufferWriter(threading.Thread):
         self.running = True
 
     def run(self):
-        logging.debug("start writing outgoing buffer")
+        logging.debug("Start writing outgoing buffer")
         while self.running:
             if len(self.outcan) > 0:
                 data = self.outcan.pop()
                 self.canManager.send(data)
             #time.sleep(1)
     def put(self,data):
-        logging.debug("inserting data %s in buffer" % data)
+        logging.debug("Inserting data %s in buffer" % data)
         self.outcan.append(self.build_can_frame(canid,data))
 
     #stop the thread

@@ -27,13 +27,13 @@ class TcpServer(threading.Thread):
         self.sock.close()
 
     def run(self):
-        logging.info('starting tcp server on %s port = %d ' % (self.host, self.port))
+        logging.info('Starting tcp server on %s port = %d ' % (self.host, self.port))
         self.sock.listen(5)
         while self.running:
             client, address = self.sock.accept()
             client.settimeout(60)
             #self.clients.append(client)
-            logging.debug("new tcp client")
+            logging.debug("New tcp client")
             clientHandler = edprocess.TcpClientHandler(client,address,self.bufferWriter)
             self.clients.append(clientHandler)
             clientHandler.start()
