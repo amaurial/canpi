@@ -133,23 +133,49 @@ class TcpClientHandler(threading.Thread):
         for msg in messages:
             logging.debug("Processing message: %s" % msg)
             logging.debug("Expected:%s" % msg[0:3])
-            if msg[0:3] in ["MT+","MS+"]: #multi throttle
-                #MT+S3<;>
-                logging.debug("MT+ found")
-                #create session
-                if msg[3] in ["S", "s", "L", "l"]:
-                    logging.debug("MT+S found")
-                    adtype = message[3]
-                    #get loco
-                    i = msg.find("<")
-                    logging.debug("Extracted loco: %s" % msg[4:i])
-                    loco = int(msg[4:i])
-                    #send the can data
-                    logging.debug("Put CAN session request in the queue for loco %d" % loco)
-                    #TODO
-                    self.STATE = self.STATES['WAITING_SESS_RESP']
-                    self.can.put(OPC_RLOC + b'\x00' + bytes([loco]))
-                    return
+            #create session
+            if msg[0:3] in ["MT+","MS+"]:
+                self.handleCreateSession(msg)
+            #query the loco
+            if msg[0:3] in ["MTA","MSA"]:
+                self.handleCreateSession(msg)
+
+    def handleCreateSession(self,msg):
+        #MT+S3<;>
+        logging.debug("MT+ found")
+        #create session
+        if msg[3] in ["S", "s", "L", "l"]:
+            logging.debug("MT+S found")
+            adtype = message[3]
+            #get loco
+            i = msg.find("<")
+            logging.debug("Extracted loco: %s" % msg[4:i])
+            loco = int(msg[4:i])
+            #send the can data
+            logging.debug("Put CAN session request in the queue for loco %d" % loco)
+            #TODO
+            self.STATE = self.STATES['WAITING_SESS_RESP']
+            self.can.put(OPC_RLOC + b'\x00' + bytes([loco]))
+            return
+
+    #TODO
+    def handleSpeedDir(self,msg):
+        #MT+S3<;>
+        logging.debug("MTA found")
+        #create session
+        if msg[3] in ["S", "s", "L", "l"]:
+            logging.debug("MT+S found")
+            adtype = message[3]
+            #get loco
+            i = msg.find("<")
+            logging.debug("Extracted loco: %s" % msg[4:i])
+            loco = int(msg[4:i])
+            #send the can data
+            logging.debug("Put CAN session request in the queue for loco %d" % loco)
+            #TODO
+            self.STATE = self.STATES['WAITING_SESS_RESP']
+            self.can.put(OPC_RLOC + b'\x00' + bytes([loco]))
+            return
 
     def sendClientMessage(self, message):
         self.client.sendall(message)
@@ -160,6 +186,7 @@ class EdSession:
         self.keepalivetime = 0
         self.loco = loco
         self.adtype = adtype #S =short address or L = long adress
+        self.speedDir = 0
 
         def getSessionId(self):
             return self.sessionid
@@ -167,6 +194,11 @@ class EdSession:
             return self.loco
         def getAdType(self):
             return self.adtype
+        def setSpeedDir(self,speedDir):
+            self.speedDir = speedDir;
+        def getSpeedDir(self):
+            return self.speedDir
+
 
 class State:
     def __init__(self,name):
