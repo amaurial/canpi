@@ -15,7 +15,11 @@ START_INFO = "VN2.0\n\rRL0]|[\n\rPPA1\n\rPTT]|[\n\rPRT]|[\n\rRCC0\n\rPW12080\n\r
 DELIM_BRACET = "]|["
 DELIM_BTLT = "<;>"
 DELIM_KEY = "}|{"
-EMPTY_LABES = "<;>]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[" #MTS3<.....
+EMPTY_LABELS = "<;>]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[\n" #MTS3<......MTLS1<;>]\[]\[]
+EMPTY_F = "<;>F00\nMTAS1<;>F01\nMTAS1<;>F02\nMTAS1<;>F03\nMTAS1<;>F04\nMTAS1<;>F05\nMTAS1<;>F06\nMTAS1<;>F07\nMTAS1<;>F08\nMTAS1<;>F09\nMTAS1<;>F010" \
+          "\nMTAS1<;>F011\nMTAS1<;>F012\nMTAS1<;>F013\nMTAS1<;>F014\nMTAS1<;>F015\nMTAS1<;>F016\nMTAS1<;>F017\nMTAS1<;>F018\nMTAS1<;>F019\nMTAS1<;>F020" \
+          "\nMTAS1<;>F021\nMTAS1<;>F022\nMTAS1<;>F023\nMTAS1<;>F024\nMTAS1<;>F025\nMTAS1<;>F026\nMTAS1<;>F027\nMTAS1<;>F028" \
+          "\nMTAS1<;>V0\nMTAS1<;>R1\nMTAS1<;>s0\n"
 
 
 class TcpClientHandler(threading.Thread):
@@ -33,6 +37,7 @@ class TcpClientHandler(threading.Thread):
         self.canmsg = []
         self.sessions = {} #dict of sessions; key is the loco number
         self.running = True
+        self.edsession = EdSession(0, "S")
 
 
     def stop(self):
@@ -43,7 +48,7 @@ class TcpClientHandler(threading.Thread):
 
         #send the version software info and the throttle data
         logging.debug("Sending start info :%s" %START_INFO)
-        self.sendClientMessage(START_INFO.encode('utf-8'))
+        self.sendClientMessage(START_INFO)
 
         size = 1024
         while self.running:
@@ -76,23 +81,37 @@ class TcpClientHandler(threading.Thread):
         opc = data[0]
 
         if opc == OPC_PLOC[0]:
+
             logging.debug("OPC: PLOC")
+
             session = int(data[1])
             loco = int(data[3])
             speedir = int(data[4])
             f1 = data[5]
             f1 = data[6]
             f1 = data[7]
-            edsession = EdSession(session, loco, "S")
-            self.sessions[session] = edsession
-            logging.debug("Aack client session created %d for loco %d" % (session, loco))
-            self.client.sendClientMessage("MT+S" + str(loco).decode('ascii') + "<;>\n")
+
+            #put session in array
+            self.edsession.setSessionID(session)
+            self.sessions[session] = self.edsession
+
+            message = "MT+" + self.edsession.getAdType() + str(loco) + "<;>\n"
+            logging.debug("Ack client session created %d for loco %d :%s" % (session, loco, message))
+            self.sendClientMessage(message)
+
+            #set speed mode 128
+            self.can.put(OPC_STMOD + bytes([session]) + b'\x00')
+
+            #send the labels
+            labels = "MTLS" + str(loco) + EMPTY_LABELS + self.generateFunctionsLabel("S" + str(loco))
+            logging.debug("Sending labels: %s " % labels )
+
+            self.sendClientMessage(labels)
 
         if opc == OPC_ERR[0]:
             logging.debug("OPC: ERR")
-            session = int(data[1])
-            loco = int(data[3])
-            err = int(data[4])
+            loco = int(data[2])
+            err = int(data[3])
             if err == 1:
                 logging.debug("Can not create session. Reason: stack full")
             elif err==2:
@@ -119,10 +138,9 @@ class TcpClientHandler(threading.Thread):
         if message[0:1] == "HU":
             self.hwinfo = message[2:]
             logging.debug("Received Hardware info: %s" % self.hwinfo)
-            #TODO
-            #send the can data
-            logging.debug("Put CAN session set timer in queue")
-            self.can.put("*10") #keep alive each 10 seconds
+            logging.debug("Put session set timer in queue")
+            self.sendClientMessage("*10") #keep alive each 10 seconds
+            #TODO wait for confirmation: expected 0xa
             return
 
         #get the session request
@@ -138,7 +156,7 @@ class TcpClientHandler(threading.Thread):
                 self.handleCreateSession(msg)
             #query the loco
             if msg[0:3] in ["MTA","MSA"]:
-                self.handleCreateSession(msg)
+                self.handleSpeedDir(msg)
 
     def handleCreateSession(self,msg):
         #MT+S3<;>
@@ -146,14 +164,16 @@ class TcpClientHandler(threading.Thread):
         #create session
         if msg[3] in ["S", "s", "L", "l"]:
             logging.debug("MT+S found")
-            adtype = message[3]
+            adtype = msg[3]
+            logging.debug("Address type: %s" % adtype)
             #get loco
             i = msg.find("<")
             logging.debug("Extracted loco: %s" % msg[4:i])
             loco = int(msg[4:i])
+            self.edsession.setLoco(loco)
+            self.edsession.setAdType(adtype)
             #send the can data
             logging.debug("Put CAN session request in the queue for loco %d" % loco)
-            #TODO
             self.STATE = self.STATES['WAITING_SESS_RESP']
             self.can.put(OPC_RLOC + b'\x00' + bytes([loco]))
             return
@@ -162,43 +182,51 @@ class TcpClientHandler(threading.Thread):
     def handleSpeedDir(self,msg):
         #MT+S3<;>
         logging.debug("MTA found")
-        #create session
-        if msg[3] in ["S", "s", "L", "l"]:
-            logging.debug("MT+S found")
-            adtype = message[3]
-            #get loco
-            i = msg.find("<")
-            logging.debug("Extracted loco: %s" % msg[4:i])
-            loco = int(msg[4:i])
-            #send the can data
-            logging.debug("Put CAN session request in the queue for loco %d" % loco)
-            #TODO
-            self.STATE = self.STATES['WAITING_SESS_RESP']
-            self.can.put(OPC_RLOC + b'\x00' + bytes([loco]))
-            return
+        #create session        
+        i = msg.find("<")
+        logging.debug("Extracted loco: %s" % msg[3:i])
+        loco = int(msg[4:i])
+        #send the can data
+        logging.debug("Put CAN session request in the queue for loco %d" % loco)
+        #TODO
+        self.STATE = self.STATES['WAITING_SESS_RESP']
+        self.can.put(OPC_RLOC + b'\x00' + bytes([loco]))
+        return
 
     def sendClientMessage(self, message):
-        self.client.sendall(message)
+        self.client.sendall(message.encode('utf-8'))
 
+    def generateFunctionsLabel(self,locoaddr):
+        s = "MTA" + locoaddr + "<;>" #MTS1<;>
+        a = ""
+        for f in range(0,29):
+            a = a + s + "F0" + str(f) + "\n"
+        a = a + s + "V0\n" + s + "R1\n" + s +  "s0\n"
+        return a
 class EdSession:
-    def __init__(self,sessionid,loco,adtype):
-        self.sessionid = sessionid
+    def __init__(self,loco,adtype):
+        self.sessionid = 0
         self.keepalivetime = 0
         self.loco = loco
         self.adtype = adtype #S =short address or L = long adress
         self.speedDir = 0
 
-        def getSessionId(self):
-            return self.sessionid
-        def getLoco(self):
-            return self.loco
-        def getAdType(self):
-            return self.adtype
-        def setSpeedDir(self,speedDir):
-            self.speedDir = speedDir;
-        def getSpeedDir(self):
-            return self.speedDir
-
+    def getSessionId(self):
+        return self.sessionid
+    def setSessionID(self,sessionid):
+        self.sessionid = sessionid
+    def getLoco(self):
+        return self.loco
+    def setLoco(self,loco):
+        self.loco = loco
+    def getAdType(self):
+        return self.adtype
+    def setAdType(self,adtype):
+        self.adtype = adtype
+    def setSpeedDir(self,speedDir):
+        self.speedDir = speedDir
+    def getSpeedDir(self):
+        return self.speedDir
 
 class State:
     def __init__(self,name):
