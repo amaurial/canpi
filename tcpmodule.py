@@ -6,6 +6,8 @@ import threading
 import edprocess
 import canmodule
 import logging
+import random
+import string
 import select
 import errno
 
@@ -16,10 +18,12 @@ class TcpServer(threading.Thread):
         self.port = port
         self.bufferWriter = bufwriter
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self.sock.bind((self.host, self.port))
         self.running = True
-        self.clients = []
+        self.clients = {}
+    def id_generator(self,size=6, chars=string.ascii_uppercase + string.digits):
+        return ''.join(random.choice(chars) for _ in range(size))
 
     def stop(self):
         self.running = False;
@@ -34,19 +38,20 @@ class TcpServer(threading.Thread):
             client.settimeout(60)
             #self.clients.append(client)
             logging.debug("New tcp client")
-            clientHandler = edprocess.TcpClientHandler(client,address,self.bufferWriter)
-            self.clients.append(clientHandler)
+            id = self.id_generator()
+            clientHandler = edprocess.TcpClientHandler(client, address, self.bufferWriter, self, id)
+            self.clients[id]=clientHandler
             clientHandler.start()
             #threading.Thread(target = self.listenToClient,args = (client,address)).start()
         #close all clients
         logging.debug("Tcp server closing clients")
-        for c in self.clients:
+        for k, c in self.clients.items():
             c.stop()
         logging.debug("Tcp server closing main socket")
         self.sock.close()
 
     def put(self,canid,size,data):
-        for c in self.clients:
+        for k, c in self.clients.items():
             # c.send(str(canid).encode(encoding='ascii'))
             # c.send(b'-')
             # c.sendall(data.encode(encoding='ascii'))
@@ -54,6 +59,9 @@ class TcpServer(threading.Thread):
             #we can do some filtering if necessary
             c.canmessage(canid,size,data)
 
+    def removeClient(self,id):
+        logging.debug("Removing ED client %s" % id)
+        del self.clients[id]
     # def listenToClient(self, client, address):
     #     logging.debug("serving the tcp client")
     #     size = 1024
