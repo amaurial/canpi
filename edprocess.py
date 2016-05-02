@@ -260,7 +260,16 @@ class TcpClientHandler(threading.Thread):
             #send the can data
             logging.debug("Put CAN session request in the queue for loco %d" % loco)
             self.STATE = self.STATES['WAITING_SESS_RESP']
-            self.can.put(OPC_RLOC + b'\x00' + bytes([loco]))
+
+            Hb = 0
+            Lb = 0
+            if loco > 127:
+                Hb = loco.to_bytes(2,byteorder='big')[0] | 0xC0
+                Lb = loco.to_bytes(2,byteorder='big')[1]
+            else:
+                Lb = loco.to_bytes(2,byteorder='big')[1]
+
+            self.can.put(OPC_RLOC + bytes([Hb]) + bytes([Lb]))
             return
 
     def handleReleaseSession(self, msg):
