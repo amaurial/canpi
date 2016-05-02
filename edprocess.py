@@ -121,10 +121,13 @@ class TcpClientHandler(threading.Thread):
 
         if opc == OPC_PLOC[0]:
 
-            logging.debug("OPC: PLOC")
+            logging.debug("OPC: PLOC %s %s" % (hex(data[2]) , hex(data[3])))
 
             session = int(data[1])
-            loco = int(data[3])
+            Hb = data[2] & 0x3f
+            Lb = data[3]
+
+            loco = int.from_bytes(bytes([Hb, Lb]),byteorder='big')
             speedir = int(data[4])
             f1 = data[5]
             f2 = data[6]

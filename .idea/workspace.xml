@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="3cc298be-3a99-4eb9-a3f8-79ba53eb2f19" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/edprocess.py" afterPath="$PROJECT_DIR$/edprocess.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="canpi.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -66,8 +67,8 @@
       <file leaf-file-name="edprocess.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/edprocess.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.5288357" vertical-offset="3549" max-vertical-offset="7905">
-              <caret line="269" column="56" selection-start-line="269" selection-start-column="56" selection-end-line="269" selection-end-column="56" />
+            <state vertical-scroll-proportion="0.31664854" vertical-offset="1614" max-vertical-offset="7950">
+              <caret line="127" column="24" selection-start-line="127" selection-start-column="24" selection-end-line="127" selection-end-column="24" />
               <folding>
                 <element signature="e#1#15#0" expanded="true" />
               </folding>
@@ -146,7 +147,6 @@
       <sortByType />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -167,6 +167,7 @@
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
       <pane id="Scratches" />
     </panes>
   </component>
@@ -765,14 +766,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/trens/teste17072015.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="11070" max-vertical-offset="39885">
-          <caret line="280" column="67" selection-start-line="280" selection-start-column="67" selection-end-line="280" selection-end-column="67" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/canmodule.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2205">
@@ -803,11 +796,19 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/edprocess.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.5288357" vertical-offset="3549" max-vertical-offset="7905">
-          <caret line="269" column="56" selection-start-line="269" selection-start-column="56" selection-end-line="269" selection-end-column="56" />
+        <state vertical-scroll-proportion="0.31664854" vertical-offset="1614" max-vertical-offset="7950">
+          <caret line="127" column="24" selection-start-line="127" selection-start-column="24" selection-end-line="127" selection-end-column="24" />
           <folding>
             <element signature="e#1#15#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/trens/teste17072015.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="11070" max-vertical-offset="39885">
+          <caret line="280" column="67" selection-start-line="280" selection-start-column="67" selection-end-line="280" selection-end-column="67" />
+          <folding />
         </state>
       </provider>
     </entry>
