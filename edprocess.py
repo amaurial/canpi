@@ -80,10 +80,6 @@ class TcpClientHandler(threading.Thread):
             except:
                 logging.debug("Exception in client processing")
                 self.running = False
-                #del self.sessions
-                self.server.removeClient(self.id)
-                self.client.close()
-                self.stop()
 
         logging.debug("Tcp server closing client socket for %s " % self.address[0])
         #del self.sessions
@@ -153,10 +149,14 @@ class TcpClientHandler(threading.Thread):
             self.can.put(OPC_STMOD + bytes([session]) + b'\x00')
 
             #send the labels to client
-            labels = "MTLS" + str(loco) + EMPTY_LABELS + self.generateFunctionsLabel("S" + str(loco))
+            labels = "MTLS" + str(loco) + EMPTY_LABELS + self.generateFunctionsLabel("S" + str(loco)) +  "\n"
             logging.debug("Sending labels: %s " % labels)
 
             self.sendClientMessage(labels)
+
+            msg = "MTLS" + str(loco) + DELIM_BTLT + "s0\n"
+            self.sendClientMessage(msg)
+
 
         if opc == OPC_ERR[0]:
             logging.debug("OPC: ERR")
@@ -266,7 +266,7 @@ class TcpClientHandler(threading.Thread):
 
             Hb = 0
             Lb = 0
-            if loco > 127:
+            if (loco > 127) or (adtype in ["L", "l"]):
                 Hb = loco.to_bytes(2,byteorder='big')[0] | 0xC0
                 Lb = loco.to_bytes(2,byteorder='big')[1]
             else:
@@ -286,22 +286,26 @@ class TcpClientHandler(threading.Thread):
             logging.debug("Releasing all sessions")
             for k , s in self.sessions.items():
                 if s:
-                     #send the can data
-                    logging.debug("Releasing session for loco %d" % s.getLoco())
-                    self.can.put(OPC_KLOC + bytes([s.getSessionID()]))
+                    #send the can data
+                    sid = s.getSessionID()
+                    logging.debug("Releasing session for loco KLOC %d" % s.getLoco())
+                    self.can.put(OPC_KLOC + bytes([sid]))
+                    time.sleep(1)
                     relsessions.append(k)
             #clear sessions
             for k in relsessions:
+                logging.debug("Delete session %s" % k)
                 del self.sessions[k]
             return
 
         loco = self.getLoco(msg)
+        logging.debug("Releasing session for loco KLOC %d" % loco)
 
         session = self.sessions.get(loco)
         if session:
             #send the can data
-            logging.debug("Releasing session for loco %d" % loco)
             self.can.put(OPC_KLOC + bytes([session.getSessionID()]))
+            time.sleep(1)
             #TODO check if it works
             del self.sessions[loco]
         else:
@@ -343,7 +347,7 @@ class TcpClientHandler(threading.Thread):
 
     def handleDirection(self, msg):
         logging.debug("Handle Direction request")
-        self.sendClientMessage("\n")
+        self.sendClientMessage(msg + "\n")
 
 
         #get the direction
@@ -415,7 +419,7 @@ class TcpClientHandler(threading.Thread):
 
     def handleSetFunction(self, msg):
         logging.debug("Set function request found")
-
+        self.sendClientMessage(msg + "\n")
         #get the function
         i = msg.find(">F")
         logging.debug("Extracted on/off: %s func: %s" % (msg[i + 2:i + 3], msg[i + 3:]))
@@ -459,6 +463,7 @@ class TcpClientHandler(threading.Thread):
             a = a + s + "F0" + str(f) + "\n"
         a = a + s + "V0\n" + s + "R1\n" + s + "s0\n"
         return a
+
 class EdSession:
     def __init__(self, loco, adtype):
         self.sessionid = 0

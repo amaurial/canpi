@@ -51,7 +51,7 @@ class CanManager(threading.Thread):
 
     #send the can data
     def send(self,data):
-        logging.debug("Sending CBUS:%s" % data)
+        logging.debug("Sending CBUS: %s" % data)
         try:
             self.can.send(data)
         except socket.error:
@@ -116,6 +116,7 @@ class BufferReader(threading.Thread):
 class BufferWriter(threading.Thread):
     # CAN frame packing/unpacking (see `struct can_frame` in <linux/can.h>)
     can_frame_fmt = "=IB3x8s"
+    lock = threading.Lock()
 
     def __init__(self, name, threadID, canManager):
         threading.Thread.__init__(self)
@@ -130,11 +131,15 @@ class BufferWriter(threading.Thread):
         while self.running:
             if len(self.outcan) > 0:
                 data = self.outcan.pop()
-                self.canManager.send(data)
+                with self.lock:
+                    self.canManager.send(data)
+
             #time.sleep(1)
+
     def put(self,data):
-        logging.debug("Inserting data %s in buffer" % data)
-        self.outcan.append(self.build_can_frame(canid,data))
+        logging.debug("Inserting data %s of size %d in buffer" % (data,len(data)))
+        with self.lock:
+            self.outcan.append(self.build_can_frame(canid,data))
 
     #stop the thread
     def stop(self):

@@ -62,6 +62,7 @@ class TcpServer(threading.Thread):
     def removeClient(self,id):
         logging.debug("Removing ED client %s" % id)
         del self.clients[id]
+        logging.debug("Sessions active %s" % self.clients)
     # def listenToClient(self, client, address):
     #     logging.debug("serving the tcp client")
     #     size = 1024
