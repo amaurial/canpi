@@ -5,9 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3cc298be-3a99-4eb9-a3f8-79ba53eb2f19" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/canmodule.py" afterPath="$PROJECT_DIR$/canmodule.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/edprocess.py" afterPath="$PROJECT_DIR$/edprocess.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/tcpmodule.py" afterPath="$PROJECT_DIR$/tcpmodule.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="canpi.iws" />
@@ -47,7 +45,7 @@
       <file leaf-file-name="canpi.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/canpi.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="80" max-vertical-offset="1020">
+            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1020">
               <caret line="22" column="0" selection-start-line="22" selection-start-column="0" selection-end-line="22" selection-end-column="0" />
               <folding>
                 <element signature="e#25#35#0" expanded="true" />
@@ -69,8 +67,8 @@
       <file leaf-file-name="edprocess.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/edprocess.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.33079433" vertical-offset="1511" max-vertical-offset="8025">
-              <caret line="121" column="34" selection-start-line="121" selection-start-column="34" selection-end-line="121" selection-end-column="34" />
+            <state vertical-scroll-proportion="0.6039173" vertical-offset="9045" max-vertical-offset="10245">
+              <caret line="640" column="0" selection-start-line="640" selection-start-column="0" selection-end-line="640" selection-end-column="0" />
               <folding>
                 <element signature="e#1#15#0" expanded="true" />
               </folding>
@@ -81,8 +79,8 @@
       <file leaf-file-name="opc.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/opc.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="180" max-vertical-offset="1995">
-              <caret line="15" column="18" selection-start-line="15" selection-start-column="18" selection-end-line="15" selection-end-column="18" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="705" max-vertical-offset="1995">
+              <caret line="47" column="6" selection-start-line="47" selection-start-column="6" selection-end-line="47" selection-end-column="6" />
               <folding />
             </state>
           </provider>
@@ -91,8 +89,8 @@
       <file leaf-file-name="ed_functions_dump.txt" pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/trens/ed_functions_dump.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="3105" max-vertical-offset="14430">
-              <caret line="195" column="72" selection-start-line="195" selection-start-column="72" selection-end-line="195" selection-end-column="72" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="2790" max-vertical-offset="14430">
+              <caret line="186" column="60" selection-start-line="186" selection-start-column="60" selection-end-line="186" selection-end-column="60" />
               <folding />
             </state>
           </provider>
@@ -101,8 +99,8 @@
       <file leaf-file-name="teste17072015.txt" pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/trens/teste17072015.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="2610" max-vertical-offset="39885">
-              <caret line="241" column="62" selection-start-line="241" selection-start-column="62" selection-end-line="241" selection-end-column="72" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="915" max-vertical-offset="39885">
+              <caret line="61" column="64" selection-start-line="61" selection-start-column="64" selection-end-line="61" selection-end-column="64" />
               <folding />
             </state>
           </provider>
@@ -159,6 +157,7 @@
       <sortByType />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -179,7 +178,6 @@
           </PATH>
         </subPane>
       </pane>
-      <pane id="Scope" />
       <pane id="Scratches" />
     </panes>
   </component>
@@ -763,24 +761,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/canpi.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="80" max-vertical-offset="1020">
-          <caret line="22" column="0" selection-start-line="22" selection-start-column="0" selection-end-line="22" selection-end-column="0" />
-          <folding>
-            <element signature="e#25#35#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/opc.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="180" max-vertical-offset="1995">
-          <caret line="15" column="18" selection-start-line="15" selection-start-column="18" selection-end-line="15" selection-end-column="18" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/tcpmodule.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="326" max-vertical-offset="1440">
@@ -799,26 +779,44 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/trens/ed_functions_dump.txt">
+    <entry file="file://$USER_HOME$/trens/teste17072015.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="3105" max-vertical-offset="14430">
-          <caret line="195" column="72" selection-start-line="195" selection-start-column="72" selection-end-line="195" selection-end-column="72" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="540" max-vertical-offset="39885">
+          <caret line="61" column="64" selection-start-line="61" selection-start-column="64" selection-end-line="61" selection-end-column="64" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/trens/teste17072015.txt">
+    <entry file="file://$USER_HOME$/trens/ed_functions_dump.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="2610" max-vertical-offset="39885">
-          <caret line="241" column="62" selection-start-line="241" selection-start-column="62" selection-end-line="241" selection-end-column="72" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="2700" max-vertical-offset="14430">
+          <caret line="186" column="60" selection-start-line="186" selection-start-column="60" selection-end-line="186" selection-end-column="60" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/opc.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="135" max-vertical-offset="1995">
+          <caret line="47" column="6" selection-start-line="47" selection-start-column="6" selection-end-line="47" selection-end-column="6" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/canpi.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1020">
+          <caret line="22" column="0" selection-start-line="22" selection-start-column="0" selection-end-line="22" selection-end-column="0" />
+          <folding>
+            <element signature="e#25#35#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/edprocess.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.33079433" vertical-offset="1511" max-vertical-offset="8025">
-          <caret line="121" column="34" selection-start-line="121" selection-start-column="34" selection-end-line="121" selection-end-column="34" />
+        <state vertical-scroll-proportion="0.6039173" vertical-offset="9045" max-vertical-offset="10245">
+          <caret line="640" column="0" selection-start-line="640" selection-start-column="0" selection-end-line="640" selection-end-column="0" />
           <folding>
             <element signature="e#1#15#0" expanded="true" />
           </folding>
