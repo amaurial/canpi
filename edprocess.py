@@ -124,13 +124,18 @@ class TcpClientHandler(threading.Thread):
 
             if opc == OPC_PLOC[0]:
 
-                logging.debug("OPC: PLOC %s %s" % (hex(data[2]) , hex(data[3])))
+                logging.debug("Checking result of request session. OPC: PLOC %s %s" % (hex(data[2]) , hex(data[3])))
 
                 session = int(data[1])
                 Hb = data[2] & 0x3f
                 Lb = data[3]
 
                 loco = int.from_bytes(bytes([Hb, Lb]),byteorder='big')
+
+                if self.edsession.getLoco() != loco:
+                    logging.debug("PLOC %d not for this session %d. Discarding." % (loco, self.edsession.getLoco()))
+                    return
+
                 speedir = int(data[4])
                 f1 = data[5]
                 f2 = data[6]
@@ -172,7 +177,19 @@ class TcpClientHandler(threading.Thread):
 
             if opc == OPC_ERR[0]:
                 logging.debug("OPC: ERR")
-                loco = int(data[2])
+
+                Hb = data[2] & 0x3f
+                Lb = data[3]
+                loco = int.from_bytes(bytes([Hb, Lb]), byteorder='big')
+
+                if self.edsession:
+                    if loco != self.edsession.getLoco():
+                        logging.debug("Error message for another client. Different loco number. Discarding.")
+                        return
+                else:
+                    logging.debug("Error message for another client. No edsession set. Discarding.")
+                    return
+
                 err = int(data[3])
                 if err == 1:
                     logging.debug("Can not create session. Reason: stack full")
@@ -350,7 +367,17 @@ class TcpClientHandler(threading.Thread):
 
             i = msg.find(">V")
             logging.debug("Extracted speed: %s" % msg[i+2:])
-            speed = int(msg[i+2:])
+            speedString = msg[i+2:]
+
+            speed = 0
+
+            if speedString in ["X", "x"]:
+                #stop
+                speed = 1
+            else:
+                speed = int(speedString)
+                if speed != 0:
+                    speed = speed + 1
 
             i = msg.find("*")
             #all sessions
