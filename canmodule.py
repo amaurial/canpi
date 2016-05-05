@@ -32,18 +32,22 @@ class CanManager(threading.Thread):
 
     #major thread function. reads the data and send to the registered tcp servers
     def run(self):
-        logging.info("Starting canmanager")
-        #reads the incomming messages
-        while self.running:
-            #ready = select.select([self.can],[],[],cantimeout)
-            #if ready[0]:
-                #read
-            cf,addr = self.can.recvfrom(recbuffer)
-            incan.append(cf)
-            #send data
-            #logging.debug("sending")
-        self.can.close();
+        try:
 
+            logging.info("Starting canmanager")
+            #reads the incomming messages
+            while self.running:
+                ready = select.select([self.can],[],[],cantimeout)
+                if ready[0]:
+                    #read
+                    cf,addr = self.can.recvfrom(recbuffer)
+                    incan.append(cf)
+                #send data
+                #logging.debug("sending")
+            self.can.close();
+        except BaseException as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            logging.info("Exception while reading CBUS in line %d\n %s" % (exc_tb.tb_lineno, str(e)))
      #open the can socket
     def opencan(self,device):
        self.can = socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW)
@@ -53,9 +57,12 @@ class CanManager(threading.Thread):
     def send(self,data):
         logging.debug("Sending CBUS: %s" % data)
         try:
-            self.can.send(data)
+            bytesSent = self.can.send(data)
+            logging.debug("CBUS sent %d bytes" % bytesSent)
+            return  bytesSent
         except socket.error:
             logging.debug('Error sending CAN frame %s' % data)
+            return 0
 
 
     #stop the thread

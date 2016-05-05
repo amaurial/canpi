@@ -25,7 +25,7 @@ RE_QRY_SPEED = re.compile('M[TA]+[SL\*]([0-9]+)?<;>qV') #regex to identify a que
 RE_QRY_DIRECTION = re.compile('M[TA]+[SL\*]([0-9]+)?<;>qR') #regex to identify a query direction
 RE_FUNC = re.compile('M[TA]+[SL\*]([0-9]+)?<;>F[0-9]+') #regex to identify a query direction
 
-CBUS_KEEP_ALIVE = 5000
+CBUS_KEEP_ALIVE = 4000
 ED_KEEP_ALIVE = 10000
 BS = 128
 ST = 0.003
@@ -132,8 +132,12 @@ class TcpClientHandler(threading.Thread):
 
                 loco = int.from_bytes(bytes([Hb, Lb]),byteorder='big')
 
-                if self.edsession.getLoco() != loco:
-                    logging.debug("PLOC %d not for this session %d. Discarding." % (loco, self.edsession.getLoco()))
+                if self.edsession:
+                    if self.edsession.getLoco() != loco:
+                        logging.debug("PLOC %d not for this session %d. Discarding." % (loco, self.edsession.getLoco()))
+                        return
+                else:
+                    logging.debug("No session request. Discarding.")
                     return
 
                 speedir = int(data[4])
