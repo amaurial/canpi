@@ -506,10 +506,6 @@ class TcpClientHandler(threading.Thread):
             logging.debug("Extracted on/off: %s func: %s" % (msg[i + 2:i + 3], msg[i + 3:]))
             onoff = int(msg[i + 2:i + 3])
 
-            if onoff == 0:
-                logging.debug("Fn Message for a 0 action. Discarding")
-                return
-
             fn = int(msg[i + 3:])
             i = msg.find("*")
 
@@ -517,6 +513,9 @@ class TcpClientHandler(threading.Thread):
             if i > 0:
                 for k,s in self.sessions.items():
                     if s:
+                        if s.getFnType(fn) == 1 and onoff == 0:
+                            logging.debug("Fn Message for toggle fn and for a off action. Discarding")
+                            return
                         self.sendFnMessages(s,fn,msg)
                 return
 
@@ -524,6 +523,9 @@ class TcpClientHandler(threading.Thread):
             loco = self.getLoco(msg)
             session = self.sessions.get(loco)
             if session:
+                if session.getFnType(fn) == 1 and onoff == 0:
+                    logging.debug("Fn Message for toggle fn and for a off action. Discarding")
+                    return
                 #send the can data
                 self.sendFnMessages(session,fn,msg)
             else:
@@ -535,9 +537,6 @@ class TcpClientHandler(threading.Thread):
     def sendFnMessages(self,session,fn, msg):
 
         try:
-
-            logging.debug("Set function %d for loco %d" % (fn, session.getLoco()))
-
             fnbyte = 1
 
             #1 is F0(FL) to F4
@@ -558,6 +557,8 @@ class TcpClientHandler(threading.Thread):
                 session.setFnState(fn,0)
             else:
                 session.setFnState(fn,1)
+
+            logging.debug("Set function %d for loco %d to %d" % (fn, session.getLoco(), session.getFnState(fn)))
 
             #send status to ED
             i = msg.find(">F")
@@ -598,8 +599,11 @@ class EdSession:
         self.clientTime = 0
         self.cbusTime = 0
         self.fns = []
+        self.fnstype = [] # 0 for momentary 1 for toggle
         for fn in range(0,29):
             self.fns.append(0)
+            self.fnstype.append(0)
+        self.fnstype[0] = 1 #light is toggle
 
     def getSessionID(self):
         return self.sessionid
@@ -642,6 +646,22 @@ class EdSession:
 
     def getCbusTime(self):
         return self.cbusTime
+
+    def setFnType(self, fn , state):
+        if state != 0 and state != 1:
+            return
+        self.fnstype[fn] = state
+
+    def getFnType(self,fn):
+        return self.fnstype[fn]
+
+    def setFnState(self, fn , state):
+        if state != 0 and state != 1:
+            return
+        self.fns[fn] = state
+
+    def getFnState(self,fn):
+        return self.fns[fn]
 
     def getDccByte(self,fn):
         # create the byte for the DCC
@@ -692,11 +712,7 @@ class EdSession:
     def clear_bit(self, value, bit):
         return value & ~(1<<bit)
 
-    def setFnState(self, fn , state):
-        self.fns[fn] = state
 
-    def getFnState(self,fn):
-        return self.fns[fn]
 
 
 class State:
