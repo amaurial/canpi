@@ -17,7 +17,7 @@ DELIM_BTLT = "<;>"
 DELIM_KEY = "}|{"
 EMPTY_LABELS = "<;>]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[]\[\n" #MTS3<......MTLS1<;>]\[]\[]
 
-RE_SPEED = re.compile('M[TA]+[SL\*]([0-9]+)?<;>V[0-9]+') #regex to identify a set speed message
+RE_SPEED = re.compile('M[TA]+[SL\*]([0-9]+)?<;>[VX]([0-9]+)?') #regex to identify a set speed message
 RE_SESSION = re.compile('M[TA]+\+[SL][0-9]+<;>\\w') #regex to identify a create session message
 RE_REL_SESSION = re.compile('M[TA]+\-[SL*]([0-9]+)?<;>\\w') #regex to identify a release session message
 RE_DIR = re.compile('M[TA]+[SL\*]([0-9]+)?<;>R[0-1]') #regex to identify a create session message
@@ -370,8 +370,16 @@ class TcpClientHandler(threading.Thread):
             self.sendClientMessage("\n")
 
             i = msg.find(">V")
-            logging.debug("Extracted speed: %s" % msg[i+2:])
-            speedString = msg[i+2:]
+            if i > 0:
+                logging.debug("Extracted speed: %s" % msg[i+2:])
+                speedString = msg[i+2:]
+            else:
+                i = msg.find(">X")
+                if i > 0:
+                    speedString = "X"
+                else:
+                    logging.debug("Bad speed message format. Discarding.")
+                    return;
 
             speed = 0
 
@@ -506,6 +514,8 @@ class TcpClientHandler(threading.Thread):
             logging.debug("Extracted on/off: %s func: %s" % (msg[i + 2:i + 3], msg[i + 3:]))
             onoff = int(msg[i + 2:i + 3])
 
+
+
             fn = int(msg[i + 3:])
             i = msg.find("*")
 
@@ -537,6 +547,9 @@ class TcpClientHandler(threading.Thread):
     def sendFnMessages(self,session,fn, msg):
 
         try:
+
+            logging.debug("Set function %d for loco %d" % (fn, session.getLoco()))
+
             fnbyte = 1
 
             #1 is F0(FL) to F4
@@ -557,8 +570,6 @@ class TcpClientHandler(threading.Thread):
                 session.setFnState(fn,0)
             else:
                 session.setFnState(fn,1)
-
-            logging.debug("Set function %d for loco %d to %d" % (fn, session.getLoco(), session.getFnState(fn)))
 
             #send status to ED
             i = msg.find(">F")
@@ -602,8 +613,8 @@ class EdSession:
         self.fnstype = [] # 0 for momentary 1 for toggle
         for fn in range(0,29):
             self.fns.append(0)
-            self.fnstype.append(1)
-        self.fnstype[2] = 0 #horn is momentary
+            self.fnstype.append(0)
+        self.fnstype[0] = 1 #light is toggle
 
     def getSessionID(self):
         return self.sessionid
