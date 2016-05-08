@@ -602,8 +602,8 @@ class EdSession:
         self.fnstype = [] # 0 for momentary 1 for toggle
         for fn in range(0,29):
             self.fns.append(0)
-            self.fnstype.append(0)
-        self.fnstype[0] = 1 #light is toggle
+            self.fnstype.append(1)
+        self.fnstype[2] = 0 #horn is momentary
 
     def getSessionID(self):
         return self.sessionid
