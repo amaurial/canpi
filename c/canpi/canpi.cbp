@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="canpi" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/canpi" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-Wall" />
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+					<Add option="-I/usr/local/include -I/usr/include -L/usr/local/lib -L/usr/lib" />
+				</Compiler>
+				<Linker>
+					<Add library="log4cpp" />
+					<Add library="pthread" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/canpi" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-std=c++11" />
+			<Add option="-fexceptions" />
+		</Compiler>
+		<Unit filename="canHandler.cpp" />
+		<Unit filename="canHandler.h" />
+		<Unit filename="main.cpp" />
+		<Unit filename="tcpClient.cpp" />
+		<Unit filename="tcpClient.h" />
+		<Unit filename="tcpServer.cpp" />
+		<Unit filename="tcpServer.h" />
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

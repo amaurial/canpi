@@ -1,0 +1,75 @@
+# depslib dependency file v1.0
+1462790881 source:/home/amaurial/projetos/canpi/c/canpi/canHandler.cpp
+	"canHandler.h"
+
+1462781659 /home/amaurial/projetos/canpi/c/canpi/canHandler.h
+	<linux/can.h>
+	<net/if.h>
+	<linux/can/raw.h>
+	<log4cpp/Category.hh>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<sys/ioctl.h>
+	<pthread.h>
+	<unistd.h>
+	<queue>
+	"tcpServer.h"
+
+1462786125 source:/home/amaurial/projetos/canpi/c/canpi/main.cpp
+	<iostream>
+	<stdio.h>
+	<stdlib.h>
+	<unistd.h>
+	<libgen.h>
+	<sys/types.h>
+	<sys/socket.h>
+	<sys/ioctl.h>
+	<sys/uio.h>
+	<unistd.h>
+	<signal.h>
+	"log4cpp/Portability.hh"
+	<unistd.h>
+	<iostream>
+	"log4cpp/Category.hh"
+	"log4cpp/Appender.hh"
+	"log4cpp/FileAppender.hh"
+	"log4cpp/OstreamAppender.hh"
+	"log4cpp/SyslogAppender.hh"
+	"log4cpp/Layout.hh"
+	"log4cpp/BasicLayout.hh"
+	"log4cpp/PatternLayout.hh"
+	"log4cpp/SimpleLayout.hh"
+	"log4cpp/Priority.hh"
+	"log4cpp/NDC.hh"
+	"canHandler.h"
+
+1462677858 source:/home/amaurial/projetos/canpi/c/canpi/tcpserver.cpp
+	"tcpserver.h"
+
+1462677865 /home/amaurial/projetos/canpi/c/canpi/tcpserver.h
+	<sys/socket.h>
+	<arpa/inet.h>
+	<log4cpp/Category.hh>
+
+1462791135 source:/home/amaurial/projetos/canpi/c/canpi/tcpClient.cpp
+	"tcpClient.h"
+
+1462790249 /home/amaurial/projetos/canpi/c/canpi/tcpClient.h
+	"tcpServer.h"
+	"canHandler.h"
+	<sys/socket.h>
+	<arpa/inet.h>
+	<log4cpp/Category.hh>
+
+1462790217 /home/amaurial/projetos/canpi/c/canpi/tcpServer.h
+	<sys/socket.h>
+	<arpa/inet.h>
+	<log4cpp/Category.hh>
+	<map>
+	"canHandler.h"
+	"tcpClient.h"
+
+1462791165 source:/home/amaurial/projetos/canpi/c/canpi/tcpServer.cpp
+	"tcpServer.h"
+
