@@ -120,16 +120,19 @@ int main()
 
         logfile = getStringCfgVal(&cfg,"logfile");
         if (logfile.empty()){
+            cout << "Failed to get log file name. Defaul is canpi.log" << endl;
             logfile = "canpi.log";
 	}
 
         candevice= getStringCfgVal(&cfg,"candevice");
         if (logfile.empty()){
+            cout << "Failed to get can device. Defaul is can0" << endl;
             logfile = "can0";
 	}
 
-	port = getIntCfgVal(&cfg,"port");
+	port = getIntCfgVal(&cfg,"tcpport");
 	if (port == INTERROR){
+            cout << "Failed to get tcp port. Defaul is 5555" << endl;
 	    port = 5555;
 	}
 
