@@ -9,6 +9,7 @@
 #include <sys/uio.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string>
 
 //logger
 #include "log4cpp/Portability.hh"
@@ -30,23 +31,109 @@
 #include "log4cpp/Priority.hh"
 #include "log4cpp/NDC.hh"
 
+#include "libconfig.h++" 
+
 //project classes
 #include "canHandler.h"
+#define INTERROR 323232
 
 using namespace std;
+using namespace libconfig;
 int running = 1;
 
 void sigterm(int signo)
 {
-	running = 0;
+   running = 0;
 }
 
+string getStringCfgVal(Config *cfg,string key)
+{
+  string ret;
+  try 
+  {
+     cfg->lookupValue(key,ret);
+  }
+  catch(const SettingNotFoundException &nfex)
+  {
+  }
+  return ret;
+
+}
+
+int getIntCfgVal(Config *cfg,string key)
+{
+  int ret;
+  try 
+  {
+     bool r = cfg->lookupValue(key,ret);
+     if (!r) ret = INTERROR;
+  }
+  catch(const SettingNotFoundException &nfex)
+  {
+     ret = INTERROR;
+  }
+  return ret;
+
+}
 int main()
 {
-
+    bool hasconfig = true;
     signal(SIGTERM, sigterm);
     signal(SIGHUP, sigterm);
     signal(SIGINT, sigterm);
+
+    Config cfg;
+    try
+    {
+       cfg.readFile("canpi.cfg");
+    }
+    catch(const FileIOException &fioex)
+    {
+	std::cerr << "File I/O error" << std::endl;
+	hasconfig = false;
+    }
+    catch(const ParseException &pex)
+    {
+	std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
+	          << " - " << pex.getError() << std::endl;
+	hasconfig = false;
+    }    
+    //****************
+    //default config
+    //***************
+    log4cpp::Priority::PriorityLevel loglevel = log4cpp::Priority::DEBUG;
+    string logfile = "canpi.log";
+    int port = 5555;
+    string candevice = "can0";
+    if (hasconfig){
+
+        string debugLevel = getStringCfgVal(&cfg,"loglevel");
+    
+        if (!debugLevel.empty()){
+	    if (debugLevel.compare("INFO")== 0){
+	       loglevel = log4cpp::Priority::INFO;
+	    }
+	    if (debugLevel.compare("WARN")== 0){
+	       loglevel = log4cpp::Priority::WARN;
+	    }
+        }
+
+        logfile = getStringCfgVal(&cfg,"logfile");
+        if (logfile.empty()){
+            logfile = "canpi.log";
+	}
+
+        candevice= getStringCfgVal(&cfg,"candevice");
+        if (logfile.empty()){
+            logfile = "can0";
+	}
+
+	port = getIntCfgVal(&cfg,"port");
+	if (port == INTERROR){
+	    port = 5555;
+	}
+
+    }
 
     log4cpp::PatternLayout * layout1 = new log4cpp::PatternLayout();
     layout1->setConversionPattern("%d [%p] %m%n");
@@ -57,22 +144,23 @@ int main()
 
     log4cpp::PatternLayout * layout2 = new log4cpp::PatternLayout();
     layout2->setConversionPattern("%d [%p] %m%n");
-    log4cpp::Appender *appender2 = new log4cpp::FileAppender("default", "canpi.log");
+    log4cpp::Appender *appender2 = new log4cpp::FileAppender("default", logfile);
     appender2->setLayout(new log4cpp::BasicLayout());
     appender2->setLayout(layout2);
 
 
     log4cpp::Category& logger = log4cpp::Category::getRoot();
-    logger.setPriority(log4cpp::Priority::DEBUG);
+    //logger.setPriority(log4cpp::Priority::DEBUG);
+    logger.setPriority(loglevel);
     logger.addAppender(appender1);
     logger.addAppender(appender2);
 
     logger.info("Logger initated");
 
     canHandler can = canHandler(&logger,110);
-    can.start("can0");
+    can.start(candevice.c_str());
 
-    tcpServer tcpserver = tcpServer(&logger,5555,&can);
+    tcpServer tcpserver = tcpServer(&logger,port,&can);
     tcpserver.start();
 
     can.setTcpServer(&tcpserver);

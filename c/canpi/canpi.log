@@ -1,0 +1,72 @@
+2016-05-10 14:44:09,253 [INFO] Logger initated
+2016-05-10 14:44:09,253 [DEBUG] Creating socket can for can0
+2016-05-10 14:44:09,632 [DEBUG] Can socket successfuly created. Starting the CBUS reader thread
+2016-05-10 14:44:09,632 [DEBUG] Starting the queue reader thread
+2016-05-10 14:44:09,632 [DEBUG] Running CBUS reader
+2016-05-10 14:44:09,632 [DEBUG] Starting the queue writer thread
+2016-05-10 14:44:09,632 [DEBUG] Running CBUS queue reader
+2016-05-10 14:44:09,632 [INFO] Starting tcp server on port 5555
+2016-05-10 14:44:09,632 [DEBUG] Running CBUS queue writer
+2016-05-10 14:44:09,633 [DEBUG] Start tcp listener
+2016-05-10 14:44:09,633 [DEBUG] Start tcp thread
+2016-05-10 14:44:09,633 [INFO] Waiting for connections on port 5555
+2016-05-10 14:44:09,633 [INFO] Tcp server running
+2016-05-10 14:44:17,441 [INFO] Stopping the tcp server
+2016-05-10 14:44:17,441 [INFO] Stopping client connections
+2016-05-10 14:44:17,441 [INFO] Stopping CBUS reader
+2016-05-10 14:44:17,451 [DEBUG] Stopping the queue reader
+2016-05-10 14:44:17,451 [DEBUG] Stopping the queue writer
+2016-05-10 14:45:20,315 [INFO] Logger initated
+2016-05-10 14:45:20,315 [DEBUG] Creating socket can for can0
+2016-05-10 14:45:20,315 [DEBUG] Can socket successfuly created. Starting the CBUS reader thread
+2016-05-10 14:45:20,315 [DEBUG] Starting the queue reader thread
+2016-05-10 14:45:20,315 [DEBUG] Running CBUS reader
+2016-05-10 14:45:20,315 [DEBUG] Starting the queue writer thread
+2016-05-10 14:45:20,315 [DEBUG] Running CBUS queue reader
+2016-05-10 14:45:20,315 [DEBUG] Running CBUS queue writer
+2016-05-10 14:45:20,315 [INFO] Starting tcp server on port 5555
+2016-05-10 14:45:20,316 [DEBUG] Start tcp listener
+2016-05-10 14:45:20,316 [DEBUG] Start tcp thread
+2016-05-10 14:45:20,316 [INFO] Waiting for connections on port 5555
+2016-05-10 14:45:20,316 [INFO] Tcp server running
+2016-05-10 14:45:27,086 [INFO] Stopping the tcp server
+2016-05-10 14:45:27,086 [INFO] Stopping client connections
+2016-05-10 14:45:27,086 [INFO] Stopping CBUS reader
+2016-05-10 14:45:27,092 [DEBUG] Stopping the queue reader
+2016-05-10 14:45:27,092 [DEBUG] Stopping the queue writer
+2016-05-10 16:00:37,165 [INFO] Logger initated
+2016-05-10 16:00:37,165 [DEBUG] Creating socket can for can0
+2016-05-10 16:00:37,165 [DEBUG] Can socket successfuly created. Starting the CBUS reader thread
+2016-05-10 16:00:37,165 [DEBUG] Starting the queue reader thread
+2016-05-10 16:00:37,165 [DEBUG] Running CBUS reader
+2016-05-10 16:00:37,165 [DEBUG] Starting the queue writer thread
+2016-05-10 16:00:37,165 [DEBUG] Running CBUS queue reader
+2016-05-10 16:00:37,165 [DEBUG] Running CBUS queue writer
+2016-05-10 16:00:37,165 [INFO] Starting tcp server on port 5555
+2016-05-10 16:00:37,166 [DEBUG] Start tcp listener
+2016-05-10 16:00:37,166 [DEBUG] Start tcp thread
+2016-05-10 16:00:37,166 [INFO] Waiting for connections on port 5555
+2016-05-10 16:00:37,166 [INFO] Tcp server running
+2016-05-10 16:00:39,599 [INFO] Stopping the tcp server
+2016-05-10 16:00:39,600 [INFO] Stopping client connections
+2016-05-10 16:00:39,600 [INFO] Stopping CBUS reader
+2016-05-10 16:00:39,610 [DEBUG] Stopping the queue writer
+2016-05-10 16:00:39,610 [DEBUG] Stopping the queue reader
+2016-05-10 16:01:02,644 [INFO] Logger initated
+2016-05-10 16:01:02,644 [DEBUG] Creating socket can for can0
+2016-05-10 16:01:02,644 [DEBUG] Can socket successfuly created. Starting the CBUS reader thread
+2016-05-10 16:01:02,644 [DEBUG] Starting the queue reader thread
+2016-05-10 16:01:02,644 [DEBUG] Running CBUS reader
+2016-05-10 16:01:02,645 [DEBUG] Running CBUS queue reader
+2016-05-10 16:01:02,644 [DEBUG] Starting the queue writer thread
+2016-05-10 16:01:02,645 [INFO] Starting tcp server on port 5555
+2016-05-10 16:01:02,645 [DEBUG] Running CBUS queue writer
+2016-05-10 16:01:02,645 [DEBUG] Start tcp listener
+2016-05-10 16:01:02,645 [DEBUG] Start tcp thread
+2016-05-10 16:01:02,645 [INFO] Waiting for connections on port 5555
+2016-05-10 16:01:02,645 [INFO] Tcp server running
+2016-05-10 16:01:04,479 [INFO] Stopping the tcp server
+2016-05-10 16:01:04,479 [INFO] Stopping client connections
+2016-05-10 16:01:04,479 [INFO] Stopping CBUS reader
+2016-05-10 16:01:04,483 [DEBUG] Stopping the queue reader
+2016-05-10 16:01:04,483 [DEBUG] Stopping the queue writer

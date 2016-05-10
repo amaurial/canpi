@@ -22,7 +22,7 @@ class canHandler
     public:
         canHandler(log4cpp::Category *logger,char canId);
         virtual ~canHandler();
-        int start(char* interface);
+        int start(const char* interface);
         int insert_data(char *msg,int size);
         void stop();
         void setCanId(char id);

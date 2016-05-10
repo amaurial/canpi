@@ -1,5 +1,5 @@
 CC=g++
-LIB= -Wl,-Bstatic -llog4cpp -Wl,-Bdynamic -lpthread
+LIB= -Wl,-Bstatic -llog4cpp lib/libconfig++.a -Wl,-Bdynamic -lpthread
 CFLAGS= -c -Wall -std=c++11 -g -I/usr/local/include -I/usr/include -Ilib/include 
 LDFLAGS= -L/usr/local/lib -L/usr/lib -Llib
 SOURCES=main.cpp canHandler.cpp tcpServer.cpp tcpClient.cpp 

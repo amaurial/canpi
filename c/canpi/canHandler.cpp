@@ -48,7 +48,7 @@ int canHandler::insert_data(char *msg,int size){
     return j;
 }
 
-int canHandler::start(char* interface){
+int canHandler::start(const char* interface){
     logger->debug("Creating socket can for %s",interface);
 
 	if ((canInterface = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0)	{
