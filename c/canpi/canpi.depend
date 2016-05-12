@@ -1,8 +1,8 @@
 # depslib dependency file v1.0
-1462790881 source:/home/amaurial/projetos/canpi/c/canpi/canHandler.cpp
+1462968310 source:/home/amaurial/projetos/canpi/c/canpi/canHandler.cpp
 	"canHandler.h"
 
-1462781659 /home/amaurial/projetos/canpi/c/canpi/canHandler.h
+1462968333 /home/amaurial/projetos/canpi/c/canpi/canHandler.h
 	<linux/can.h>
 	<net/if.h>
 	<linux/can/raw.h>
@@ -16,7 +16,7 @@
 	<queue>
 	"tcpServer.h"
 
-1462786125 source:/home/amaurial/projetos/canpi/c/canpi/main.cpp
+1462872482 source:/home/amaurial/projetos/canpi/c/canpi/main.cpp
 	<iostream>
 	<stdio.h>
 	<stdlib.h>
@@ -28,6 +28,7 @@
 	<sys/uio.h>
 	<unistd.h>
 	<signal.h>
+	<string>
 	"log4cpp/Portability.hh"
 	<unistd.h>
 	<iostream>
@@ -42,6 +43,7 @@
 	"log4cpp/SimpleLayout.hh"
 	"log4cpp/Priority.hh"
 	"log4cpp/NDC.hh"
+	"libconfig.h++"
 	"canHandler.h"
 
 1462677858 source:/home/amaurial/projetos/canpi/c/canpi/tcpserver.cpp
@@ -52,17 +54,24 @@
 	<arpa/inet.h>
 	<log4cpp/Category.hh>
 
-1462791135 source:/home/amaurial/projetos/canpi/c/canpi/tcpClient.cpp
+1463047245 source:/home/amaurial/projetos/canpi/c/canpi/tcpClient.cpp
 	"tcpClient.h"
 
-1462790249 /home/amaurial/projetos/canpi/c/canpi/tcpClient.h
+1463047263 /home/amaurial/projetos/canpi/c/canpi/tcpClient.h
 	"tcpServer.h"
 	"canHandler.h"
+	"edSession.h"
+	"opcodes.h"
+	"msgdata.h"
 	<sys/socket.h>
 	<arpa/inet.h>
 	<log4cpp/Category.hh>
+	<map>
+	<sys/time.h>
+	<string>
+	<sstream>
 
-1462790217 /home/amaurial/projetos/canpi/c/canpi/tcpServer.h
+1462872496 /home/amaurial/projetos/canpi/c/canpi/tcpServer.h
 	<sys/socket.h>
 	<arpa/inet.h>
 	<log4cpp/Category.hh>
@@ -70,6 +79,15 @@
 	"canHandler.h"
 	"tcpClient.h"
 
-1462791165 source:/home/amaurial/projetos/canpi/c/canpi/tcpServer.cpp
+1462872482 source:/home/amaurial/projetos/canpi/c/canpi/tcpServer.cpp
 	"tcpServer.h"
+
+1463043443 /home/amaurial/projetos/canpi/c/canpi/edSession.h
+
+1463043520 source:/home/amaurial/projetos/canpi/c/canpi/edSession.cpp
+	"edSession.h"
+
+1462964238 /home/amaurial/projetos/canpi/c/canpi/opcodes.h
+
+1462964018 /home/amaurial/projetos/canpi/c/canpi/msgdata.h
 

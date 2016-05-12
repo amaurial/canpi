@@ -28,7 +28,7 @@ void canHandler::setCanId(char canId){
 int canHandler::insert_data(char *msg,int size){
     int i = 0;
     int j = CAN_MSG_SIZE;
-    struct canfd_frame frame;
+    struct can_frame frame;
     if (size < 1){
         return 0;
     }
@@ -38,7 +38,7 @@ int canHandler::insert_data(char *msg,int size){
     }
     memset(frame.data , 0 , sizeof(frame.data));
     frame.can_id = canId;
-    frame.len = j;
+    frame.can_dlc = j;
 
     for (i = 0;i < j; i++){
         frame.data[i]=msg[i];
@@ -148,7 +148,8 @@ void canHandler::run_queue_reader(void* param){
 }
 
 void canHandler::run_out(void* param){
-    struct canfd_frame frame;
+    struct can_frame frame;
+    int nbytes;
 
     logger->debug("Running CBUS queue writer");
     while (running){
@@ -158,6 +159,9 @@ void canHandler::run_out(void* param){
                 ,frame.can_id
                 ,frame.data[0],frame.data[1],frame.data[2],frame.data[3]
                 ,frame.data[4],frame.data[5],frame.data[6],frame.data[7]);
+            frame.can_id = canId;
+            frame.can_dlc = CAN_MSG_SIZE;
+            nbytes = write(canInterface,&frame,CAN_MTU);
             out_msgs.pop();
 
         }

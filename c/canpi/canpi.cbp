@@ -39,10 +39,24 @@
 			<Add option="-Wall" />
 			<Add option="-std=c++11" />
 			<Add option="-fexceptions" />
+			<Add option="-I/usr/lib" />
+			<Add option="-I/usr/local/lib" />
+			<Add option="-fpermissive" />
 		</Compiler>
+		<Linker>
+			<Add option="-L/usr/lib" />
+			<Add option="-L/usr/local/lib" />
+			<Add library="pthread" />
+			<Add library="log4cpp" />
+			<Add library="config++" />
+		</Linker>
 		<Unit filename="canHandler.cpp" />
 		<Unit filename="canHandler.h" />
+		<Unit filename="edSession.cpp" />
+		<Unit filename="edSession.h" />
 		<Unit filename="main.cpp" />
+		<Unit filename="msgdata.h" />
+		<Unit filename="opcodes.h" />
 		<Unit filename="tcpClient.cpp" />
 		<Unit filename="tcpClient.h" />
 		<Unit filename="tcpServer.cpp" />

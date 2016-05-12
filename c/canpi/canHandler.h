@@ -42,7 +42,7 @@ class canHandler
         tcpServer *tcpserver;
 
         std::queue<can_frame> in_msgs;
-        std::queue<canfd_frame> out_msgs;
+        std::queue<can_frame> out_msgs;
 
         void run_in(void* param);
         void run_out(void* param);

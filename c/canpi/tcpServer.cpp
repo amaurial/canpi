@@ -103,12 +103,10 @@ void tcpServer::run(void* param){
                 default:
                     break;
             }
-            //cl->setIP(s);
-            logger->debug("New client %s",s);
-            free(s);
-
-            logger->debug("Creating client %d",counter);
+            logger->debug("Creating client for ip:%s id:%d",s, counter);
             tcpClient *cl = new tcpClient(logger,this,can,client_sock, client_addr,counter);
+            cl->setIp(s);
+            free(s);
             tempClient = cl;
             logger->debug("Creating client thread %d",counter);
             pthread_create(&clientThread, nullptr, tcpServer::thread_entry_run_client, this);
