@@ -42,7 +42,10 @@ void tcpClient::stop(){
     running = 0;
 }
 
-void tcpClient::sendCbusMessage(char b0, char b1, char b2, char b3, char b4, char b5, char b6, char b7){
+void tcpClient::sendCbusMessage(char b0=0, char b1=0,
+                                char b2=0, char b3=0,
+                                char b4=0, char b5=0,
+                                char b6=0, char b7=0){
     char msg[CAN_MSG_SIZE];
     msg[0] = b0;
     msg[1] = b1;
@@ -57,11 +60,11 @@ void tcpClient::sendCbusMessage(char b0, char b1, char b2, char b3, char b4, cha
 
 void tcpClient::canMessage(char canid,const char* msg){
     //test to send data to client tcp
-    int nbytes;
+    //int nbytes;
     //char buf[CAN_MSG_SIZE+1];
     char buf[30];
     memset(buf,0,20);
-    nbytes = sprintf(buf,"%02x %02x %02x %02x %02x %02x %02x %02x\n", msg[0],msg[1],msg[2],msg[3],msg[4],msg[5],msg[6],msg[7]);
+    sprintf(buf,"%02x %02x %02x %02x %02x %02x %02x %02x\n", msg[0],msg[1],msg[2],msg[3],msg[4],msg[5],msg[6],msg[7]);
     logger->debug("Tcp Client received cbus message: %s",buf);
     //memcpy(buf,msg,CAN_MSG_SIZE);
     //buf[CAN_MSG_SIZE] = '\n';
@@ -242,4 +245,178 @@ string tcpClient::generateFunctionsLabel(int loco){
 void tcpClient::sendToEd(string msg){
     int nbytes;
     nbytes = write(client_sock,msg.c_str(),msg.length());
+    if (nbytes != msg.length()){
+        logger->error("Fail to send message %s to ED", msg.c_str());
+    }
+}
+
+void tcpClient::handleCreateSession(string message){
+    const char *msg = message.c_str();
+    logger->debug("Handle create session. MT+ found");
+    unsigned char Hb,Lb;
+    int loco;
+    //create session
+    if ( (msg[3] == 'S') | (msg[3] == 's') | (msg[3] == 'L') | (msg[3] == 'l') ){
+
+        logger->debug("MT+ found");
+        edsession->setAddressType(msg[3]);
+        logger->debug("Address type: %s", edsession->getAddressType());
+        //get loco
+        loco = getLoco(message);
+        edsession->setLoco(loco);
+        //send the can data
+        logger->debug("Put CAN session request in the queue for loco %d" , loco);
+
+        Hb = 0;
+        if ((loco > 127) | (msg[3] == 'L') | (msg[3] == 'l')){
+            Hb = loco >> 8 | 0xC0;
+            Lb = loco & 0xFF;
+        }
+        else Lb = loco & 0xFF;
+
+        sendCbusMessage(OPC_RLOC,Hb,Lb,0,0,0,0,0);
+    }
+}
+
+
+void tcpClient::handleReleaseSession(string message){
+
+    logger->debug("Handle release session. MT- found");
+    //release session
+    sendToEd(message + "\n");
+    int i = message.find("*");
+
+    //all sessions
+    if (i>0){
+        logger->debug("Releasing all sessions");
+        std::map<int,edSession*>::iterator it = sessions.begin();
+        while(it != sessions.end())
+        {
+            logger->debug("Releasing session for loco KLOC %d" , it->second->getLoco());
+            sendCbusMessage(OPC_KLOC,it->second->getSession());
+            usleep(5000);//5ms
+            it++;
+        }
+        //clear sessions
+        sessions.clear();
+        return;
+    }
+
+    int loco = getLoco(message);
+    logger->debug("Releasing session for loco KLOC %d" , loco);
+
+    char sesid = sessions[loco]->getSession();
+    //send the can data
+    sendCbusMessage(OPC_KLOC,sesid);
+    sessions.erase(loco);
+}
+
+
+void tcpClient::handleDirection(string message){
+    const char* msg = message.c_str();
+
+    logger->debug("Handle Direction request");
+    sendToEd(message + "\n");
+
+    //get the direction
+    int i = message.find(">R");
+    logger->debug("Extracted direction: %s" ,  message.substr(i+2,1).c_str());
+    int d = atoi(message.substr(i+2,1).c_str());
+
+    i = message.find("*");
+    //all sessions
+    if (i > 0){
+        logger->debug("Set direction for all sessions");
+        std::map<int,edSession*>::iterator it = sessions.begin();
+        while(it != sessions.end())
+        {
+            if (d != it->second->getDirection()){
+                it->second->setDirection(d);
+                logger->debug("Set direction %d for loco %d" , d ,it->second->getLoco());
+                sendCbusMessage(OPC_DSPD,it->second->getSession(),d*BS+it->second->getSpeed());
+            }
+            it++;
+        }
+        return;
+    }
+
+    //one session
+    int loco = getLoco(message);
+    int sesid = sessions[loco]->getSession();
+
+    if (d != sesid){
+        sessions[loco]->setDirection(d);
+        logger->debug("Set direction %d for loco %d" , d ,loco);
+        sendCbusMessage(OPC_DSPD,sesid, d * BS + sessions[loco]->getSpeed());
+    }
+
+}
+
+void tcpClient::handleSpeedDir(string message){
+
+    const char* msg message.c_str();
+    string speedString;
+
+    logger->debug("Handle speed request")
+    sendToEd("\n");
+
+    int i = message.find(">V");
+    if (i > 0){
+        int s = i + 1;
+        logger->debug("Extracted speed: %s", message.substr(s,message.length()-s));
+        speedString = message.substr(s,message.length()-s);
+    }
+    else{
+        i = message.find(">X");
+        if (i > 0) speedString = "X";
+        else{
+            logger->debug("Bad speed message format. Discarding.")
+            return;
+        }
+    }
+    int speed = 0;
+
+    if (speedString =='X') speed = 1;
+    else{
+        speed = atoi(speedString.c_str());
+        if (speed != 0) speed++;
+    }
+    i = message.find("*");
+    //all sessions
+    if i > 0:
+        logger->debug("Set speed for all sessions")
+        for k, s in self.sessions.items():
+            if s:
+                logger->debug("Set speed %d for loco %d" % (speed, s.getLoco()))
+                self.sessions.get(s.getLoco()).setSpeed(speed)
+                sdir = s.getDirection() * BS + speed
+                self.can.put(OPC_DSPD + bytes([s.getSessionID()]) + bytes([sdir]))
+        return
+
+    #one session
+    loco = self.getLoco(msg)
+    session = self.sessions.get(loco)
+
+    if session:
+        #send the can data
+        logger->debug("Set speed %d for loco %d" % (speed, loco))
+        self.sessions.get(loco).setSpeed(speed)
+        sdir = session.getDirection() * BS + speed
+        self.can.put(OPC_DSPD + bytes([session.getSessionID()]) + bytes([sdir]))
+    else:
+        logger->debug("No session found for loco %d" % loco)
+}
+
+int tcpClient::getLoco(string msg){
+    //expected format
+    //MT+S45<;>Name
+    try{
+        int i = msg.find_first_of("<");
+        logger->debug("Extracted loco: %s", msg.substr(4,i-4).c_str());
+        int loco = atoi(msg.substr(4,i-4).c_str());
+        return loco;
+    }
+    catch(...){
+        return 0;
+    }
 }

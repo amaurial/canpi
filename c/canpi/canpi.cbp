@@ -36,11 +36,12 @@
 			</Target>
 		</Build>
 		<Compiler>
-			<Add option="-Wall" />
 			<Add option="-std=c++11" />
+			<Add option="-Wall" />
 			<Add option="-fexceptions" />
-			<Add option="-I/usr/lib" />
-			<Add option="-I/usr/local/lib" />
+			<Add option="-I/usr/include" />
+			<Add option="-I/usr/local/include" />
+			<Add option="-Ilib/include" />
 			<Add option="-fpermissive" />
 		</Compiler>
 		<Linker>

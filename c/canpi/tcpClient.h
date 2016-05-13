@@ -54,9 +54,16 @@ class tcpClient
         void handleCBUS(const char* msg);
         void handleLearnEvents(const char* msg);
         void sendKeepAlive();
-        void sendCbusMessage(char b0, char b1, char b2, char b3, char b4, char b5, char b6, char b7);
+        void sendCbusMessage(char b0=0, char b1=0,
+                             char b2=0, char b3=0,
+                             char b4=0, char b5=0,
+                             char b6=0, char b7=0);
         void sendToEd(string msg);
         string generateFunctionsLabel(int loco);
+        void handleCreateSession(string message);
+        void handleReleaseSession(string message);
+        void handleDirection(string message);
+        int getLoco(string msg);
 };
 
 #endif // TCPCLIENT_H
