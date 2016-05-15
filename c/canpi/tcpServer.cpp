@@ -6,6 +6,7 @@ tcpServer::tcpServer(log4cpp::Category *logger, int port, canHandler* can)
     this->logger = logger;
     this->setPort(port);
     this->can = can;
+    counter = 0;
 }
 
 tcpServer::~tcpServer()
@@ -47,6 +48,8 @@ bool tcpServer::start(){
     }
 
     //Prepare the sockaddr_in structure
+    int yes = 1;
+    setsockopt(socket_desc,SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port = htons( port );
@@ -75,6 +78,7 @@ void tcpServer::run(void* param){
     struct sockaddr_in client_addr;
     socklen_t len = sizeof(client_addr);
     logger->info("Tcp server running");
+
     while (running){
 
          client_sock = accept(socket_desc, (struct sockaddr *)&client_addr, &len);
@@ -109,6 +113,7 @@ void tcpServer::run(void* param){
             free(s);
             tempClient = cl;
             logger->debug("Creating client thread %d",counter);
+            pthread_t clientThread;
             pthread_create(&clientThread, nullptr, tcpServer::thread_entry_run_client, this);
             clients.insert(std::pair<int,tcpClient*>(counter,cl));
             counter++;

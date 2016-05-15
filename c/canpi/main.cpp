@@ -31,7 +31,7 @@
 #include "log4cpp/Priority.hh"
 #include "log4cpp/NDC.hh"
 
-#include "libconfig.h++" 
+#include "libconfig.h++"
 
 //project classes
 #include "canHandler.h"
@@ -46,10 +46,13 @@ void sigterm(int signo)
    running = 0;
 }
 
+/**
+* Usefull function to get string from config file
+**/
 string getStringCfgVal(Config *cfg,string key)
 {
   string ret;
-  try 
+  try
   {
      cfg->lookupValue(key,ret);
   }
@@ -59,11 +62,13 @@ string getStringCfgVal(Config *cfg,string key)
   return ret;
 
 }
-
+/**
+* Usefull function to get integer from config file
+**/
 int getIntCfgVal(Config *cfg,string key)
 {
   int ret;
-  try 
+  try
   {
      bool r = cfg->lookupValue(key,ret);
      if (!r) ret = INTERROR;
@@ -73,8 +78,9 @@ int getIntCfgVal(Config *cfg,string key)
      ret = INTERROR;
   }
   return ret;
-
 }
+
+
 int main()
 {
     bool hasconfig = true;
@@ -97,7 +103,7 @@ int main()
 	std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
 	          << " - " << pex.getError() << std::endl;
 	hasconfig = false;
-    }    
+    }
     //****************
     //default config
     //***************
@@ -105,10 +111,11 @@ int main()
     string logfile = "canpi.log";
     int port = 5555;
     string candevice = "can0";
+    bool append = false;
     if (hasconfig){
 
         string debugLevel = getStringCfgVal(&cfg,"loglevel");
-    
+
         if (!debugLevel.empty()){
 	    if (debugLevel.compare("INFO")== 0){
 	       loglevel = log4cpp::Priority::INFO;
@@ -122,19 +129,28 @@ int main()
         if (logfile.empty()){
             cout << "Failed to get log file name. Defaul is canpi.log" << endl;
             logfile = "canpi.log";
-	}
+        }
 
         candevice= getStringCfgVal(&cfg,"candevice");
         if (logfile.empty()){
             cout << "Failed to get can device. Defaul is can0" << endl;
             logfile = "can0";
-	}
+        }
 
-	port = getIntCfgVal(&cfg,"tcpport");
-	if (port == INTERROR){
-            cout << "Failed to get tcp port. Defaul is 5555" << endl;
-	    port = 5555;
-	}
+        port = getIntCfgVal(&cfg,"tcpport");
+        if (port == INTERROR){
+                cout << "Failed to get tcp port. Defaul is 5555" << endl;
+            port = 5555;
+        }
+
+        string sappend= getStringCfgVal(&cfg,"logappend");
+        if (sappend.empty()){
+            cout << "Failed to get logappend . Defaul is false" << endl;
+            append = false;
+        }
+        if ((sappend.compare("true") == 0) | (sappend.compare("TRUE") == 0) | (sappend.compare("True") == 0)){
+            append = true;
+        }
 
     }
 
@@ -147,7 +163,7 @@ int main()
 
     log4cpp::PatternLayout * layout2 = new log4cpp::PatternLayout();
     layout2->setConversionPattern("%d [%p] %m%n");
-    log4cpp::Appender *appender2 = new log4cpp::FileAppender("default", logfile);
+    log4cpp::Appender *appender2 = new log4cpp::FileAppender("default", logfile, append);
     appender2->setLayout(new log4cpp::BasicLayout());
     appender2->setLayout(layout2);
 

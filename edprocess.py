@@ -525,8 +525,8 @@ class TcpClientHandler(threading.Thread):
                     if s:
                         if s.getFnType(fn) == 1 and onoff == 0:
                             logging.debug("Fn Message for toggle fn and for a off action. Discarding")
-                            return
-                        self.sendFnMessages(s,fn,msg)
+                        else:
+                            self.sendFnMessages(s,fn,msg)
                 return
 
             #one session

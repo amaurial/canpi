@@ -3,34 +3,55 @@
 
 #define FN_SIZE 28
 
+#include <string>
+#include <log4cpp/Category.hh>
+
+#include "utils.h"
+using namespace std;
+
 class edSession
 {
     public:
-        edSession();
+        edSession(log4cpp::Category *logger);
         virtual ~edSession();
 
         void setLoco(int loco);
         int getLoco();
 
-        void setSession(char session);
-        char getSession();
+        void setSession(byte session);
+        byte getSession();
 
-        void setSpeed(char val);
-        char getSpeed();
+        void setSpeed(byte val);
+        byte getSpeed();
 
-        void setDirection(char direction);
-        char getDirection();
+        void setDirection(byte direction);
+        byte getDirection();
 
-        void setAddressType(char val);
-        char getAddressType();
+        void setAddressType(byte val);
+        byte getAddressType();
 
-        void setCbusTime(long val);
-        long getCbusTime();
+        void setCbusTime(struct timespec val);
+        struct timespec getCbusTime();
 
-        void setEDTime(long val);
-        long getEDTime();
+        void setEDTime(struct timespec val);
+        struct timespec getEDTime();
 
-        char getDccByte(int fn);
+        void setFnType(int fn ,byte state);
+        byte getFnType(int fn);
+
+        void setFnState(int fn ,byte state);
+        byte getFnState(int fn);
+
+        void setEdName(string edname);
+        string getEdName();
+
+        void setEdHW(string hw);
+        string getEdHW();
+
+        void setLocoName(string loconame);
+        string getLocoName();
+
+        byte getDccByte(int fn);
 
 
     protected:
@@ -38,16 +59,20 @@ class edSession
         int loco;
         char sessionid;
         long last_keep_alive;
-        char direction;
-        char ad_type;
-        long cbus_time;
-        long ed_time;
-        char fns[FN_SIZE];
-        char fnstype[FN_SIZE];
-        char speed;
+        byte direction;
+        byte ad_type;
+        struct timespec cbus_time;
+        struct timespec ed_time;
+        byte fns[FN_SIZE];
+        byte fnstype[FN_SIZE];
+        byte speed;
+        string session_name;
+        string hname;
+        string loconame;
+        log4cpp::Category *logger;
 
-        char setBit(char val, int pos);
-        char clearBit(char val, int pos);
+        byte setBit(byte val, int pos);
+        byte clearBit(byte val, int pos);
 
 };
 

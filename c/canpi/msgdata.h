@@ -15,16 +15,16 @@
 //MTS3<......MTLS1<;>]\[]\[]
 
 //regex to identify a set speed message
-#define RE_SPEED "M[[TA]]+[[SL\\*]]([[0-9]]+)?<;>[[VX]([[0-9]]+)?"
+#define RE_SPEED "M[TA]+[SL\\*]([0-9]+)?<;>[VX]([0-9]+)?"
 //regex to identify a create session message
-#define RE_SESSION  "M[[TA]]+\\+[[SL]][[0-9]]+<;>\\w"
+#define RE_SESSION  "M[TA]+\\+[SL][0-9]+<;>.*"
 //regex to identify a release session message
-#define RE_REL_SESSION "M[[TA]]+\\-[[SL\\*]]([[0-9]]+)?<;>\\w"
+#define RE_REL_SESSION "M[TA]+\\-[SL\\*]([0-9]+)?<;>.*"
 //regex to identify a create session message
-#define RE_DIR "M[[TA]]+[[SL\\*]]([[0-9]]+)?<;>R[[0-1]]"
+#define RE_DIR "M[TA]+[SL\\*]([0-9]+)?<;>R[0-1]"
 //regex to identify a query speed
-#define RE_QRY_SPEED "M[[TA]]+[[SL\\*]]([[0-9]]+)?<;>qV"
+#define RE_QRY_SPEED "M[TA]+[SL\\*]([0-9]+)?<;>qV"
 //regex to identify a query direction
-#define RE_QRY_DIRECTION "M[[TA]]+[[SL\\*]]([[0-9]]+)?<;>qR"
+#define RE_QRY_DIRECTION "M[TA]+[SL\\*]([0-9]+)?<;>qR"
 //regex to identify a query direction
-#define RE_FUNC "M[[TA]]+[[SL\\*]]([[0-9]]+)?<;>F[[0-9]]+"
+#define RE_FUNC "M[TA]+[SL\\*]([0-9]+)?<;>F[0-9]+"

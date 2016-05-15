@@ -33,7 +33,7 @@ class tcpServer
         log4cpp::Category *logger;
         std::map<int,tcpClient*> clients;
         pthread_t serverThread;
-        pthread_t clientThread;
+
 
         void removeClients();
         void run(void* param);

@@ -25,16 +25,16 @@ void canHandler::setCanId(char canId){
     this->canId = canId;
 }
 
-int canHandler::insert_data(char *msg,int size){
+int canHandler::insert_data(char *msg,int msize){
     int i = 0;
     int j = CAN_MSG_SIZE;
     struct can_frame frame;
-    if (size < 1){
+    if (msize < 1){
         return 0;
     }
 
-    if (size < CAN_MSG_SIZE){
-        j = size;
+    if (msize < CAN_MSG_SIZE){
+        j = msize;
     }
     memset(frame.data , 0 , sizeof(frame.data));
     frame.can_id = canId;
@@ -43,7 +43,8 @@ int canHandler::insert_data(char *msg,int size){
     for (i = 0;i < j; i++){
         frame.data[i]=msg[i];
     }
-    logger->debug("Add message %s to cbus queue", msg);
+    logger->debug("Add message to cbus queue");
+    print_frame(&frame,"Insert");
     out_msgs.push(frame);
     return j;
 }
@@ -114,7 +115,6 @@ void canHandler::run_in(void* param){
         if (nbytes < 0)
         {
             logger->error("Can not read CBUS");
-            return;
         }
         else{
                in_msgs.push(frame);
@@ -131,20 +131,25 @@ void canHandler::run_queue_reader(void* param){
     logger->debug("Running CBUS queue reader");
     while (running){
         if (!in_msgs.empty()){
+            print_frame(&frame,"Received");
             frame = in_msgs.front();
             if (tcpserver != nullptr){
                 tcpserver->addCanMessage(frame.can_id,(char*)frame.data);
             }
-
-            logger->debug("Recv Can Data : [%03x] %02x %02x %02x %02x %02x %02x %02x %02x"
-                ,frame.can_id
-                ,frame.data[0],frame.data[1],frame.data[2],frame.data[3]
-                ,frame.data[4],frame.data[5],frame.data[6],frame.data[7]);
             in_msgs.pop();
         }
-        usleep(10000);
+        usleep(5000);
     }
     logger->debug("Stopping the queue reader");
+}
+
+void canHandler::print_frame(can_frame *frame,string message){
+
+    logger->debug("%s Can Data : [%03x] [%d] data: %02x %02x %02x %02x %02x %02x %02x %02x"
+                ,message.c_str()
+                ,frame->can_id , frame->can_dlc
+                ,frame->data[0],frame->data[1],frame->data[2],frame->data[3]
+                ,frame->data[4],frame->data[5],frame->data[6],frame->data[7]);
 }
 
 void canHandler::run_out(void* param){
@@ -155,17 +160,19 @@ void canHandler::run_out(void* param){
     while (running){
         if (!out_msgs.empty()){
             frame = out_msgs.front();
-            logger->debug("Sent Can Data : [%03x] %02x %02x %02x %02x %02x %02x %02x %02x"
-                ,frame.can_id
-                ,frame.data[0],frame.data[1],frame.data[2],frame.data[3]
-                ,frame.data[4],frame.data[5],frame.data[6],frame.data[7]);
             frame.can_id = canId;
-            frame.can_dlc = CAN_MSG_SIZE;
+            //frame.can_dlc = CAN_MSG_SIZE;
+            print_frame(&frame,"Sent");
             nbytes = write(canInterface,&frame,CAN_MTU);
+            logger->debug("Sent %d bytes to CBUS",nbytes);
+            if (nbytes != CAN_MTU){
+                logger->debug("Problem on sending the CBUS, bytes transfered %d, supposed to transfer %d", nbytes, CAN_MTU);
+            }
             out_msgs.pop();
-
         }
-        usleep(10000);
+        else{
+            usleep(5000);
+        }
     }
     logger->debug("Stopping the queue writer");
 }

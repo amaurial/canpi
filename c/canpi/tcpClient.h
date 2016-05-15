@@ -6,14 +6,17 @@
 #include "edSession.h"
 #include "opcodes.h"
 #include "msgdata.h"
+#include "utils.h"
 
 #include <sys/socket.h>
 #include <arpa/inet.h> //inet_addr
 #include <log4cpp/Category.hh>
 #include <map>
-#include <sys/time.h>
+#include <time.h>
 #include <string>
 #include <sstream>
+#include <vector>
+#include <regex>
 
 #define BUFFER_SIZE 1024
 #define CBUS_KEEP_ALIVE  4000 //ms
@@ -53,17 +56,46 @@ class tcpClient
         void run(void * param);
         void handleCBUS(const char* msg);
         void handleLearnEvents(const char* msg);
-        void sendKeepAlive();
-        void sendCbusMessage(char b0=0, char b1=0,
-                             char b2=0, char b3=0,
-                             char b4=0, char b5=0,
-                             char b6=0, char b7=0);
+        void sendKeepAlive(void *param);
         void sendToEd(string msg);
         string generateFunctionsLabel(int loco);
+        void handleEDMessages(char* msgptr);
         void handleCreateSession(string message);
         void handleReleaseSession(string message);
         void handleDirection(string message);
+        void handleSpeed(string message);
+        void handleQueryDirection(string message);
+        void handleQuerySpeed(string message);
+        void handleSetFunction(string message);
+        void sendFnMessages(edSession* session, int fn, string message);
         int getLoco(string msg);
+        std::vector<std::string> & split(const std::string &s, char delim, std::vector<std::string> &elems);
+
+        void setStartSessionTime();
+
+        regex re_speed;
+        regex re_session;
+        regex re_rel_session;
+        regex re_dir;
+        regex re_qry_speed;
+        regex re_qry_direction;
+        regex re_func;
+
+        static void* thread_keepalive(void *classPtr){
+            ((tcpClient*)classPtr)->sendKeepAlive(classPtr);
+            return nullptr;
+        }
+
+        void sendCbusMessage(int nbytes,byte b0, byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7);
+        void sendCbusMessage(byte b0);
+        void sendCbusMessage(byte b0, byte b1);
+        void sendCbusMessage(byte b0, byte b1, byte b2);
+        void sendCbusMessage(byte b0, byte b1, byte b2, byte b3);
+        void sendCbusMessage(byte b0, byte b1, byte b2, byte b3, byte b4);
+        void sendCbusMessage(byte b0, byte b1, byte b2, byte b3, byte b4, byte b5);
+        void sendCbusMessage(byte b0, byte b1, byte b2, byte b3, byte b4, byte b5, byte b6);
+        void sendCbusMessage(byte b0, byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7);
+
 };
 
 #endif // TCPCLIENT_H

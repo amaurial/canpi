@@ -11,10 +11,12 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <queue>
+#include <string>
 #include "tcpServer.h"
 
 #define CAN_MSG_SIZE 8
 
+using namespace std;
 class tcpServer;
 
 class canHandler
@@ -47,6 +49,8 @@ class canHandler
         void run_in(void* param);
         void run_out(void* param);
         void run_queue_reader(void* param);
+
+        void print_frame(can_frame *frame,string message);
 
         static void* thread_entry_in(void *classPtr){
             ((canHandler*)classPtr)->run_in(nullptr);
