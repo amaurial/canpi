@@ -5,6 +5,7 @@
 
 #include <string>
 #include <log4cpp/Category.hh>
+#include <time.h>
 
 #include "utils.h"
 using namespace std;

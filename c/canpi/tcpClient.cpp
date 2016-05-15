@@ -433,8 +433,6 @@ void tcpClient::handleCBUS(const char *msg){
         }
         break;
     }
-
-
 }
 
 string tcpClient::generateFunctionsLabel(int loco){
@@ -609,6 +607,8 @@ void tcpClient::handleSpeed(string message){
         if (speed != 0) speed++;
     }
 
+    stringstream ss;
+
     i = message.find("*");
     //all sessions
     if (i > 0){
@@ -622,6 +622,15 @@ void tcpClient::handleSpeed(string message){
             sendCbusMessage(OPC_DSPD, it->second->getSession(), it->second->getDirection() * BS + speed);
             it++;
         }
+        ss.clear();ss.str();
+        ss << "MTA";
+        ss << it->second->getAddressType();
+        ss << it->second->getLoco();
+        ss << DELIM_BTLT;
+        ss << "V";
+        if (it->second->getSpeed() == 1) ss << 0;
+        else ss << (int)it->second->getSpeed();
+        ss << "\n";
         sendToEd(message + "\n");
         return;
     }
@@ -632,7 +641,18 @@ void tcpClient::handleSpeed(string message){
     logger->debug("Set speed %d for loco %d" ,speed, loco);
     session->setSpeed(speed);
     sendCbusMessage(OPC_DSPD, session->getSession(), session->getDirection() * BS + speed);
-    sendToEd(message + "\n");
+
+    ss.clear();ss.str();
+    ss << "MTA";
+    ss << session->getAddressType();
+    ss << session->getLoco();
+    ss << DELIM_BTLT;
+    ss << "V";
+    if (session->getSpeed() == 1) ss << 0;
+    else ss << (int)session->getSpeed();
+    ss << "\n";
+
+    sendToEd(ss.str() + "\n");
 }
 
 
@@ -688,7 +708,8 @@ void tcpClient::handleQuerySpeed(string message){
             ss << it->second->getLoco();
             ss << DELIM_BTLT;
             ss << "V";
-            ss << (int)it->second->getSpeed();
+            if (it->second->getSpeed() == 1) ss << 0;
+            else ss << (int)it->second->getSpeed();
             ss << "\n";
             it++;
         }
@@ -705,7 +726,8 @@ void tcpClient::handleQuerySpeed(string message){
     ss << session->getLoco();
     ss << DELIM_BTLT;
     ss << "V";
-    ss << (int)session->getSpeed();
+    if (session->getSpeed() == 1) ss << 0;
+    else ss << (int)session->getSpeed();
     ss << "\n";
     sendToEd(ss.str());
 }

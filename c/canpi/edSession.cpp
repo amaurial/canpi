@@ -7,16 +7,18 @@ edSession::edSession(log4cpp::Category *logger)
     sessionid = 0;
     for (int i=0;i<FN_SIZE;i++){
         fns[i]=0;
-        fnstype[i]=0;
+        fnstype[i]=1;
     }
-
-    fnstype[0] = 1;// #light is toggle
-    //cbus_time = 0;
-    //ed_time = 0;
+    fnstype[1] = 0;// #horn is momentary
     speed = 0;
     direction = 0;
     ad_type = 'S';
     this->logger = logger;
+    //set inital time
+    struct timespec spec;
+    clock_gettime(CLOCK_REALTIME,&spec);
+    setCbusTime(spec);
+    setEDTime(spec);
 }
 
 edSession::~edSession()
