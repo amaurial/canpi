@@ -519,8 +519,7 @@ void tcpClient::handleReleaseSession(string message){
             //usleep(50000);//50ms
             sesid = it->second->getSession();
             sendCbusMessage(OPC_KLOC, sesid);
-            sendCbusMessage(OPC_KLOC, sesid);
-            usleep(100000);//10ms
+            //usleep(100000);//10ms
             it++;
         }
         //clear sessions
