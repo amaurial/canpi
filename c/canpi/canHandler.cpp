@@ -105,12 +105,14 @@ void canHandler::run_in(void* param){
     logger->debug("Running CBUS reader");
     while (running){
         memset(frame.data , 0 , sizeof(frame.data));
+
         /* these settings may be modified by recvmsg() */
         iov.iov_len = sizeof(frame);
         msg.msg_namelen = sizeof(addr);
         msg.msg_controllen = sizeof(ctrlmsg);
         msg.msg_flags = 0;
-        //if ((nbytes = read(canInterface, &frame, sizeof(frame))) < 0)
+
+        //nbytes = read(canInterface, &frame, sizeof(frame));
         nbytes = recvmsg(canInterface, &msg , 0);
         if (nbytes < 0)
         {
@@ -119,7 +121,6 @@ void canHandler::run_in(void* param){
         else{
                in_msgs.push(frame);
         }
-
     }
     logger->debug("Shutting down the CBUS socket");
     close(canInterface);
@@ -131,8 +132,8 @@ void canHandler::run_queue_reader(void* param){
     logger->debug("Running CBUS queue reader");
     while (running){
         if (!in_msgs.empty()){
-            print_frame(&frame,"Received");
             frame = in_msgs.front();
+            print_frame(&frame,"Received");
             if (tcpserver != nullptr){
                 tcpserver->addCanMessage(frame.can_id,(char*)frame.data);
             }
@@ -157,22 +158,23 @@ void canHandler::run_out(void* param){
     int nbytes;
 
     logger->debug("Running CBUS queue writer");
+
     while (running){
         if (!out_msgs.empty()){
             frame = out_msgs.front();
             frame.can_id = canId;
             //frame.can_dlc = CAN_MSG_SIZE;
-            print_frame(&frame,"Sent");
             nbytes = write(canInterface,&frame,CAN_MTU);
-            logger->debug("Sent %d bytes to CBUS",nbytes);
+            print_frame(&frame,"Sent [" + to_string(nbytes) + "]");
+            //logger->debug("Sent %d bytes to CBUS",nbytes);
             if (nbytes != CAN_MTU){
                 logger->debug("Problem on sending the CBUS, bytes transfered %d, supposed to transfer %d", nbytes, CAN_MTU);
             }
             out_msgs.pop();
         }
-        else{
-            usleep(5000);
-        }
+
+        usleep(5000);
+
     }
     logger->debug("Stopping the queue writer");
 }

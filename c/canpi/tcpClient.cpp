@@ -313,6 +313,8 @@ void tcpClient::handleEDMessages(char* msgptr){
                 handleSetFunction(msg);
                 continue;
             }
+
+            logger->debug("Support not implemented %s",msg.c_str());
         }
     }
     catch(const runtime_error &ex){
@@ -505,6 +507,7 @@ void tcpClient::handleReleaseSession(string message){
     logger->debug("Handle release session %s", message.c_str());
     //release session
     int i = message.find("*");
+    byte sesid;
 
     //all sessions
     if (i>0){
@@ -514,11 +517,14 @@ void tcpClient::handleReleaseSession(string message){
         {
             logger->info("Releasing session for loco %d" , it->second->getLoco());
             //usleep(50000);//50ms
-            sendCbusMessage(OPC_KLOC,it->second->getSession());
+            sesid = it->second->getSession();
+            sendCbusMessage(OPC_KLOC, sesid);
+            sendCbusMessage(OPC_KLOC, sesid);
+            usleep(100000);//10ms
             it++;
         }
         //clear sessions
-        usleep(1000*1000);//1s
+        usleep(1000*700);//700ms
         it = this->sessions.begin();
         while(it != this->sessions.end())
         {
@@ -535,10 +541,10 @@ void tcpClient::handleReleaseSession(string message){
     int loco = getLoco(message);
     logger->debug("Releasing session for loco KLOC %d" , loco);
 
-    char sesid = this->sessions[loco]->getSession();
+    sesid = this->sessions[loco]->getSession();
     //send the can data
     sendCbusMessage(OPC_KLOC,sesid);
-    usleep(1000*1000);//1s
+    usleep(1000*700);//700ms
     delete(this->sessions[loco]);
     this->sessions.erase(loco);
     //inform the ED
@@ -606,7 +612,7 @@ void tcpClient::handleSpeed(string message){
     if (speedString == "X") speed = 1;
     else{
         speed = atoi(speedString.c_str());
-        if (speed != 0) speed++;
+        if (speed == 1) speed++;
     }
 
     stringstream ss;
@@ -622,14 +628,10 @@ void tcpClient::handleSpeed(string message){
             logger->debug("Set speed %d for loco %d" ,speed, it->second->getLoco());
             //logger->debug("Speed dir byte %02x",it->second->getDirection() * BS + it->second->getSpeed() );
             sendCbusMessage(OPC_DSPD, it->second->getSession(), it->second->getDirection() * BS + speed);
+            usleep(1000*10);//wait 10ms
             it++;
         }
-
         ss.clear();ss.str("MTA*<;>V");
-        //ss << it->second->getAddressType();
-        //ss << it->second->getLoco();
-        //ss << DELIM_BTLT;
-        //ss << "V";
         if (speed == 1) ss << "0";
         else ss << speed;
         ss << "\n";
@@ -656,6 +658,7 @@ void tcpClient::handleSpeed(string message){
     ss << "\n";
 
     sendToEd(ss.str());
+    usleep(1000*10);//wait 10ms
 }
 
 
