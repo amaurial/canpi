@@ -107,7 +107,7 @@ void tcpServer::run(void* param){
                 default:
                     break;
             }
-            logger->debug("Creating client for ip:%s id:%d",s, counter);
+            logger->info("Creating client for ip:%s id:%d",s, counter);
             tcpClient *cl = new tcpClient(logger,this,can,client_sock, client_addr,counter);
             cl->setIp(s);
             free(s);
@@ -123,7 +123,7 @@ void tcpServer::run(void* param){
 }
 
 void tcpServer::run_client(void* param){
-    logger->debug("Starting client thread %d",counter);
+    logger->info("Starting client thread %d",counter);
     tempClient->start(nullptr);
 }
 
@@ -133,7 +133,7 @@ void tcpServer::removeClients(){
     std::map<int,tcpClient*>::iterator it = clients.begin();
     while(it != clients.end())
     {
-        logger->debug("Stop client %d", it->second->getId());
+        logger->info("Stop client %d", it->second->getId());
         it->second->stop();
         it++;
     }

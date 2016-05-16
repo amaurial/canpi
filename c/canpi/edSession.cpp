@@ -9,7 +9,7 @@ edSession::edSession(log4cpp::Category *logger)
         fns[i]=0;
         fnstype[i]=1;
     }
-    fnstype[1] = 0;// #horn is momentary
+    fnstype[2] = 0;// #horn is momentary
     speed = 0;
     direction = 0;
     ad_type = 'S';

@@ -151,7 +151,7 @@ void tcpClient::run(void *param){
             break;
         }
     }
-    logger->debug("Quiting client connection ip:%s id:%d.",ip.c_str(),id);
+    logger->info("Quiting client connection ip:%s id:%d.",ip.c_str(),id);
     usleep(1000*1000); //1sec give some time for any pending thread to finish
     close(client_sock);
     server->removeClient(this);
@@ -377,6 +377,7 @@ void tcpClient::handleCBUS(const char *msg){
         sendToEd(message);
 
         logger->debug("Adding loco %d to sessions",  loco);
+        logger->info("Loco %d acquired",loco);
         sessions.insert(pair<int,edSession*>(loco,edsession));
         edsession = new edSession(logger);
         setStartSessionTime();
@@ -485,6 +486,7 @@ void tcpClient::handleCreateSession(string message){
         edsession->setLoco(loco);
 
         //send the can data
+        logger->info("Request session for loco %d",loco);
         logger->debug("Put CAN session request in the queue for loco %d" , loco);
 
         Hb = 0;
@@ -510,7 +512,7 @@ void tcpClient::handleReleaseSession(string message){
         std::map<int,edSession*>::iterator it = this->sessions.begin();
         while(it != this->sessions.end())
         {
-            logger->debug("Releasing session for loco %d" , it->second->getLoco());
+            logger->info("Releasing session for loco %d" , it->second->getLoco());
             //usleep(50000);//50ms
             sendCbusMessage(OPC_KLOC,it->second->getSession());
             it++;
@@ -622,16 +624,17 @@ void tcpClient::handleSpeed(string message){
             sendCbusMessage(OPC_DSPD, it->second->getSession(), it->second->getDirection() * BS + speed);
             it++;
         }
-        ss.clear();ss.str();
-        ss << "MTA";
-        ss << it->second->getAddressType();
-        ss << it->second->getLoco();
-        ss << DELIM_BTLT;
-        ss << "V";
-        if (it->second->getSpeed() == 1) ss << 0;
-        else ss << (int)it->second->getSpeed();
+
+        ss.clear();ss.str("MTA*<;>V");
+        //ss << it->second->getAddressType();
+        //ss << it->second->getLoco();
+        //ss << DELIM_BTLT;
+        //ss << "V";
+        if (speed == 1) ss << "0";
+        else ss << speed;
         ss << "\n";
-        sendToEd(message + "\n");
+        sendToEd(message);
+
         return;
     }
 
@@ -648,11 +651,11 @@ void tcpClient::handleSpeed(string message){
     ss << session->getLoco();
     ss << DELIM_BTLT;
     ss << "V";
-    if (session->getSpeed() == 1) ss << 0;
+    if (session->getSpeed() == 1) ss << "0";
     else ss << (int)session->getSpeed();
     ss << "\n";
 
-    sendToEd(ss.str() + "\n");
+    sendToEd(ss.str());
 }
 
 
@@ -708,7 +711,7 @@ void tcpClient::handleQuerySpeed(string message){
             ss << it->second->getLoco();
             ss << DELIM_BTLT;
             ss << "V";
-            if (it->second->getSpeed() == 1) ss << 0;
+            if (it->second->getSpeed() == 1) ss << "0";
             else ss << (int)it->second->getSpeed();
             ss << "\n";
             it++;
@@ -726,7 +729,7 @@ void tcpClient::handleQuerySpeed(string message){
     ss << session->getLoco();
     ss << DELIM_BTLT;
     ss << "V";
-    if (session->getSpeed() == 1) ss << 0;
+    if (session->getSpeed() == 1) ss << "0";
     else ss << (int)session->getSpeed();
     ss << "\n";
     sendToEd(ss.str());
