@@ -9,8 +9,8 @@
 # Description:       Enable service provided by Merg canpi daemon.
 ### END INIT INFO
 
-dir="/home/pi/canpi"
-cmd="/usr/bin/python3 canpi.py"
+dir="/home/pi/canpi/c/canpi"
+cmd="/home/pi/canpi/c/canpi/canpi"
 user=""
 
 name=`basename $0`
@@ -34,8 +34,9 @@ case "$1" in
         echo "Starting $name"
         cd "$dir"
 
-        #start can interface
-        sudo /sbin/ip link set can0 up type can bitrate 125000
+        #restart can interface
+        sudo /sbin/ip link set can0 down
+        sudo /sbin/ip link set can0 up type can bitrate 125000 restart-ms 1000
 
         if [ -z "$user" ]; then
             sudo $cmd >> "$stdout_log" 2>> "$stderr_log" &
