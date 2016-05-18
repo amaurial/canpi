@@ -50,7 +50,7 @@ int tcpClient::getId(){
 
 void tcpClient::start(void *param){
     running = 1;
-    logger->debug("Sending start info :%s", START_INFO);
+    logger->debug("[%d] Sending start info :%s",id, START_INFO);
     sendToEd(START_INFO);
     run(nullptr);
 }
@@ -69,7 +69,7 @@ void tcpClient::sendCbusMessage(int nbytes, byte b0, byte b1, byte b2, byte b3, 
     msg[5] = b5;
     msg[6] = b6;
     msg[7] = b7;
-    logger->debug("Sending message to CBUS");
+    logger->debug("[%d] Sending message to CBUS",id);
     int n=nbytes;
     if (nbytes>CAN_MSG_SIZE) n = CAN_MSG_SIZE;
     can->insert_data(msg,n);
@@ -108,7 +108,7 @@ void tcpClient::canMessage(char canid,const char* msg){
         char buf[30];
         memset(buf,0,20);
         sprintf(buf,"%02x %02x %02x %02x %02x %02x %02x %02x\n", msg[0],msg[1],msg[2],msg[3],msg[4],msg[5],msg[6],msg[7]);
-        logger->debug("Tcp Client received cbus message: %s",buf);
+        logger->debug("[%d] Tcp Client received cbus message: %s",id,buf);
         //memcpy(buf,msg,CAN_MSG_SIZE);
         //buf[CAN_MSG_SIZE] = '\n';
         //nbytes = write(client_sock,buf,CAN_MSG_SIZE + 1);
@@ -117,7 +117,7 @@ void tcpClient::canMessage(char canid,const char* msg){
         handleCBUS(msg);
     }
     catch(runtime_error &ex){
-        logger->debug("Failed to process the can message");
+        logger->debug("[%d] Failed to process the can message",id);
         throw_line("Failed to process the can message");
     }
 }
@@ -133,25 +133,25 @@ void tcpClient::run(void *param){
         memset(msg,0,BUFFER_SIZE);
         nbytes = recv(client_sock, msg,BUFFER_SIZE, 0);
         if (nbytes<0){
-            logger->debug("Error while receiving data from ED %d",nbytes);
+            logger->debug("[%d] Error while receiving data from ED %d",id,nbytes);
             running = 0;
         }
         else if (nbytes>0){
-            logger->debug("Received from ED:%s Bytes:%d", msg, nbytes);
+            logger->debug("[%d] Received from ED:%s Bytes:%d",id, msg, nbytes);
             try{
                 handleEDMessages(msg);
             }
             catch(const runtime_error &ex){
-                logger->debug("Failed to process the can message\n%s",ex.what());
+                logger->debug("[%d] Failed to process the can message\n%s",id,ex.what());
             }
         }
         if (nbytes == 0){
-            logger->debug("0 bytes received. disconnecting");
+            logger->debug("[%d] 0 bytes received. disconnecting",id);
             running = 0;
             break;
         }
     }
-    logger->info("Quiting client connection ip:%s id:%d.",ip.c_str(),id);
+    logger->info("[%d] Quiting client connection ip:%s id:%d.",id, ip.c_str(),id);
     usleep(1000*1000); //1sec give some time for any pending thread to finish
     close(client_sock);
     server->removeClient(this);
@@ -167,34 +167,34 @@ void tcpClient::sendKeepAlive(void *param){
         try{
             usleep(1000*500);//500ms
             if (running == 0){
-                logger->info("Stopping keep alive process");
+                logger->info("[%d] Stopping keep alive process",id);
                 break;
             }
             if (sessions.size() == 0){
-                //logger->debug("Keep alive 0 sessions");
+                //logger->debug("[%d] Keep alive 0 sessions",id);
                 clock_gettime(CLOCK_REALTIME,&spec);
                 t = edsession->getEDTime();
                 millis = spec.tv_sec*1000 + spec.tv_nsec/1.0e6 - t.tv_sec*1000 - t.tv_nsec/1.0e6;
                 if (millis > ED_KEEP_ALIVE ){
                     edsession->setEDTime(spec);
                     //send to ED
-                    logger->debug("Send ED keep alive");
+                    logger->debug("[%d] Send ED keep alive",id);
                     sendToEd("\n");
                 }
             }
             else{
-                //logger->debug("Keep alive %d sessions",sessions.size());
+                //logger->debug("[%d] Keep alive %d sessions",id,sessions.size());
                 std::map<int,edSession*>::iterator it = sessions.begin();
                 while(it != sessions.end())
                 {
-                    //logger->debug("Keep alive %d loco",it->second->getLoco());
+                    //logger->debug("[%d] Keep alive %d loco",id,it->second->getLoco());
                     clock_gettime(CLOCK_REALTIME,&spec);
                     t = it->second->getEDTime();
                     millis = spec.tv_sec*1000 + spec.tv_nsec/1.0e6 - t.tv_sec*1000 - t.tv_nsec/1.0e6;
                     if (millis > ED_KEEP_ALIVE ){
                         it->second->setEDTime(spec);
                         //send to ED
-                        logger->debug("Send ED keep alive");
+                        logger->debug("[%d] Send ED keep alive",id);
                         sendToEd("\n");
                     }
                     if (it->second->getLoco()>-1){
@@ -203,22 +203,22 @@ void tcpClient::sendKeepAlive(void *param){
                         if (millis > CBUS_KEEP_ALIVE ){
                             it->second->setCbusTime(spec);
                             //send keep alive
-                            logger->debug("Send CBUS keep alive");
+                            logger->debug("[%d] Send CBUS keep alive",id);
                             sendCbusMessage(OPC_DKEEP,it->second->getSession());
                         }
                     }
                     else{
-                        logger->debug("Loco not set keep alive");
+                        logger->debug("[%d] Loco not set keep alive",id);
                     }
                     it++;
                 }
             }
         }//try
         catch(...){
-            logger->debug("Keep alive error");
+            logger->debug("[%d] Keep alive error",id);
         }
     }
-    logger->info("Finish keep alive process");
+    logger->info("[%d] Finish keep alive process",id);
 }
 
 void tcpClient::handleEDMessages(char* msgptr){
@@ -232,7 +232,7 @@ void tcpClient::handleEDMessages(char* msgptr){
 
         vector<string>::iterator it = msgs.begin();
         for (auto const& msg:msgs){
-            logger->debug("Handle message:%s",msg.c_str());
+            logger->debug("[%d] Handle message:%s",id,msg.c_str());
 
             if (msg.length() == 0){
                 continue;
@@ -240,7 +240,7 @@ void tcpClient::handleEDMessages(char* msgptr){
             msgtemp = msg.c_str();
             //get the name
             if (msgtemp[0] == 'N'){
-                logger->debug("ED name: %s" , msgtemp);
+                logger->debug("[%d] ED name: %s" ,id, msgtemp);
                 edsession->setEdName(msg.substr(1,msg.length()-1));
                 sendToEd("\n*10\n"); //keep alive each 10 seconds
                 continue;
@@ -249,36 +249,36 @@ void tcpClient::handleEDMessages(char* msgptr){
             //get hardware info
             if ((msgtemp[0] == 'H') & (msgtemp[1] == 'U')){
                 edsession->setEdHW(msg.substr(2,msg.length()-2));
-                logger->debug("Received Hardware info: %s" , msg.substr(2,msg.length()-2).c_str());
+                logger->debug("[%d] Received Hardware info: %s" , id,msg.substr(2,msg.length()-2).c_str());
                 sendToEd("\n*10\n"); //keep alive each 10 seconds
                 //TODO wait for confirmation: expected 0xa
                 continue;
             }
 
             if ((msgtemp[0] == '*') & (msgtemp[1] == '+')){
-                logger->debug("Timer request");
+                logger->debug("[%d] Timer request",id);
                 sendToEd("*10\n"); //keep alive each 10 seconds
                 continue;
             }
 
             if ((msgtemp[0] == '*') & (msgtemp[1] == '-')){
-                logger->debug("Finish timer request");
+                logger->debug("[%d] Finish timer request",id);
                 continue;
             }
 
             //create session
             if (regex_match(msg,re_session)){
-                logger->debug("Create session %s" , msg.c_str());
+                logger->debug("[%d] Create session %s" ,id, msg.c_str());
                 handleCreateSession(msg);
                 // wait until session is created
-                logger->debug("Waiting 2 secs for session to be created.");
+                logger->debug("[%d] Waiting 2 secs for session to be created.",id);
                 usleep(2*1000000);//2 seconds
-                logger->debug("Awake from 2 secs");
+                logger->debug("[%d] Awake from 2 secs",id);
                 if (sessions.size()>0){
-                    logger->debug("Session created after 2 secs.");
+                    logger->debug("[%d] Session created after 2 secs.",id);
                 }
                 else{
-                    logger->debug("No session created.");
+                    logger->debug("[%d] No session created.",id);
                 }
                 continue;
             }
@@ -314,7 +314,7 @@ void tcpClient::handleEDMessages(char* msgptr){
                 continue;
             }
 
-            logger->debug("Support not implemented %s",msg.c_str());
+            logger->debug("[%d] Support not implemented %s",id,msg.c_str());
         }
     }
     catch(const runtime_error &ex){
@@ -348,13 +348,13 @@ void tcpClient::handleCBUS(const char *msg){
 
     switch (opc){
     case OPC_PLOC:
-        logger->debug("Checking result of request session. OPC: PLOC %02x %02x",msg[2] ,msg[3]);
+        logger->debug("[%d] Checking result of request session. OPC: PLOC %02x %02x",id,msg[2] ,msg[3]);
         session = msg[1];
         loco = msg[2] & 0x3f;
         loco = (loco << 8) + msg[3];
 
         if (edsession->getLoco() != loco){
-            logger->debug("PLOC %d not for this session %d. Discarding." , loco, edsession->getLoco());
+            logger->debug("[%d] PLOC %d not for this session %d. Discarding." , id,loco, edsession->getLoco());
             return;
         }
         edsession->setSession(session);
@@ -375,17 +375,17 @@ void tcpClient::handleCBUS(const char *msg){
         ss << '\n';
 
         message = ss.str();
-        logger->debug("Ack client session created %d for loco %d :%s" ,session, loco, message.c_str());
+        logger->debug("[%d] Ack client session created %d for loco %d :%s" ,id,session, loco, message.c_str());
         sendToEd(message);
 
-        logger->debug("Adding loco %d to sessions",  loco);
-        logger->info("Loco %d acquired",loco);
+        logger->debug("[%d] Adding loco %d to sessions", id, loco);
+        logger->info("[%d] Loco %d acquired",id,loco);
         sessions.insert(pair<int,edSession*>(loco,edsession));
         edsession = new edSession(logger);
         setStartSessionTime();
 
         //set speed mode 128 to can
-        logger->debug("Sending speed mode 128 to CBUS");
+        logger->debug("[%d] Sending speed mode 128 to CBUS",id);
         sendCbusMessage(OPC_STMOD, session, 0);
 
         //send the labels to client
@@ -397,11 +397,11 @@ void tcpClient::handleCBUS(const char *msg){
         ss << generateFunctionsLabel(loco);
         ss << '\n';
 
-        logger->debug("Sending labels");
+        logger->debug("[%d] Sending labels",id);
 
         sendToEd(ss.str());
 
-        logger->debug("Sending speed mode 128 to ED");
+        logger->debug("[%d] Sending speed mode 128 to ED",id);
         ss.clear();ss.str();
         ss << "MT";
         ss << edsession->getAddressType();
@@ -412,27 +412,27 @@ void tcpClient::handleCBUS(const char *msg){
         sendToEd(ss.str());
         break;
     case OPC_ERR:
-        logger->debug("CBUS Error message");
+        logger->debug("[%d] CBUS Error message",id);
         loco = msg[2] & 0x3f;
         loco = (loco << 8) + msg[3];
 
         if (loco != edsession->getLoco()){
-            logger->debug("Error message for another client. Different loco number %d %d. Discarding.",edsession->getLoco(), loco);
+            logger->debug("[%d] Error message for another client. Different loco number %d %d. Discarding.",id,edsession->getLoco(), loco);
             return;
         }
 
         switch (msg[3]){
         case 1:
-            logger->info("Can not create session. Reason: stack full");
+            logger->info("[%d] Can not create session. Reason: stack full",id);
             break;
         case 2:
-            logger->info("Err: Loco %d TAKEN", loco);
+            logger->info("[%d] Err: Loco %d TAKEN",id, loco);
             break;
         case 3:
-            logger->info("Err: No session %d" , loco);
+            logger->info("[%d] Err: No session %d" ,id, loco);
             break;
         default:
-            logger->info("Err code: %d" , msg[3]);
+            logger->info("[%d] Err code: %d" ,id, msg[3]);
         }
         break;
     }
@@ -462,22 +462,22 @@ string tcpClient::generateFunctionsLabel(int loco){
 
 void tcpClient::sendToEd(string msg){
     unsigned int nbytes;
-    logger->debug("Send to ED:%s",msg.c_str());
+    logger->debug("[%d] Send to ED:%s",id,msg.c_str());
     nbytes = write(client_sock,msg.c_str(),msg.length());
     if (nbytes != msg.length()){
-        logger->error("Fail to send message %s to ED", msg.c_str());
+        logger->error("Fail to send message %s to ED",id, msg.c_str());
     }
 }
 
 void tcpClient::handleCreateSession(string message){
     const char *msg = message.c_str();
-    logger->debug("Handle create session: %s", msg);
+    logger->debug("[%d] Handle create session: %s",id, msg);
     unsigned char Hb,Lb;
     int loco,i;
     //create session
     if ( (msg[3] == 'S') | (msg[3] == 's') | (msg[3] == 'L') | (msg[3] == 'l') ){
 
-        logger->debug("Address type %c",msg[3]);
+        logger->debug("[%d] Address type %c",id,msg[3]);
         edsession->setAddressType(msg[3]);
         i = message.find(";>");
         if (i > 0){
@@ -488,8 +488,8 @@ void tcpClient::handleCreateSession(string message){
         edsession->setLoco(loco);
 
         //send the can data
-        logger->info("Request session for loco %d",loco);
-        logger->debug("Put CAN session request in the queue for loco %d" , loco);
+        logger->info("[%d] Request session for loco %d",id,loco);
+        logger->debug("[%d] Put CAN session request in the queue for loco %d" ,id, loco);
 
         Hb = 0;
         if ((loco > 127) | (msg[3] == 'L') | (msg[3] == 'l')){
@@ -504,18 +504,18 @@ void tcpClient::handleCreateSession(string message){
 
 void tcpClient::handleReleaseSession(string message){
 
-    logger->debug("Handle release session %s", message.c_str());
+    logger->debug("[%d] Handle release session %s",id, message.c_str());
     //release session
     int i = message.find("*");
     byte sesid;
 
     //all sessions
     if (i>0){
-        logger->debug("Releasing all %d sessions",sessions.size());
+        logger->debug("[%d] Releasing all %d sessions",id,sessions.size());
         std::map<int,edSession*>::iterator it = this->sessions.begin();
         while(it != this->sessions.end())
         {
-            logger->info("Releasing session for loco %d" , it->second->getLoco());
+            logger->info("[%d] Releasing session for loco %d" ,id, it->second->getLoco());
             //usleep(50000);//50ms
             sesid = it->second->getSession();
             sendCbusMessage(OPC_KLOC, sesid);
@@ -538,7 +538,7 @@ void tcpClient::handleReleaseSession(string message){
 
     //one session
     int loco = getLoco(message);
-    logger->debug("Releasing session for loco KLOC %d" , loco);
+    logger->debug("[%d] Releasing session for loco KLOC %d" ,id, loco);
 
     sesid = this->sessions[loco]->getSession();
     //send the can data
@@ -554,23 +554,23 @@ void tcpClient::handleReleaseSession(string message){
 void tcpClient::handleDirection(string message){
     //const char* msg = message.c_str();
 
-    logger->debug("Handle Direction request %s", message.c_str());
+    logger->debug("[%d] Handle Direction request %s",id, message.c_str());
     sendToEd(message + "\n");
 
     //get the direction
     int i = message.find(">R");
-    logger->debug("Extracted direction: %s" ,  message.substr(i+2,1).c_str());
+    logger->debug("[%d] Extracted direction: %s" , id, message.substr(i+2,1).c_str());
     byte d = atoi(message.substr(i+2,1).c_str());
 
     i = message.find("*");
     //all sessions
     if (i > 0){
-        logger->debug("Set direction for all sessions");
+        logger->debug("[%d] Set direction for all sessions",id);
         std::map<int,edSession*>::iterator it = sessions.begin();
         while(it != sessions.end())
         {
             it->second->setDirection(d);
-            logger->debug("Set direction %d for loco %d" , d ,it->second->getLoco());
+            logger->debug("[%d] Set direction %d for loco %d" ,id, d ,it->second->getLoco());
             sendCbusMessage(OPC_DSPD,it->second->getSession(),d*BS+it->second->getSpeed());
             it++;
         }
@@ -581,7 +581,7 @@ void tcpClient::handleDirection(string message){
     int loco = getLoco(message);
     int sesid = sessions[loco]->getSession();
     sessions[loco]->setDirection(d);
-    logger->debug("Set direction %d for loco %d" , d ,loco);
+    logger->debug("[%d] Set direction %d for loco %d" ,id, d ,loco);
     sendCbusMessage(OPC_DSPD,sesid, d * BS + sessions[loco]->getSpeed());
 
 }
@@ -590,19 +590,19 @@ void tcpClient::handleSpeed(string message){
 
     string speedString;
 
-    logger->debug("Handle speed request %s", message.c_str());
+    logger->debug("[%d] Handle speed request %s",id, message.c_str());
 
     int i = message.find(">V");
     if (i > 0){
         int s = i + 2;
-        logger->debug("Extracted speed: %s", message.substr(s,message.length()-s).c_str());
+        logger->debug("[%d] Extracted speed: %s",id, message.substr(s,message.length()-s).c_str());
         speedString = message.substr(s,message.length()-s);
     }
     else{
         i = message.find(">X");
         if (i > 0) speedString = "X";
         else{
-            logger->debug("Bad speed message format. Discarding.");
+            logger->debug("[%d] Bad speed message format. Discarding.",id);
             return;
         }
     }
@@ -619,13 +619,12 @@ void tcpClient::handleSpeed(string message){
     i = message.find("*");
     //all sessions
     if (i > 0){
-        logger->debug("Set speed %d for all sessions",speed);
+        logger->debug("[%d] Set speed %d for all sessions",id,speed);
         std::map<int,edSession*>::iterator it = sessions.begin();
         while(it != sessions.end())
         {
             it->second->setSpeed(speed);
-            logger->debug("Set speed %d for loco %d" ,speed, it->second->getLoco());
-            //logger->debug("Speed dir byte %02x",it->second->getDirection() * BS + it->second->getSpeed() );
+            logger->debug("[%d] Set speed %d for loco %d" ,id,speed, it->second->getLoco());
             sendCbusMessage(OPC_DSPD, it->second->getSession(), it->second->getDirection() * BS + speed);
             usleep(1000*10);//wait 10ms
             it++;
@@ -642,7 +641,7 @@ void tcpClient::handleSpeed(string message){
     //one session
     int loco = getLoco(message);
     edSession* session = sessions[loco];
-    logger->debug("Set speed %d for loco %d" ,speed, loco);
+    logger->debug("[%d] Set speed %d for loco %d" ,id,speed, loco);
     session->setSpeed(speed);
     sendCbusMessage(OPC_DSPD, session->getSession(), session->getDirection() * BS + speed);
 
@@ -663,11 +662,11 @@ void tcpClient::handleSpeed(string message){
 
 void tcpClient::handleQueryDirection(string message){
 
-    logger->debug("Query Direction found %s", message.c_str());
+    logger->debug("[%d] Query Direction found %s",id, message.c_str());
     int i = message.find("*");
     stringstream ss;
     if (i > 0){
-        logger->debug("Query direction for all locos");
+        logger->debug("[%d] Query direction for all locos",id);
         std::map<int,edSession*>::iterator it = sessions.begin();
         while(it != sessions.end())
         {
@@ -700,11 +699,11 @@ void tcpClient::handleQueryDirection(string message){
 
 void tcpClient::handleQuerySpeed(string message){
 
-    logger->debug("Query speed found %s",message.c_str());
+    logger->debug("[%d] Query speed found %s",id,message.c_str());
     int i = message.find("*");
     stringstream ss;
     if (i > 0){
-        logger->debug("Query speed for all locos");
+        logger->debug("[%d] Query speed for all locos",id);
         std::map<int,edSession*>::iterator it = sessions.begin();
         while(it != sessions.end())
         {
@@ -739,13 +738,13 @@ void tcpClient::handleQuerySpeed(string message){
 
 void tcpClient::handleSetFunction(string message){
 
-    logger->debug("Set function request found %s",message.c_str());
+    logger->debug("[%d] Set function request found %s",id,message.c_str());
 
     // the ED always sends an on and off we will consider just the on and toggle the function internally
     //get the function
 
     int i = message.find(">F");
-    logger->debug("Extracted on/off: %s func: %s" ,message.substr(i+2,1).c_str(), message.substr(i+3,message.length()-(i+3)).c_str());
+    logger->debug("[%d] Extracted on/off: %s func: %s" ,id,message.substr(i+2,1).c_str(), message.substr(i+3,message.length()-(i+3)).c_str());
     int onoff = atoi(message.substr(i+2,1).c_str());
     int fn = atoi(message.substr(i+3,message.length()-(i+3)).c_str());
     i = message.find("*");
@@ -753,18 +752,18 @@ void tcpClient::handleSetFunction(string message){
 
     //all sessions
     if ( i > 0){
-        logger->debug("Setting function for all sessions");
+        logger->debug("[%d] Setting function for all sessions",id);
         std::map<int,edSession*>::iterator it = sessions.begin();
         while(it != sessions.end())
         {
             session = it->second;
             if ((session->getFnType(fn) == 1) & (onoff == 0) ){
-                logger->debug("Fn Message for toggle fn and for a off action. Discarding");
+                logger->debug("[%d] Fn Message for toggle fn and for a off action. Discarding",id);
             }
             else{
-                logger->debug("Previous FN state %02x" , session->getFnState(fn));
+                logger->debug("[%d] Previous FN state %02x" , id,session->getFnState(fn));
                 sendFnMessages(session,fn,message);
-                logger->debug("Last FN state %02x" , session->getFnState(fn));
+                logger->debug("[%d] Last FN state %02x" ,id, session->getFnState(fn));
             }
             it++;
         }
@@ -775,7 +774,7 @@ void tcpClient::handleSetFunction(string message){
     session = sessions[loco];
 
     if ((session->getFnType(fn) == 1) & (onoff == 0) ){
-        logger->debug("Fn Message for toggle fn and for a off action. Discarding");
+        logger->debug("[%d] Fn Message for toggle fn and for a off action. Discarding",id);
     }
     else{
         sendFnMessages(session,fn,message);
@@ -784,7 +783,7 @@ void tcpClient::handleSetFunction(string message){
 
 void tcpClient::sendFnMessages(edSession* session, int fn, string message){
 
-    logger->debug("Set function %d for loco %d" , fn, session->getLoco());
+    logger->debug("[%d] Set function %d for loco %d" ,id, fn, session->getLoco());
 
     byte fnbyte = 1;
     byte fnbyte2 = 0;
@@ -805,7 +804,7 @@ void tcpClient::sendFnMessages(edSession* session, int fn, string message){
 
     //send status to ED
     int i = message.find(">F");
-    logger->debug("message: %s", message.substr(0, i+2).c_str());
+    logger->debug("[%d] message: %s",id, message.substr(0, i+2).c_str());
     //logging.debug(str(session.getFnState(fn)))
 
     ss << message.substr(0, i+2);
@@ -825,7 +824,7 @@ int tcpClient::getLoco(string msg){
     //MT+S45<;>Name
     try{
         int i = msg.find_first_of("<");
-        logger->debug("Extracted loco: %s", msg.substr(4,i-4).c_str());
+        logger->debug("[%d] Extracted loco: %s",id, msg.substr(4,i-4).c_str());
         int loco = atoi(msg.substr(4,i-4).c_str());
         return loco;
     }
