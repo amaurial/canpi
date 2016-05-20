@@ -607,11 +607,18 @@ void tcpClient::handleSpeed(string message){
         }
     }
     int speed = 0;
+    int edspeed = 0;
 
-    if (speedString == "X") speed = 1;
+    if (speedString == "X"){//emergency stop
+        speed = 1;
+        edspeed = 0;
+    }
     else{
         speed = atoi(speedString.c_str());
-        if (speed == 1) speed++;
+        edspeed = speed;
+        if (speed == 1){//can't send speed 1 (emergency stop) to cancmd
+            speed++;
+        }
     }
 
     stringstream ss;
@@ -619,19 +626,20 @@ void tcpClient::handleSpeed(string message){
     i = message.find("*");
     //all sessions
     if (i > 0){
-        logger->debug("[%d] Set speed %d for all sessions",id,speed);
+        logger->debug("[%d] Set speed %d for all sessions",id,edspeed);
         std::map<int,edSession*>::iterator it = sessions.begin();
         while(it != sessions.end())
         {
-            it->second->setSpeed(speed);
-            logger->debug("[%d] Set speed %d for loco %d" ,id,speed, it->second->getLoco());
+            it->second->setSpeed(edspeed);
+            logger->debug("[%d] Set speed %d for loco %d" ,id,edspeed, it->second->getLoco());
             sendCbusMessage(OPC_DSPD, it->second->getSession(), it->second->getDirection() * BS + speed);
             usleep(1000*10);//wait 10ms
             it++;
         }
         ss.clear();ss.str("MTA*<;>V");
-        if (speed == 1) ss << "0";
-        else ss << speed;
+        //if (speed == 1) ss << "0";
+        //else ss << speed;
+        ss << edspeed;
         ss << "\n";
         sendToEd(message);
 
@@ -641,8 +649,8 @@ void tcpClient::handleSpeed(string message){
     //one session
     int loco = getLoco(message);
     edSession* session = sessions[loco];
-    logger->debug("[%d] Set speed %d for loco %d" ,id,speed, loco);
-    session->setSpeed(speed);
+    logger->debug("[%d] Set speed %d for loco %d" ,id,edspeed, loco);
+    session->setSpeed(edspeed);
     sendCbusMessage(OPC_DSPD, session->getSession(), session->getDirection() * BS + speed);
 
     ss.clear();ss.str();
@@ -651,8 +659,9 @@ void tcpClient::handleSpeed(string message){
     ss << session->getLoco();
     ss << DELIM_BTLT;
     ss << "V";
-    if (session->getSpeed() == 1) ss << "0";
-    else ss << (int)session->getSpeed();
+    //if (session->getSpeed() == 1) ss << "0";
+    //else ss << (int)session->getSpeed();
+    ss << edspeed;
     ss << "\n";
 
     sendToEd(ss.str());
