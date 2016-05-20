@@ -721,8 +721,9 @@ void tcpClient::handleQuerySpeed(string message){
             ss << it->second->getLoco();
             ss << DELIM_BTLT;
             ss << "V";
-            if (it->second->getSpeed() == 1) ss << "0";
-            else ss << (int)it->second->getSpeed();
+            //if (it->second->getSpeed() == 1) ss << "0";
+            //else ss << (int)it->second->getSpeed();
+            ss << (int)it->second->getSpeed();
             ss << "\n";
             it++;
         }
@@ -739,8 +740,9 @@ void tcpClient::handleQuerySpeed(string message){
     ss << session->getLoco();
     ss << DELIM_BTLT;
     ss << "V";
-    if (session->getSpeed() == 1) ss << "0";
-    else ss << (int)session->getSpeed();
+    //if (session->getSpeed() == 1) ss << "0";
+    //else ss << (int)session->getSpeed();
+    ss << (int)session->getSpeed();
     ss << "\n";
     sendToEd(ss.str());
 }
