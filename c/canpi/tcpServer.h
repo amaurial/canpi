@@ -6,9 +6,10 @@
 #include <log4cpp/Category.hh>
 #include <map>
 #include "canHandler.h"
-#include "tcpClient.h"
+#include "Client.h"
 
-class tcpClient;
+
+class Client;
 
 class tcpServer
 {
@@ -19,19 +20,19 @@ class tcpServer
         void setPort(int port);
         int getPort();
         void stop();
-        void removeClient(tcpClient* client);
+        void removeClient(Client* client);
         void addCanMessage(char canid,const char* msg);
     protected:
     private:
         canHandler *can;
-        tcpClient *tempClient;
+        Client *tempClient;
         int running;
         int port;
         int socket_desc, client_sock ,read_size;
         struct sockaddr_in server_addr;
         int counter;
         log4cpp::Category *logger;
-        std::map<int,tcpClient*> clients;
+        std::map<int,Client*> clients;
         pthread_t serverThread;
 
 

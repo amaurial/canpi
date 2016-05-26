@@ -35,7 +35,7 @@ void tcpClient::setStartSessionTime(){
     edsession->setCbusTime(spec);
     edsession->setEDTime(spec);
 }
-
+/*
 void tcpClient::setIp(char *ip){
     this->ip = string(ip);
 }
@@ -47,7 +47,7 @@ string tcpClient::getIp(){
 int tcpClient::getId(){
     return id;
 }
-
+*/
 void tcpClient::start(void *param){
     running = 1;
     logger->debug("[%d] Sending start info :%s",id, START_INFO);
@@ -59,6 +59,7 @@ void tcpClient::stop(){
     running = 0;
 }
 
+/*
 void tcpClient::sendCbusMessage(int nbytes, byte b0, byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7){
     char msg[CAN_MSG_SIZE];
     msg[0] = b0;
@@ -99,6 +100,7 @@ void tcpClient::sendCbusMessage(byte b0,byte b1, byte b2, byte b3, byte b4, byte
 void tcpClient::sendCbusMessage(byte b0,byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7){
     sendCbusMessage(8,b0,b1,b2,b3,b4,b5,b6,b7);
 }
+*/
 
 void tcpClient::canMessage(char canid,const char* msg){
     //test to send data to client tcp

@@ -1,12 +1,15 @@
 #ifndef TCPCLIENT_H
 #define TCPCLIENT_H
 
-#include "tcpServer.h"
-#include "canHandler.h"
+#include "Client.h"
+//#include "tcpServer.h"
+//#include "canHandler.h"
 #include "edSession.h"
 #include "opcodes.h"
 #include "msgdata.h"
-#include "utils.h"
+//#include "utils.h"
+
+
 
 #include <sys/socket.h>
 #include <arpa/inet.h> //inet_addr
@@ -26,30 +29,30 @@
 
 using namespace std;
 
-class tcpServer;
-class canHandler;
+//class tcpServer;
+//class canHandler;
 
-class tcpClient
+class tcpClient : public Client
 {
     public:
         tcpClient(log4cpp::Category *logger, tcpServer *server, canHandler* can, int client_sock, struct sockaddr_in client_addr, int id);
         virtual ~tcpClient();
         void start(void *param);
         void stop();
-        void setIp(char *ip);
-        string getIp();
-        int getId();
+        //void setIp(char *ip);
+        //string getIp();
+        //int getId();
         void canMessage(char canid,const char* msg);
     protected:
     private:
-        tcpServer *server;
-        canHandler *can;
-        int client_sock;
-        struct sockaddr_in client_addr;
+        //tcpServer *server;
+        //canHandler *can;
+        //int client_sock;
+        //struct sockaddr_in client_addr;
         int running;
-        int id;
-        string ip;
-        log4cpp::Category *logger;
+        //int id;
+        //string ip;
+        //log4cpp::Category *logger;
         edSession* edsession;
         std::map<int,edSession*> sessions; //the loco number is the key
 
@@ -85,7 +88,7 @@ class tcpClient
             ((tcpClient*)classPtr)->sendKeepAlive(classPtr);
             return nullptr;
         }
-
+/*
         void sendCbusMessage(int nbytes,byte b0, byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7);
         void sendCbusMessage(byte b0);
         void sendCbusMessage(byte b0, byte b1);
@@ -95,7 +98,7 @@ class tcpClient
         void sendCbusMessage(byte b0, byte b1, byte b2, byte b3, byte b4, byte b5);
         void sendCbusMessage(byte b0, byte b1, byte b2, byte b3, byte b4, byte b5, byte b6);
         void sendCbusMessage(byte b0, byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7);
-
+*/
 };
 
 #endif // TCPCLIENT_H

@@ -1,4 +1,6 @@
 #include "tcpServer.h"
+#include "tcpClient.h"
+
 
 tcpServer::tcpServer(log4cpp::Category *logger, int port, canHandler* can)
 {
@@ -29,7 +31,7 @@ void tcpServer::stop(){
 void tcpServer::addCanMessage(char canid,const char* msg){
 
     if (!clients.empty()){
-        std::map<int,tcpClient*>::iterator it = clients.begin();
+        std::map<int,Client*>::iterator it = clients.begin();
         while(it != clients.end())
         {
             it->second->canMessage(canid,msg);
@@ -108,14 +110,14 @@ void tcpServer::run(void* param){
                     break;
             }
             logger->info("Creating client for ip:%s id:%d",s, counter);
-            tcpClient *cl = new tcpClient(logger,this,can,client_sock, client_addr,counter);
+            Client *cl = new tcpClient(logger,this,can,client_sock, client_addr,counter);
             cl->setIp(s);
             free(s);
             tempClient = cl;
             logger->debug("Creating client thread %d",counter);
             pthread_t clientThread;
             pthread_create(&clientThread, nullptr, tcpServer::thread_entry_run_client, this);
-            clients.insert(std::pair<int,tcpClient*>(counter,cl));
+            clients.insert(std::pair<int,Client*>(counter,cl));
             counter++;
         }
 
@@ -130,7 +132,7 @@ void tcpServer::run_client(void* param){
 void tcpServer::removeClients(){
 
     logger->info("Stopping client connections");
-    std::map<int,tcpClient*>::iterator it = clients.begin();
+    std::map<int,Client*>::iterator it = clients.begin();
     while(it != clients.end())
     {
         logger->info("Stop client %d", it->second->getId());
@@ -141,7 +143,7 @@ void tcpServer::removeClients(){
     clients.clear();
 }
 
-void tcpServer::removeClient(tcpClient *client){
+void tcpServer::removeClient(Client *client){
 
     if (clients.find(client->getId()) != clients.end()){
         logger->debug("Removing tcp client with id: %d",client->getId());

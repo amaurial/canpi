@@ -112,6 +112,8 @@ int main()
     int port = 5555;
     string candevice = "can0";
     bool append = false;
+    bool start_grid_server = false;
+    int gridport = 4444;
     if (hasconfig){
 
         string debugLevel = getStringCfgVal(&cfg,"loglevel");
@@ -143,6 +145,12 @@ int main()
             port = 5555;
         }
 
+        gridport = getIntCfgVal(&cfg,"cangridport");
+        if (gridport == INTERROR){
+                cout << "Failed to get tcp port. Defaul is 5555" << endl;
+            gridport = 5555;
+        }
+
         string sappend= getStringCfgVal(&cfg,"logappend");
         if (sappend.empty()){
             cout << "Failed to get logappend . Defaul is false" << endl;
@@ -150,6 +158,15 @@ int main()
         }
         if ((sappend.compare("true") == 0) | (sappend.compare("TRUE") == 0) | (sappend.compare("True") == 0)){
             append = true;
+        }
+
+        string grid= getStringCfgVal(&cfg,"cangrid");
+        if (grid.empty()){
+            cout << "Failed to get cangrid . Defaul is false" << endl;
+            start_grid_server = false;
+        }
+        if ((grid.compare("true") == 0) | (grid.compare("TRUE") == 0) | (grid.compare("True") == 0)){
+            start_grid_server = true;
         }
 
     }
