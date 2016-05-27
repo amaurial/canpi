@@ -15,9 +15,16 @@
 #include <string>
 #include <sstream>
 #include <vector>
-#include <regex>
 
 #define BUFFER_SIZE 1024
+/*
+The GridConnect protocol encodes messages as an ASCII string of up to 24 characters of the form:
+:ShhhhNd0d1d2d3d4d5d6d7;
+The S indicates a standard CAN frame
+:XhhhhhhhhNd0d1d2d3d4d5d6d7;
+The X indicates an extended CAN frame hhhh is the two byte header N or R indicates a normal
+or remote frame, in position 6 or 10 d0 - d7 are the (up to) 8 data bytes
+*/
 
 using namespace std;
 
@@ -28,14 +35,11 @@ class tcpClientGridConnect:public Client
         virtual ~tcpClientGridConnect();
         void start(void *param);
         void stop();
-        void canMessage(char canid,const char* msg);
+        void canMessage(int canid,const char* msg,int dlc);
     protected:
     private:
         int running;
         void run(void * param);
-        void handleCBUS(const char* msg);
-        void sendToEd(string msg);
-        void handleEDMessages(char* msgptr);
         std::vector<std::string> & split(const std::string &s, char delim, std::vector<std::string> &elems);
 
 };

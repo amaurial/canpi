@@ -35,19 +35,7 @@ void tcpClient::setStartSessionTime(){
     edsession->setCbusTime(spec);
     edsession->setEDTime(spec);
 }
-/*
-void tcpClient::setIp(char *ip){
-    this->ip = string(ip);
-}
 
-string tcpClient::getIp(){
-    return ip.c_str();
-}
-
-int tcpClient::getId(){
-    return id;
-}
-*/
 void tcpClient::start(void *param){
     running = 1;
     logger->debug("[%d] Sending start info :%s",id, START_INFO);
@@ -59,50 +47,7 @@ void tcpClient::stop(){
     running = 0;
 }
 
-/*
-void tcpClient::sendCbusMessage(int nbytes, byte b0, byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7){
-    char msg[CAN_MSG_SIZE];
-    msg[0] = b0;
-    msg[1] = b1;
-    msg[2] = b2;
-    msg[3] = b3;
-    msg[4] = b4;
-    msg[5] = b5;
-    msg[6] = b6;
-    msg[7] = b7;
-    logger->debug("[%d] Sending message to CBUS",id);
-    int n=nbytes;
-    if (nbytes>CAN_MSG_SIZE) n = CAN_MSG_SIZE;
-    can->insert_data(msg,n);
-}
-
-void tcpClient::sendCbusMessage(byte b0){
-    sendCbusMessage(1,b0,0,0,0,0,0,0,0);
-}
-void tcpClient::sendCbusMessage(byte b0,byte b1){
-    sendCbusMessage(2,b0,b1,0,0,0,0,0,0);
-}
-void tcpClient::sendCbusMessage(byte b0,byte b1, byte b2){
-    sendCbusMessage(3,b0,b1,b2,0,0,0,0,0);
-}
-void tcpClient::sendCbusMessage(byte b0,byte b1, byte b2, byte b3){
-    sendCbusMessage(4,b0,b1,b2,b3,0,0,0,0);
-}
-void tcpClient::sendCbusMessage(byte b0,byte b1, byte b2, byte b3, byte b4){
-    sendCbusMessage(5,b0,b1,b2,b3,b4,0,0,0);
-}
-void tcpClient::sendCbusMessage(byte b0,byte b1, byte b2, byte b3, byte b4, byte b5){
-    sendCbusMessage(6,b0,b1,b2,b3,b4,b5,0,0);
-}
-void tcpClient::sendCbusMessage(byte b0,byte b1, byte b2, byte b3, byte b4, byte b5, byte b6){
-    sendCbusMessage(7,b0,b1,b2,b3,b4,b5,b6,0);
-}
-void tcpClient::sendCbusMessage(byte b0,byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7){
-    sendCbusMessage(8,b0,b1,b2,b3,b4,b5,b6,b7);
-}
-*/
-
-void tcpClient::canMessage(char canid,const char* msg){
+void tcpClient::canMessage(int canid,const char* msg, int dlc){
     //test to send data to client tcp
     //int nbytes;
     //char buf[CAN_MSG_SIZE+1];

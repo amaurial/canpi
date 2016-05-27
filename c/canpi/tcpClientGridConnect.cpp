@@ -28,21 +28,40 @@ void tcpClientGridConnect::stop(){
     running = 0;
 }
 
-void tcpClientGridConnect::canMessage(char canid,const char* msg){
+void tcpClientGridConnect::canMessage(int canid,const char* msg, int dlc){
     //test to send data to client tcp
-    //int nbytes;
-    //char buf[CAN_MSG_SIZE+1];
+    int nbytes;
+    char buf[CAN_MSG_SIZE+1];
+    stringstream ss;
     try{
         char buf[30];
         memset(buf,0,20);
         sprintf(buf,"%02x %02x %02x %02x %02x %02x %02x %02x\n", msg[0],msg[1],msg[2],msg[3],msg[4],msg[5],msg[6],msg[7]);
         logger->debug("[%d] Tcp grid client received cbus message: %s",id,buf);
-        //memcpy(buf,msg,CAN_MSG_SIZE);
-        //buf[CAN_MSG_SIZE] = '\n';
-        //nbytes = write(client_sock,buf,CAN_MSG_SIZE + 1);
-        //nbytes = write(client_sock,buf,nbytes);
 
-        handleCBUS(msg);
+/*
+The GridConnect protocol encodes messages as an ASCII string of up to 24 characters of the form:
+:ShhhhNd0d1d2d3d4d5d6d7; size = 2 + 4 + 1 + 8 + 1 = 16
+The S indicates a standard CAN frame
+:XhhhhhhhhNd0d1d2d3d4d5d6d7;
+The X indicates an extended CAN frame hhhh is the two byte header N or R indicates a normal
+or remote frame, in position 6 or 10 d0 - d7 are the (up to) 8 data bytes
+*/      byte h1 = canid && 0x0000ffff;
+        byte h2 = canid && 0xffff0000;
+        ss << ":S";
+        ss << h2 && 0xff00;
+        ss << h2 && 0x00ff;
+        ss << h1 && 0xff00;
+        ss << h1 && 0x00ff;
+        ss << "N";
+        for (int a=0;a<dlc;a++){
+            ss << msg[a];
+        }
+        ss << ";\n";
+
+        memcpy(buf,msg,CAN_MSG_SIZE);
+        int s = 17 - (8 - dlc); // max msg + \n - data size offset
+        nbytes = write(client_sock,ss.str().c_str(),s);
     }
     catch(runtime_error &ex){
         logger->debug("[%d] Failed to process the can message",id);
@@ -62,9 +81,8 @@ void tcpClientGridConnect::run(void *param){
             running = 0;
         }
         else if (nbytes>0){
-            logger->debug("[%d] Received from ED:%s Bytes:%d",id, msg, nbytes);
             try{
-                handleEDMessages(msg);
+                logger->debug("[%d] Received from ED:%s Bytes:%d",id, msg, nbytes);
             }
             catch(const runtime_error &ex){
                 logger->debug("[%d] Failed to process the can message\n%s",id,ex.what());
@@ -82,31 +100,6 @@ void tcpClientGridConnect::run(void *param){
     server->removeClient(this);
 }
 
-void tcpClientGridConnect::handleEDMessages(char* msgptr){
-    vector<string> msgs;
-    string message (msgptr);
-    const char *msgtemp;
-
-    try{
-        msgs = split(message,'\n', msgs);
-
-        vector<string>::iterator it = msgs.begin();
-        for (auto const& msg:msgs){
-            logger->debug("[%d] Handle message:%s",id,msg.c_str());
-            if (msg.length() == 0){
-                continue;
-            }
-            msgtemp = msg.c_str();
-        }
-    }
-    catch(const runtime_error &ex){
-        throw_line(ex.what());
-    }
-    catch(...){
-        throw_line("Not runtime error cought");
-    }
-}
-
 std::vector<std::string> & tcpClientGridConnect::split(const std::string &s, char delim, std::vector<std::string> &elems)
 {
     std::stringstream ss(s+' ');
@@ -118,19 +111,3 @@ std::vector<std::string> & tcpClientGridConnect::split(const std::string &s, cha
     return elems;
 }
 
-void tcpClientGridConnect::handleCBUS(const char *msg){
-
-    unsigned char opc = msg[0];
-    int loco;
-    string message;
-    stringstream ss;
-}
-
-void tcpClientGridConnect::sendToEd(string msg){
-    unsigned int nbytes;
-    logger->debug("[%d] Send to ED:%s",id,msg.c_str());
-    nbytes = write(client_sock,msg.c_str(),msg.length());
-    if (nbytes != msg.length()){
-        logger->error("Fail to send message %s to ED",id, msg.c_str());
-    }
-}

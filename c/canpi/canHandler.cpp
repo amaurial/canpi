@@ -147,7 +147,7 @@ void canHandler::run_queue_reader(void* param){
             frame = in_msgs.front();
             print_frame(&frame,"Received");
             if (tcpserver != nullptr){
-                tcpserver->addCanMessage(frame.can_id,(char*)frame.data);
+                tcpserver->addCanMessage(frame.can_id,(char*)frame.data, frame.can_dlc);
             }
             in_msgs.pop();
         }

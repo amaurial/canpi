@@ -22,7 +22,7 @@ class Client
         virtual ~Client();
         virtual void start(void *param)=0;
         virtual void stop()=0;
-        virtual void canMessage(char canid,const char* msg)=0;
+        virtual void canMessage(int canid,const char* msg,int dlc)=0;
 
         Client& setIp(char *ip);
         string getIp();

@@ -28,13 +28,13 @@ void tcpServer::stop(){
     running = 0;
 }
 
-void tcpServer::addCanMessage(char canid,const char* msg){
+void tcpServer::addCanMessage(char canid,const char* msg,int dlc){
 
     if (!clients.empty()){
         std::map<int,Client*>::iterator it = clients.begin();
         while(it != clients.end())
         {
-            it->second->canMessage(canid,msg);
+            it->second->canMessage(canid,msg,dlc);
             it++;
         }
     }

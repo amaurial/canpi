@@ -21,7 +21,7 @@ class tcpServer
         int getPort();
         void stop();
         void removeClient(Client* client);
-        void addCanMessage(char canid,const char* msg);
+        void addCanMessage(char canid,const char* msg,int dlc);
     protected:
     private:
         canHandler *can;
