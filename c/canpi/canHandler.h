@@ -12,7 +12,9 @@
 #include <unistd.h>
 #include <queue>
 #include <string>
+#include <vector>
 #include "tcpServer.h"
+#include "utils.h"
 
 #define CAN_MSG_SIZE 8
 
@@ -22,17 +24,18 @@ class tcpServer;
 class canHandler
 {
     public:
-        canHandler(log4cpp::Category *logger,char canId);
+        canHandler(log4cpp::Category *logger,int canId);
         virtual ~canHandler();
         int start(const char* interface);
-        int insert_data(char *msg,int size);
+        int insert_data(char *msg,int size,ClientType ct);
+        int insert_data(int canid,char *msg,int size,ClientType ct);
         void stop();
-        void setCanId(char id);
-        char getCanId();
+        void setCanId(int id);
+        int getCanId();
         void setTcpServer(tcpServer * tcpserver);
     protected:
     private:
-        char canId;
+        int canId;
         int canInterface;
         int running;
         struct ifreq ifr;
@@ -42,7 +45,7 @@ class canHandler
         pthread_t queueReader;
         pthread_t queueWriter;
         tcpServer *tcpserver;
-
+        vector<tcpServer*> servers;
         std::queue<can_frame> in_msgs;
         std::queue<can_frame> out_msgs;
 

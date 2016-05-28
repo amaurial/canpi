@@ -21,6 +21,7 @@ tcpClient::tcpClient(log4cpp::Category *logger, tcpServer *server, canHandler* c
     this->re_qry_direction = regex(RE_QRY_DIRECTION);
     this->re_func = regex(RE_FUNC);
     setStartSessionTime();
+    this->clientType = ClientType::ED;
 }
 
 tcpClient::~tcpClient()
@@ -177,7 +178,7 @@ void tcpClient::handleEDMessages(char* msgptr){
     try{
         msgs = split(message,'\n', msgs);
 
-        vector<string>::iterator it = msgs.begin();
+        //vector<string>::iterator it = msgs.begin();
         for (auto const& msg:msgs){
             logger->debug("[%d] Handle message:%s",id,msg.c_str());
 
@@ -194,7 +195,7 @@ void tcpClient::handleEDMessages(char* msgptr){
             }
 
             //get hardware info
-            if ((msgtemp[0] == 'H') & (msgtemp[1] == 'U')){
+            if ((msgtemp[0] == 'H') && (msgtemp[1] == 'U')){
                 edsession->setEdHW(msg.substr(2,msg.length()-2));
                 logger->debug("[%d] Received Hardware info: %s" , id,msg.substr(2,msg.length()-2).c_str());
                 sendToEd("\n*10\n"); //keep alive each 10 seconds
@@ -202,13 +203,13 @@ void tcpClient::handleEDMessages(char* msgptr){
                 continue;
             }
 
-            if ((msgtemp[0] == '*') & (msgtemp[1] == '+')){
+            if ((msgtemp[0] == '*') && (msgtemp[1] == '+')){
                 logger->debug("[%d] Timer request",id);
                 sendToEd("*10\n"); //keep alive each 10 seconds
                 continue;
             }
 
-            if ((msgtemp[0] == '*') & (msgtemp[1] == '-')){
+            if ((msgtemp[0] == '*') && (msgtemp[1] == '-')){
                 logger->debug("[%d] Finish timer request",id);
                 continue;
             }
@@ -270,17 +271,6 @@ void tcpClient::handleEDMessages(char* msgptr){
     catch(...){
         throw_line("Not runtime error cought");
     }
-}
-
-std::vector<std::string> & tcpClient::split(const std::string &s, char delim, std::vector<std::string> &elems)
-{
-    std::stringstream ss(s+' ');
-    std::string item;
-    while(std::getline(ss, item, delim))
-    {
-        elems.push_back(item);
-    }
-    return elems;
 }
 
 void tcpClient::handleCBUS(const char *msg){
@@ -409,7 +399,7 @@ string tcpClient::generateFunctionsLabel(int loco){
 
 void tcpClient::sendToEd(string msg){
     unsigned int nbytes;
-    logger->debug("[%d] Send to ED:%s",id,msg.c_str());
+    logger->debug("[%d] Send to ED:%s",id, msg.c_str());
     nbytes = write(client_sock,msg.c_str(),msg.length());
     if (nbytes != msg.length()){
         logger->error("Fail to send message %s to ED",id, msg.c_str());
@@ -715,7 +705,7 @@ void tcpClient::handleSetFunction(string message){
         while(it != sessions.end())
         {
             session = it->second;
-            if ((session->getFnType(fn) == 1) & (onoff == 0) ){
+            if ((session->getFnType(fn) == 1) && (onoff == 0) ){
                 logger->debug("[%d] Fn Message for toggle fn and for a off action. Discarding",id);
             }
             else{
@@ -731,7 +721,7 @@ void tcpClient::handleSetFunction(string message){
     int loco = getLoco(message);
     session = sessions[loco];
 
-    if ((session->getFnType(fn) == 1) & (onoff == 0) ){
+    if ((session->getFnType(fn) == 1) && (onoff == 0) ){
         logger->debug("[%d] Fn Message for toggle fn and for a off action. Discarding",id);
     }
     else{
@@ -752,10 +742,10 @@ void tcpClient::sendFnMessages(edSession* session, int fn, string message){
     //3 is F9 to F12
     //4 is F13 to F19
     //5 is F20 to F28
-    if ((4 < fn) & (fn < 9))    fnbyte = 2;
-    if ((8 < fn) & (fn < 13))   fnbyte = 3;
-    if ((12 < fn) & (fn < 20))  fnbyte = 4;
-    if ((19 < fn) & (fn < 29))  fnbyte = 5;
+    if ((4 < fn) && (fn < 9))    fnbyte = 2;
+    if ((8 < fn) && (fn < 13))   fnbyte = 3;
+    if ((12 < fn) && (fn < 20))  fnbyte = 4;
+    if ((19 < fn) && (fn < 29))  fnbyte = 5;
 
     if (session->getFnState(fn) == 1) session->setFnState(fn,0);
     else session->setFnState(fn,1);

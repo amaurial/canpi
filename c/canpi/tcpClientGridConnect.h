@@ -40,8 +40,8 @@ class tcpClientGridConnect:public Client
     private:
         int running;
         void run(void * param);
-        std::vector<std::string> & split(const std::string &s, char delim, std::vector<std::string> &elems);
-
+        void handleClientGridMessage(char *msg,int size);
+        vector<byte> getBytes(string hex_chars,vector<byte> &bytes);
 };
 
 #endif // TCPCLIENT_H

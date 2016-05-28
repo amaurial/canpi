@@ -52,6 +52,17 @@ Client& Client::setServer(tcpServer *server){
     return *this;
 }
 
+vector<string> & Client::split(const string &s, char delim, vector<string> &elems)
+{
+    stringstream ss(s+' ');
+    string item;
+    while(getline(ss, item, delim))
+    {
+        elems.push_back(item);
+    }
+    return elems;
+}
+
 void Client::sendCbusMessage(int nbytes, byte b0, byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7){
     char msg[CAN_MSG_SIZE];
     msg[0] = b0;
@@ -65,7 +76,7 @@ void Client::sendCbusMessage(int nbytes, byte b0, byte b1, byte b2, byte b3, byt
     logger->debug("[%d] Sending message to CBUS",id);
     int n=nbytes;
     if (nbytes>CAN_MSG_SIZE) n = CAN_MSG_SIZE;
-    can->insert_data(msg,n);
+    can->insert_data(msg,n,clientType);
 }
 
 void Client::sendCbusMessage(byte b0){

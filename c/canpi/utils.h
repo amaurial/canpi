@@ -6,6 +6,7 @@
 
 //byte definition
 typedef unsigned char byte;
+enum ClientType {ED,GRID};
 
 //custom exception class
 class my_exception : public std::runtime_error {

@@ -54,7 +54,6 @@ class tcpClient : public Client
         void handleSetFunction(string message);
         void sendFnMessages(edSession* session, int fn, string message);
         int getLoco(string msg);
-        std::vector<std::string> & split(const std::string &s, char delim, std::vector<std::string> &elems);
 
         void setStartSessionTime();
 

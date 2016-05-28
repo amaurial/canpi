@@ -12,7 +12,7 @@ sent as <11 bit SID><0><1><0>< 18 bit EID> N or R indicates a normal or remote f
 in position 6 or 10 d0 - d7 are the (up to) 8 data bytes
 */
 
-canHandler::canHandler(log4cpp::Category *logger, char canId)
+canHandler::canHandler(log4cpp::Category *logger, int canId)
 {
     //ctor
     this->logger = logger;
@@ -25,19 +25,26 @@ canHandler::~canHandler()
     //dtor
 }
 
-char canHandler::getCanId(){
+int canHandler::getCanId(){
     return canId;
 }
 
 void canHandler::setTcpServer(tcpServer * tcpserver){
-    this->tcpserver = tcpserver;
+    servers.push_back(tcpserver);
 }
 
-void canHandler::setCanId(char canId){
+void canHandler::setCanId(int canId){
     this->canId = canId;
 }
 
-int canHandler::insert_data(char *msg,int msize){
+int canHandler::insert_data(char *msg,int msize,ClientType ct){
+    int c = 5; //priority 0101
+    c = c << 8;
+    c = c | byte(canId);
+    return insert_data(c,msg,msize,ct);
+}
+
+int canHandler::insert_data(int canid,char *msg,int msize,ClientType ct){
     int i = 0;
     int j = CAN_MSG_SIZE;
     struct can_frame frame;
@@ -49,7 +56,7 @@ int canHandler::insert_data(char *msg,int msize){
         j = msize;
     }
     memset(frame.data , 0 , sizeof(frame.data));
-    frame.can_id = canId;
+    frame.can_id = canid;
     frame.can_dlc = j;
 
     for (i = 0;i < j; i++){
@@ -58,6 +65,17 @@ int canHandler::insert_data(char *msg,int msize){
     logger->debug("Add message to cbus queue");
     print_frame(&frame,"Insert");
     out_msgs.push(frame);
+
+    //send to can grid server
+    vector<tcpServer*>::iterator server;
+    if ((servers.size() > 0) && (ct != ClientType::GRID)){
+        for (server = servers.begin();server != servers.end(); server++){
+            if ((*server)->getClientType() == ClientType::GRID){
+                (*server)->addCanMessage(frame.can_id,(char*)frame.data, frame.can_dlc);
+            }
+        }
+    }
+
     return j;
 }
 
@@ -142,12 +160,17 @@ void canHandler::run_queue_reader(void* param){
     struct can_frame frame;
 
     logger->debug("Running CBUS queue reader");
+
+    vector<tcpServer*>::iterator server;
+
     while (running){
         if (!in_msgs.empty()){
             frame = in_msgs.front();
             print_frame(&frame,"Received");
-            if (tcpserver != nullptr){
-                tcpserver->addCanMessage(frame.can_id,(char*)frame.data, frame.can_dlc);
+            if (servers.size() > 0){
+                for (server = servers.begin();server != servers.end(); server++){
+                    (*server)->addCanMessage(frame.can_id,(char*)frame.data, frame.can_dlc);
+                }
             }
             in_msgs.pop();
         }
@@ -174,7 +197,7 @@ void canHandler::run_out(void* param){
     while (running){
         if (!out_msgs.empty()){
             frame = out_msgs.front();
-            frame.can_id = canId;
+            //frame.can_id = canId;
             //frame.can_dlc = CAN_MSG_SIZE;
             nbytes = write(canInterface,&frame,CAN_MTU);
             print_frame(&frame,"Sent [" + to_string(nbytes) + "]");

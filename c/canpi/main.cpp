@@ -114,6 +114,7 @@ int main()
     bool append = false;
     bool start_grid_server = false;
     int gridport = 4444;
+    int canid = 110;
     if (hasconfig){
 
         string debugLevel = getStringCfgVal(&cfg,"loglevel");
@@ -143,6 +144,12 @@ int main()
         if (port == INTERROR){
                 cout << "Failed to get tcp port. Defaul is 5555" << endl;
             port = 5555;
+        }
+
+        canid = getIntCfgVal(&cfg,"canid");
+        if (canid == INTERROR){
+                cout << "Failed to get canid. Defaul is 110" << endl;
+            canid = 110;
         }
 
         gridport = getIntCfgVal(&cfg,"cangridport");
@@ -196,11 +203,15 @@ int main()
     canHandler can = canHandler(&logger,110);
     can.start(candevice.c_str());
 
-    tcpServer tcpserver = tcpServer(&logger,port,&can);
+    tcpServer tcpserver = tcpServer(&logger,port,&can,ClientType::ED);
     tcpserver.start();
-
     can.setTcpServer(&tcpserver);
 
+    if (start_grid_server){
+        tcpServer tcpserverGrid = tcpServer(&logger,gridport,&can,ClientType::GRID);
+        tcpserverGrid.start();
+        can.setTcpServer(&tcpserverGrid);
+    }
 
     while (running == 1){usleep(1000000);};
 

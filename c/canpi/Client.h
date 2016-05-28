@@ -45,6 +45,8 @@ class Client
         canHandler *can;
         int client_sock;
         struct sockaddr_in client_addr;
+        ClientType clientType;
+        vector<string> & split(const string &s, char delim, vector<string> &elems);
 
         void sendCbusMessage(int nbytes,byte b0, byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7);
         void sendCbusMessage(byte b0);

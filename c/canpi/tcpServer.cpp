@@ -1,14 +1,16 @@
 #include "tcpServer.h"
 #include "tcpClient.h"
+#include "tcpClientGridConnect.h"
 
 
-tcpServer::tcpServer(log4cpp::Category *logger, int port, canHandler* can)
+tcpServer::tcpServer(log4cpp::Category *logger, int port, canHandler* can,ClientType clientType)
 {
     //ctor
     this->logger = logger;
     this->setPort(port);
     this->can = can;
     counter = 0;
+    this->clientType = clientType;
 }
 
 tcpServer::~tcpServer()
@@ -28,7 +30,7 @@ void tcpServer::stop(){
     running = 0;
 }
 
-void tcpServer::addCanMessage(char canid,const char* msg,int dlc){
+void tcpServer::addCanMessage(int canid,const char* msg,int dlc){
 
     if (!clients.empty()){
         std::map<int,Client*>::iterator it = clients.begin();
@@ -110,7 +112,14 @@ void tcpServer::run(void* param){
                     break;
             }
             logger->info("Creating client for ip:%s id:%d",s, counter);
-            Client *cl = new tcpClient(logger,this,can,client_sock, client_addr,counter);
+            Client *cl;
+            if (clientType == GRID){
+                cl = new tcpClientGridConnect(logger,this,can,client_sock, client_addr,counter);
+            }
+            else{
+                cl = new tcpClient(logger,this,can,client_sock, client_addr,counter);
+            }
+
             cl->setIp(s);
             free(s);
             tempClient = cl;
