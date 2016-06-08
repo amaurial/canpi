@@ -1,6 +1,6 @@
-#!bin/bash
+#!/bin/bash
 
-apg-get update
+apt-get update
 apt-get install hostapd
 apt-get install isc-dhcp-server
 mv /etc/hostapd/hostapd.conf /etc/hostapd/hostapd.conf.old
