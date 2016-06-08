@@ -34,6 +34,13 @@ Extracted from the Developer’s Guide for CBUS (Version 5g)
 // MERG Module types
 #define MTYP_SLIM 0 // default for SLiM nodes
 #define MTYP_FLIM 1 // default for SLiM nodes
+//ModuleID
+#define MID 54
+//Software version
+#define SOFT_VERSION 1
+#define SOFT_MIN_VERSION 0
+#define MFLAGS 0b00000000
+
 
 // CBUS opcodes list
 // Packets with no data bytes

@@ -11,12 +11,18 @@
 
 dir="/home/pi/canpi/c/canpi"
 cmd="/home/pi/canpi/c/canpi/canpi"
+config="${dir}/canpi.cfg"
 user=""
 
 name=`basename $0`
 pid_file="/var/run/$name.pid"
 stdout_log="/var/log/$name.log"
 stderr_log="/var/log/$name.err"
+
+source $config
+bonjour_file="/etc/avahi/services"
+bonjour_template="$dir/services"
+
 
 get_pid() {
     cat "$pid_file"
@@ -25,6 +31,55 @@ get_pid() {
 is_running() {
     [ -f "$pid_file" ] && ps `get_pid` > /dev/null 2>&1
 }
+
+setup_bonjour(){
+    echo "Configuring the bonjour service"
+    #back the old file
+    sudo mv $bonjour_file "${bonjour_file}.bak"
+    sudo mv $bonjour_template $bonjour_file
+
+    #change the service name
+    sudo sed -i 's/SERVICENAME/${service_name}/' $bonjour_file
+
+    #change the port
+    sudo sed -i 's/PORT/${service_name}/' $tcpport
+
+    #restart the service
+    echo "Restarting the bonjour service"
+    sudo /etc/init.d/avahi-daemon restart
+    r = `/etc/init.d/avahi-daemon status`
+    echo $r|grep "avahi-daemon start/running"
+    if [ $? == 0 ]
+    then
+        echo "Bonjour restarted"
+    else
+        echo "Failed to restart Bonjour"
+    fi
+}
+
+setup_ap_mode(){
+#set static ip
+#start dhcp service
+#start hostapd service
+}
+
+setup_wifi_mode(){
+#set wlan to dhcp
+#stop dhcp service
+#stop hostapd
+}
+
+start_led_watchdog(){
+
+}
+
+stop_led_watchdog(){
+
+}
+
+bootstrap(){
+}
+
 
 case "$1" in
     start)
@@ -87,6 +142,10 @@ case "$1" in
     fi
     $0 start
     ;;
+    configure)
+        echo "Configuring the services"
+        setup_bonjour()
+    ;;
     status)
     if is_running; then
         echo "Running"
@@ -96,7 +155,7 @@ case "$1" in
     fi
     ;;
     *)
-    echo "Usage: $0 {start|stop|restart|status}"
+    echo "Usage: $0 {start|stop|restart|status|configure}"
     exit 1
     ;;
 esac
