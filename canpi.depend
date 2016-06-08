@@ -1,0 +1,223 @@
+# depslib dependency file v1.0
+1464428902 source:/home/amaurial/projetos/canpi/c/canpi/canHandler.cpp
+	"canHandler.h"
+
+1464428872 /home/amaurial/projetos/canpi/c/canpi/canHandler.h
+	<linux/can.h>
+	<net/if.h>
+	<linux/can/raw.h>
+	<log4cpp/Category.hh>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<sys/ioctl.h>
+	<pthread.h>
+	<unistd.h>
+	<queue>
+	<string>
+	<vector>
+	"tcpServer.h"
+	"utils.h"
+
+1464410974 source:/home/amaurial/projetos/canpi/c/canpi/main.cpp
+	<iostream>
+	<stdio.h>
+	<stdlib.h>
+	<unistd.h>
+	<libgen.h>
+	<sys/types.h>
+	<sys/socket.h>
+	<sys/ioctl.h>
+	<sys/uio.h>
+	<unistd.h>
+	<signal.h>
+	<string>
+	"log4cpp/Portability.hh"
+	<unistd.h>
+	<iostream>
+	"log4cpp/Category.hh"
+	"log4cpp/Appender.hh"
+	"log4cpp/FileAppender.hh"
+	"log4cpp/OstreamAppender.hh"
+	"log4cpp/SyslogAppender.hh"
+	"log4cpp/Layout.hh"
+	"log4cpp/BasicLayout.hh"
+	"log4cpp/PatternLayout.hh"
+	"log4cpp/SimpleLayout.hh"
+	"log4cpp/Priority.hh"
+	"log4cpp/NDC.hh"
+	"libconfig.h++"
+	"canHandler.h"
+
+1462677858 source:/home/amaurial/projetos/canpi/c/canpi/tcpserver.cpp
+	"tcpserver.h"
+
+1462677865 /home/amaurial/projetos/canpi/c/canpi/tcpserver.h
+	<sys/socket.h>
+	<arpa/inet.h>
+	<log4cpp/Category.hh>
+
+1464422250 source:/home/amaurial/projetos/canpi/c/canpi/tcpClient.cpp
+	"tcpClient.h"
+	<stdio.h>
+
+1464418819 /home/amaurial/projetos/canpi/c/canpi/tcpClient.h
+	"Client.h"
+	"edSession.h"
+	"opcodes.h"
+	"msgdata.h"
+	<sys/socket.h>
+	<arpa/inet.h>
+	<log4cpp/Category.hh>
+	<map>
+	<time.h>
+	<string>
+	<sstream>
+	<vector>
+	<regex>
+
+1464409115 /home/amaurial/projetos/canpi/c/canpi/tcpServer.h
+	<sys/socket.h>
+	<arpa/inet.h>
+	<log4cpp/Category.hh>
+	<map>
+	"Client.h"
+	"canHandler.h"
+
+1464409128 source:/home/amaurial/projetos/canpi/c/canpi/tcpServer.cpp
+	"tcpServer.h"
+	"tcpClient.h"
+	"tcpClientGridConnect.h"
+
+1463376231 /home/amaurial/projetos/canpi/c/canpi/edSession.h
+	<string>
+	<log4cpp/Category.hh>
+	<time.h>
+	"utils.h"
+
+1463379182 source:/home/amaurial/projetos/canpi/c/canpi/edSession.cpp
+	"edSession.h"
+
+1462964238 /home/amaurial/projetos/canpi/c/canpi/opcodes.h
+
+1463391380 /home/amaurial/projetos/canpi/c/canpi/msgdata.h
+
+1463091518 source:/home/user/amauriala/Projects/canpi/c/canpi/canHandler.cpp
+	"canHandler.h"
+
+1463091518 /home/user/amauriala/Projects/canpi/c/canpi/canHandler.h
+	<linux/can.h>
+	<net/if.h>
+	<linux/can/raw.h>
+	<log4cpp/Category.hh>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<sys/ioctl.h>
+	<pthread.h>
+	<unistd.h>
+	<queue>
+	"tcpServer.h"
+
+1462835984 /home/user/amauriala/Projects/canpi/c/canpi/tcpServer.h
+	<sys/socket.h>
+	<arpa/inet.h>
+	<log4cpp/Category.hh>
+	<map>
+	"canHandler.h"
+	"tcpClient.h"
+
+1463106569 /home/user/amauriala/Projects/canpi/c/canpi/tcpClient.h
+	"tcpServer.h"
+	"canHandler.h"
+	"edSession.h"
+	"opcodes.h"
+	"msgdata.h"
+	<sys/socket.h>
+	<arpa/inet.h>
+	<log4cpp/Category.hh>
+	<map>
+	<sys/time.h>
+	<string>
+	<sstream>
+
+1463091518 /home/user/amauriala/Projects/canpi/c/canpi/edSession.h
+
+1463091518 /home/user/amauriala/Projects/canpi/c/canpi/opcodes.h
+
+1463091518 /home/user/amauriala/Projects/canpi/c/canpi/msgdata.h
+
+1463091518 source:/home/user/amauriala/Projects/canpi/c/canpi/edSession.cpp
+	"edSession.h"
+
+1463091518 source:/home/user/amauriala/Projects/canpi/c/canpi/main.cpp
+	<iostream>
+	<stdio.h>
+	<stdlib.h>
+	<unistd.h>
+	<libgen.h>
+	<sys/types.h>
+	<sys/socket.h>
+	<sys/ioctl.h>
+	<sys/uio.h>
+	<unistd.h>
+	<signal.h>
+	<string>
+	"log4cpp/Portability.hh"
+	<unistd.h>
+	<iostream>
+	"log4cpp/Category.hh"
+	"log4cpp/Appender.hh"
+	"log4cpp/FileAppender.hh"
+	"log4cpp/OstreamAppender.hh"
+	"log4cpp/SyslogAppender.hh"
+	"log4cpp/Layout.hh"
+	"log4cpp/BasicLayout.hh"
+	"log4cpp/PatternLayout.hh"
+	"log4cpp/SimpleLayout.hh"
+	"log4cpp/Priority.hh"
+	"log4cpp/NDC.hh"
+	"libconfig.h++"
+	"canHandler.h"
+
+1463099901 source:/home/user/amauriala/Projects/canpi/c/canpi/tcpClient.cpp
+	"tcpClient.h"
+
+1463091518 source:/home/user/amauriala/Projects/canpi/c/canpi/tcpServer.cpp
+	"tcpServer.h"
+
+1464396778 /home/amaurial/projetos/canpi/c/canpi/utils.h
+	<stdexcept>
+	<sstream>
+
+1464418805 /home/amaurial/projetos/canpi/c/canpi/Client.h
+	<string>
+	<sys/socket.h>
+	<arpa/inet.h>
+	<log4cpp/Category.hh>
+	"tcpServer.h"
+	"canHandler.h"
+	"utils.h"
+
+1464418779 source:/home/amaurial/projetos/canpi/c/canpi/Client.cpp
+	"Client.h"
+
+1464431365 source:/home/amaurial/projetos/canpi/c/canpi/tcpClientGridConnect.cpp
+	"tcpClientGridConnect.h"
+	<stdio.h>
+
+1464426378 /home/amaurial/projetos/canpi/c/canpi/tcpClientGridConnect.h
+	"Client.h"
+	"canHandler.h"
+	"opcodes.h"
+	"msgdata.h"
+	"utils.h"
+	<sys/socket.h>
+	<arpa/inet.h>
+	<log4cpp/Category.hh>
+	<map>
+	<time.h>
+	<string>
+	<sstream>
+	<vector>
+
