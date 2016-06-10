@@ -1,4 +1,6 @@
 import web
+import os
+import shutil
 from web import form
 
 #configpath="/home/amaurial/projetos/canpi/canpi.cfg"
@@ -40,6 +42,9 @@ class configManager:
                      line = k + "=\"" + v + "\"\n" 
                 f.write(line)
         f.close()
+        #move the file
+        if os.path.exists(tmpfile):
+           shutil.move(tmpfile,configpath)
 
 cm = configManager()
 cm.readConfig()
