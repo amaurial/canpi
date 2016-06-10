@@ -68,7 +68,8 @@ myform = form.Form(
     form.Checkbox('Cangrid enable',checked=gridenable,value="gridenable",id="cangrid"),
     form.Textbox('Grid connect Service port',value=cm.getValue("cangrid_port"),id="cangripport"),
     form.Textbox('Logfile',value=cm.getValue("logfile"),id="logfile"),
-    form.Button("btn", id="btnSave", value="save", html="Save changes")) 
+    form.Button("btn", id="btnSave", value="save", html="Save changes"),
+    form.Button("btn", id="btnRestart", value="restart", html="Reboot")) 
 
 class index: 
     def GET(self): 
@@ -97,6 +98,9 @@ class index:
 		cm.setValue("logfile",str(form['Logfile'].value))
 		cm.saveFile()
         	return render.index(form,"Canpi Configuration Saved")
+        if userData.btn == "restart": 
+                return render.index(form,"Restarting ...")
+
         return render.index(form,"Canpi Configuration")
         #else:
             # form.d.boe and form['boe'].value are equivalent ways of
