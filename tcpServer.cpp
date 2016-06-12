@@ -117,7 +117,10 @@ void tcpServer::run(void* param){
                 cl = new tcpClientGridConnect(logger,this,can,client_sock, client_addr,counter);
             }
             else{
-                cl = new tcpClient(logger,this,can,client_sock, client_addr,counter);
+                tcpClient *client;
+                client = new tcpClient(logger,this,can,client_sock, client_addr,counter);
+                client->setTurnout(turnouts);
+                cl = client;
             }
 
             cl->setIp(s);
@@ -161,5 +164,9 @@ void tcpServer::removeClient(Client *client){
     else{
         logger->debug("Could not remove tcp client with id: %d",client->getId());
     }
+}
+
+void tcpServer::setTurnout(Turnout* turnouts){
+    this->turnouts = turnouts;
 }
 

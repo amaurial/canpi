@@ -5,6 +5,7 @@
 #include "edSession.h"
 #include "opcodes.h"
 #include "msgdata.h"
+#include "Turnout.h"
 
 #include <sys/socket.h>
 #include <arpa/inet.h> //inet_addr
@@ -32,11 +33,13 @@ class tcpClient : public Client
         void start(void *param);
         void stop();
         void canMessage(int canid,const char* msg, int dlc);
+        void setTurnout(Turnout *turnouts);
     protected:
     private:
         int running;
         edSession* edsession;
         std::map<int,edSession*> sessions; //the loco number is the key
+        Turnout *turnouts;
 
         void run(void * param);
         void handleCBUS(const char* msg);
@@ -52,6 +55,8 @@ class tcpClient : public Client
         void handleQueryDirection(string message);
         void handleQuerySpeed(string message);
         void handleSetFunction(string message);
+        void handleTurnout(string message);
+        void handleTurnoutGeneric(string message);
         void sendFnMessages(edSession* session, int fn, string message);
         int getLoco(string msg);
 
@@ -64,6 +69,8 @@ class tcpClient : public Client
         regex re_qry_speed;
         regex re_qry_direction;
         regex re_func;
+        regex re_turnout;
+        regex re_turnout_generic;
 
         static void* thread_keepalive(void *classPtr){
             ((tcpClient*)classPtr)->sendKeepAlive(classPtr);

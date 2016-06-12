@@ -20,6 +20,8 @@ tcpClient::tcpClient(log4cpp::Category *logger, tcpServer *server, canHandler* c
     this->re_qry_speed = regex(RE_QRY_SPEED);
     this->re_qry_direction = regex(RE_QRY_DIRECTION);
     this->re_func = regex(RE_FUNC);
+    this->re_turnout = regex(RE_TURNOUT);
+    this->re_turnout_generic = regex(RE_TURNOUT_GENERIC);
     setStartSessionTime();
     this->clientType = ClientType::ED;
 }
@@ -28,6 +30,10 @@ tcpClient::~tcpClient()
 {
     //dtor
     delete(edsession);
+}
+
+void tcpClient::setTurnout(Turnout* turnouts){
+    this->turnouts = turnouts;
 }
 
 void tcpClient::setStartSessionTime(){
@@ -39,8 +45,21 @@ void tcpClient::setStartSessionTime(){
 
 void tcpClient::start(void *param){
     running = 1;
-    logger->debug("[%d] Sending start info :%s",id, START_INFO);
-    sendToEd(START_INFO);
+    stringstream ss;
+    ss << SOFT_VERSION;ss << "\n";
+    sendToEd(ss.str());
+    ss << "\n";
+    ss.clear();ss.str("");
+    ss << START_INFO_RL;ss << "\n";
+    ss << START_INFO_PPA;ss << "\n";
+    ss << turnouts->getStartInfo();ss << "\n";
+    ss << START_INFO_PRT;ss << "\n";
+    ss << START_INFO_PRL;ss << "\n";
+    //ss << "PRL]\[MAINT}|{Main}|{]\[YARD1}|{Yard1}|{";ss << "\n\n";
+    ss << START_INFO_RCC;ss << "\n";
+    ss << START_INFO_PW;ss << "\n";
+    logger->debug("[%d] Sending start info :%s",id, ss.str().c_str());
+    sendToEd(ss.str());
     run(nullptr);
 }
 
@@ -190,7 +209,7 @@ void tcpClient::handleEDMessages(char* msgptr){
             if (msgtemp[0] == 'N'){
                 logger->debug("[%d] ED name: %s" ,id, msgtemp);
                 edsession->setEdName(msg.substr(1,msg.length()-1));
-                sendToEd("\n*10\n"); //keep alive each 10 seconds
+                sendToEd("\n"); //keep alive each 10 seconds
                 continue;
             }
 
@@ -236,29 +255,38 @@ void tcpClient::handleEDMessages(char* msgptr){
                 handleSpeed(msg);
                 continue;
             }
-
+            //set direction
             if (regex_match(msg,re_dir)){
                 handleDirection(msg);
                 continue;
             }
-
+            //query speed
             if (regex_match(msg,re_qry_speed)){
                 handleQuerySpeed(msg);
                 continue;
             }
-
+            //query direction
             if (regex_match(msg,re_qry_direction)){
                 handleQueryDirection(msg);
                 continue;
             }
-
+            //release session
             if (regex_match(msg,re_rel_session)){
                 handleReleaseSession(msg);
                 continue;
             }
-
+            //set unset FNs
             if (regex_match(msg,re_func)){
                 handleSetFunction(msg);
+                continue;
+            }
+            //turnouts
+            if (regex_match(msg,re_turnout)){
+                handleTurnout(msg);
+                continue;
+            }
+            if (regex_match(msg,re_turnout_generic)){
+                handleTurnoutGeneric(msg);
                 continue;
             }
 
@@ -727,6 +755,116 @@ void tcpClient::handleSetFunction(string message){
     else{
         sendFnMessages(session,fn,message);
     }
+}
+
+void tcpClient::handleTurnout(string message){
+
+    /*
+    #received from ed
+    PTA2MT+30;-30
+    #sent back
+    PTA4MT+30;-30
+    */
+
+    logger->debug("[%d] Turnout message found %s",id,message.c_str());
+
+    // the ED always sends an on and off we will consider just the on and toggle the function internally
+    //get the function
+
+    int i = message.find("MT+");
+    int j = message.find(";");
+    logger->debug("[%d] Extracted turnout code: %s" ,id,message.substr(i+3,j-i-3).c_str());
+    int tcode = atoi(message.substr(i+3,j-i-3).c_str());
+
+    //sanity checkings
+    string scode = message.substr(i+3,j-i-3).c_str();
+    if (turnouts->size() == 0){
+        logger->debug("[%d] Turnout table empty. Inserting turnout %d" ,id, tcode);
+        turnouts->addTurnout(scode,tcode);
+    }
+    if (!turnouts->exists(tcode)){
+        logger->debug("[%d] Turnout $d does not exist. Inserting" ,id,tcode);
+        turnouts->addTurnout(scode,tcode);
+        if (!turnouts->exists(tcode)){
+            logger->debug("[%d] Failed to insert turnout %d" ,id, tcode);
+        }
+    }
+    //prepare the data for the cbus messages
+    byte Hb,Lb;
+    Lb = tcode & 0xff;
+    Hb = (tcode >> 8) & 0xff;
+    // check the turnout state and send the short events
+    if (turnouts->getTurnoutState(tcode) == TurnoutState::THROWN){
+        turnouts->CloseTurnout(tcode);
+        sendCbusMessage(OPC_ASOF, 0, 0 , Hb, Lb );
+    }
+    else{
+        turnouts->ThrownTurnout(tcode);
+        sendCbusMessage(OPC_ASON, 0, 0 , Hb, Lb );
+    }
+    sendToEd(turnouts->getTurnoutMsg(tcode) + "\n");
+}
+
+void tcpClient::handleTurnoutGeneric(string message){
+
+    /*
+    #received from ed
+    PTACMT8
+    #sent back
+    PTACMT8
+    */
+
+    logger->debug("[%d] Turnout generic message found %s",id,message.c_str());
+
+    // the ED always sends an on and off we will consider just the on and toggle the function internally
+    //get the function
+
+    int i = message.find("PTA");
+    int j = message.find("MT");
+
+    logger->debug("[%d] Extracted turnout action: %s" ,id,message.substr(i+3,1).c_str());
+    string tstate = message.substr(i+3,1).c_str();
+
+    logger->debug("[%d] Extracted turnout code: %s" ,id,message.substr(j+2,message.size()-j-2).c_str());
+    int tcode = atoi(message.substr(j+2,message.size()-j-2).c_str());
+    //sanity checkings
+    string scode = message.substr(j+2,message.size()-j-2).c_str();
+    if (turnouts->size() == 0){
+        logger->debug("[%d] Turnout table empty. Inserting turnout %d" ,id, tcode);
+        turnouts->addTurnout(scode,tcode);
+    }
+    if (!turnouts->exists(tcode)){
+        logger->debug("[%d] Turnout $d does not exist. Inserting" ,id,tcode);
+        turnouts->addTurnout(scode,tcode);
+        if (!turnouts->exists(tcode)){
+            logger->debug("[%d] Failed to insert turnout %d" ,id, tcode);
+        }
+    }
+    //prepare the data for the cbus messages
+    byte Hb,Lb;
+    Lb = tcode & 0xff;
+    Hb = (tcode >> 8) & 0xff;
+    // check the turnout state and send the short events
+    if (tstate == "C"){
+        turnouts->CloseTurnout(tcode);
+        sendCbusMessage(OPC_ASOF, 0, 0 , Hb, Lb );
+    }
+    else if (tstate == "T"){
+        turnouts->ThrownTurnout(tcode);
+        sendCbusMessage(OPC_ASON, 0, 0 , Hb, Lb );
+    }
+    else {
+        //toggle
+        if (turnouts->getTurnoutState(tcode) == TurnoutState::THROWN){
+            turnouts->CloseTurnout(tcode);
+            sendCbusMessage(OPC_ASOF, 0, 0 , Hb, Lb );
+        }
+        else{
+            turnouts->ThrownTurnout(tcode);
+            sendCbusMessage(OPC_ASON, 0, 0 , Hb, Lb );
+        }
+    }
+    sendToEd(turnouts->getTurnoutMsg(tcode) + "\n");
 }
 
 void tcpClient::sendFnMessages(edSession* session, int fn, string message){

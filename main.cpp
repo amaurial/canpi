@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string>
+#include <sys/stat.h>
 
 //logger
 #include "log4cpp/Portability.hh"
@@ -35,6 +36,7 @@
 
 //project classes
 #include "canHandler.h"
+#include "Turnout.h"
 #define INTERROR 323232
 
 using namespace std;
@@ -80,6 +82,10 @@ int getIntCfgVal(Config *cfg,string key)
   return ret;
 }
 
+inline bool file_exists (const std::string& name) {
+  struct stat buffer;
+  return (stat (name.c_str(), &buffer) == 0);
+}
 
 int main()
 {
@@ -109,6 +115,7 @@ int main()
     //***************
     log4cpp::Priority::PriorityLevel loglevel = log4cpp::Priority::DEBUG;
     string logfile = "canpi.log";
+    string turnoutfile = "turnout.txt";
     int port = 5555;
     string candevice = "can0";
     bool append = false;
@@ -176,6 +183,12 @@ int main()
             start_grid_server = true;
         }
 
+        turnoutfile = getStringCfgVal(&cfg,"turnout_file");
+        if (turnoutfile.empty()){
+            cout << "Failed to get turnout file name. Defaul is turnout.txt" << endl;
+            turnoutfile = "turnout.txt";
+        }
+
     }
 
     log4cpp::PatternLayout * layout1 = new log4cpp::PatternLayout();
@@ -200,10 +213,16 @@ int main()
 
     logger.info("Logger initated");
 
-    canHandler can = canHandler(&logger,110);
+    canHandler can = canHandler(&logger,canid);
     can.start(candevice.c_str());
 
+    Turnout turnouts=Turnout(&logger);
+    if (file_exists(turnoutfile)){
+        turnouts.load(turnoutfile);
+    }
+
     tcpServer tcpserver = tcpServer(&logger,port,&can,ClientType::ED);
+    tcpserver.setTurnout(&turnouts);
     tcpserver.start();
     can.setTcpServer(&tcpserver);
 

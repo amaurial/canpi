@@ -1,0 +1,47 @@
+RL3]\[Ana}|{3}|{S]\[Diesel}|{1}|{S]\[teste}|{0}|{S
+PPA1
+PTT]\[Turnouts}|{Turnout]\[Closed}|{2]\[Thrown}|{4
+PTL]\[MT+10;-10}|{T1T2}|{4]\[MT+30;-30}|{T1}|{4]\[MT+31;-31}|{T2}|{2
+PRT]\[Routes}|{Route]\[Active}|{2]\[Inactive}|{4
+PRL]\[MAINT}|{Main}|{]\[YARD1}|{Yard1}|{
+
+#sent
+PTA2MT+30;-30.
+#received
+PTA2MT+30;-30
+
+#sent
+PTA2MT+30;-30
+#received
+PTA4MT+30;-30
+
+PTA2MT+30;-30
+PTA2MT+30;-30
+
+PTA2MT+30;-30
+PTA4MT+30;-30
+
+PTA2MT+10;-10
+PTA2MT+10;-10
+
+PTA2MT+10;-10
+PTA4MT+10;-10
+
+PTA2MT+10;-10
+PTA2MT+10;-10
+
+#file for merg turnout
+<route name> <event number>
+T1T2 10
+T1 30
+T2 31
+
+RL3]\[Ana}|{3}|{S]\[Diesel}|{1}|{S]\[teste}|{0}|{S
+PPA1
+PTT]\[Turnouts}|{Turnout]\[Closed}|{2]\[Thrown}|{4
+PTL]\[MT+10;-10}|{T1T2}|{4]\[MT+30;-30}|{T1}|{4]\[MT+31;-31}|{T2}|{2
+PRT]\[Routes}|{Route]\[Active}|{2]\[Inactive}|{4
+PRL]\[MAINT}|{Main}|{]\[YARD1}|{Yard1}|{
+RCC0
+PW12080
+

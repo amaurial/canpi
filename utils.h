@@ -7,6 +7,7 @@
 //byte definition
 typedef unsigned char byte;
 enum ClientType {ED,GRID};
+enum TurnoutState {CLOSED,THROWN,UNKNOWN};
 
 //custom exception class
 class my_exception : public std::runtime_error {

@@ -7,6 +7,7 @@
 #include <map>
 #include "Client.h"
 #include "canHandler.h"
+#include "Turnout.h"
 
 
 
@@ -24,6 +25,7 @@ class tcpServer
         void removeClient(Client* client);
         void addCanMessage(int canid,const char* msg,int dlc);
         ClientType getClientType(){return clientType;};
+        void setTurnout(Turnout* turnouts);
 
     protected:
     private:
@@ -38,6 +40,7 @@ class tcpServer
         log4cpp::Category *logger;
         std::map<int,Client*> clients;
         pthread_t serverThread;
+        Turnout* turnouts;
 
 
         void removeClients();
