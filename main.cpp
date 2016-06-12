@@ -148,11 +148,11 @@ int main()
 
         canid = getIntCfgVal(&cfg,"canid");
         if (canid == INTERROR){
-                cout << "Failed to get canid. Defaul is 110" << endl;
+                cout << "Failed to get canid. Default is 110" << endl;
             canid = 110;
         }
 
-        gridport = getIntCfgVal(&cfg,"cangridport");
+        gridport = getIntCfgVal(&cfg,"cangrid_port");
         if (gridport == INTERROR){
                 cout << "Failed to get tcp port. Defaul is 5555" << endl;
             gridport = 5555;
@@ -167,9 +167,9 @@ int main()
             append = true;
         }
 
-        string grid= getStringCfgVal(&cfg,"cangrid");
+        string grid= getStringCfgVal(&cfg,"can_grid");
         if (grid.empty()){
-            cout << "Failed to get cangrid . Defaul is false" << endl;
+            cout << "Failed to get can_grid . Defaul is false" << endl;
             start_grid_server = false;
         }
         if ((grid.compare("true") == 0) | (grid.compare("TRUE") == 0) | (grid.compare("True") == 0)){

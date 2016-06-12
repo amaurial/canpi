@@ -14,6 +14,8 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
 dir="/home/pi/canpi"
 cmd="/home/pi/canpi/canpi"
+webdir="$dir/webserver"
+webcmd="/usr/bin/python $webdir/canpiconfig.py 80"
 config="${dir}/canpi.cfg"
 user=""
 
@@ -21,6 +23,11 @@ name=`basename $0`
 pid_file="/var/run/$name.pid"
 stdout_log="/var/log/$name.log"
 stderr_log="/var/log/$name.err"
+
+webname="canpiconfig"
+web_pid_file="/var/run/$webname.pid"
+web_stdout_log="/var/log/$webname.log"
+web_stderr_log="/var/log/$webname.err"
 
 source $config
 
@@ -54,6 +61,14 @@ get_pid() {
 
 is_running() {
     [ -f "$pid_file" ] && ps `get_pid` > /dev/null 2>&1
+}
+
+get_web_pid() {
+    cat "$web_pid_file"
+}
+
+is_web_running() {
+    [ -f "$web_pid_file" ] && ps `get_web_pid` > /dev/null 2>&1
 }
 
 is_avahi_running(){
@@ -108,7 +123,7 @@ setup_wpa_supplicant(){
 
     #change the password
     sudo sed -i 's/PASSWORD/'"$router_password"'/' $wpa_file
- 
+
 }
 
 setup_hostapd(){
@@ -116,13 +131,13 @@ setup_hostapd(){
     #back the old file
     sudo mv $hostapd_file "${hostapd_file}.bak"
     sudo cp $hostapd_template $hostapd_file
-    
+
     #change the ssid
     sudo sed -i 's/SSID/'"$ap_ssid"'/' $hostapd_file
-    
+
     #change the password
     sudo sed -i 's/PASSWORD/'"$ap_password"'/' $hostapd_file
- 
+
     #change the channel
     sudo sed -i 's/CHANNEL/'"$ap_channel"'/' $hostapd_file
 }
@@ -162,14 +177,14 @@ restore_dhcp_default(){
 setup_ap_mode()
 {
     echo "Configuring to AP mode"
-    
-    
+
+
     sleep 1
     sudo /etc/init.d/hostapd stop
     sleep 1
     sudo /etc/init.d/isc-dhcp-server stop
-    
-    
+
+
     echo "Restarting wlan0"
     sudo ip link set wlan0 down
     setup_iface_ap
@@ -181,10 +196,10 @@ setup_ap_mode()
     sudo /etc/init.d/hostapd start
     sleep 1
     sudo /etc/init.d/isc-dhcp-server start
-    
+
     echo "Configuring the hostapd daemon"
     sudo /usr/sbin/update-rc.d hostapd defaults
-    echo "Configuring DHCP server" 
+    echo "Configuring DHCP server"
     sudo /usr/sbin/update-rc.d isc-dhcp-server defaults
 }
 
@@ -192,14 +207,14 @@ setup_wifi_mode(){
     echo "Configuring to wifi mode"
     setup_iface_wifi
     setup_wpa_supplicant
-     
+
     echo "Stoping wlan0"
     sudo ip link set wlan0 down
-    
+
     echo "Stoping the hostapd service"
-    sudo /etc/init.d/hostapd stop    
+    sudo /etc/init.d/hostapd stop
     sleep 1
-    
+
     echo "Stoping the DHCP service"
     sudo /etc/init.d/isc-dhcp-server stop
     sleep 1
@@ -210,7 +225,7 @@ setup_wifi_mode(){
     #sleep 1
     #remove_hostapd_default
     #remove_dhcp_default
-    sudo /usr/sbin/update-rc.d hostapd remove 
+    sudo /usr/sbin/update-rc.d hostapd remove
     sleep 1
     sudo /usr/sbin/update-rc.d isc-dhcp-server remove
 }
@@ -227,9 +242,60 @@ bootstrap(){
    echo "bootstrap"
 }
 
+start_webserver(){
+    if is_web_running; then
+        echo "Web service already started"
+    else
+        echo "Starting $webname"
+        cd "$webdir"
+
+        if [ -z "$user" ]; then
+            sudo $webcmd >> "$web_stdout_log" 2>> "$web_stderr_log" &
+        else
+            sudo -u "$user" $webcmd >> "$web_stdout_log" 2>> "$web_stderr_log" &
+        fi
+        echo $! > "$web_pid_file"
+        if ! is_web_running; then
+            echo "Unable to start, see $web_stdout_log and $web_stderr_log"
+            exit 1
+        fi
+    fi
+}
+
+stop_webserver(){
+    if is_web_running; then
+        echo -n "Stopping $webname.."
+        kill `get_web_pid`
+        for i in {1..10}
+        do
+            if ! is_web_running; then
+                break
+            fi
+
+            echo -n "."
+            sleep 1
+        done
+        echo
+
+        if is_web_running; then
+            echo "$webname not stopped; may still be shutting down or shutdown may have failed"
+            #exit 1
+        else
+            echo "Stopped"
+            if [ -f "$web_pid_file" ]; then
+                rm "$web_pid_file"
+            fi
+        fi
+    else
+        echo "$webname not running"
+    fi
+}
 
 case "$1" in
     start)
+
+    start_webserver
+
     if is_running; then
         echo "Already started"
     else
@@ -253,7 +319,9 @@ case "$1" in
     fi
     ;;
     stop)
-    sudo /sbin/ip link set can0 down
+
+    stop_webserver
+    #sudo /sbin/ip link set can0 down
     if is_running; then
         echo -n "Stopping $name.."
         kill `get_pid`
@@ -281,6 +349,66 @@ case "$1" in
         echo "Not running"
     fi
     ;;
+    startcanpi)
+
+    if is_running; then
+        echo "Already started"
+    else
+        echo "Starting $name"
+        cd "$dir"
+
+        #restart can interface
+        #sudo /sbin/ip link set can0 down
+        #sudo /sbin/ip link set can0 up type can bitrate 125000 restart-ms 1000
+
+        if [ -z "$user" ]; then
+            sudo $cmd >> "$stdout_log" 2>> "$stderr_log" &
+        else
+            sudo -u "$user" $cmd >> "$stdout_log" 2>> "$stderr_log" &
+        fi
+        echo $! > "$pid_file"
+        if ! is_running; then
+            echo "Unable to start, see $stdout_log and $stderr_log"
+            exit 1
+        fi
+    fi
+    ;;
+    stopcanpi)
+    if is_running; then
+        echo -n "Stopping $name.."
+        kill `get_pid`
+        for i in {1..10}
+        do
+            if ! is_running; then
+                break
+            fi
+
+            echo -n "."
+            sleep 1
+        done
+        echo
+
+        if is_running; then
+            echo "Not stopped; may still be shutting down or shutdown may have failed"
+            exit 1
+        else
+            echo "Stopped"
+            if [ -f "$pid_file" ]; then
+                rm "$pid_file"
+            fi
+        fi
+    else
+        echo "Not running"
+    fi
+    ;;
+    restartcanpi)
+    $0 stopcanpi
+    if is_running; then
+        echo "Unable to stop, will not attempt to start"
+        exit 1
+    fi
+    $0 startcanpi
+    ;;
     restart)
     $0 stop
     if is_running; then
@@ -291,7 +419,7 @@ case "$1" in
     ;;
     configure)
         echo "Configuring the services"
-        if [ $ap_mode == "true" ];then
+        if [[ $ap_mode == "true" || $ap_mode == "True" || $ap_mode == "TRUE" ]];then
            echo "Starting configuration for AP Mode"
            setup_ap_mode
         else
@@ -299,15 +427,21 @@ case "$1" in
            setup_wifi_mode
         fi
         setup_bonjour
-        sleep 5
+        sleep 1
         echo "Rebooting"
         sudo reboot
     ;;
     status)
-    if is_running; then
-        echo "Running"
+    if is_web_running; then
+        echo "Config is Running"
     else
-        echo "Stopped"
+        echo "Config Stopped"
+    fi
+
+    if is_running; then
+        echo "Canpi is Running"
+    else
+        echo "Canpi Stopped"
         exit 1
     fi
     ;;
