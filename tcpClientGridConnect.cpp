@@ -166,6 +166,8 @@ void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
 
             logger->debug("Grid parsed canid:%d data:%s",icanid,candata);
             can->insert_data(icanid,candata,j,clientType);
+            server->postMessageToAllClients(id,icanid,candata,j,clientType);
+
 
         }
         else{

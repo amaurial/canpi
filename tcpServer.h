@@ -26,6 +26,7 @@ class tcpServer
         void addCanMessage(int canid,const char* msg,int dlc);
         ClientType getClientType(){return clientType;};
         void setTurnout(Turnout* turnouts);
+        void postMessageToAllClients(int clientId,int canid,char *msg,int msize,ClientType ct);
 
     protected:
     private:

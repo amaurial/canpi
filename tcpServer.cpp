@@ -170,3 +170,17 @@ void tcpServer::setTurnout(Turnout* turnouts){
     this->turnouts = turnouts;
 }
 
+void tcpServer::postMessageToAllClients(int clientId,int canid,char *msg,int msize,ClientType ct){
+    //transverse the clients and send the message to all except the clientId
+    logger->info("Sending messages to other clients");
+    std::map<int,Client*>::iterator it = clients.begin();
+    while(it != clients.end())
+    {
+        if (it->second->getId() != clientId){
+            logger->info("Stop client %d", it->second->getId());
+            it->second->canMessage(canid,msg,msize);
+        }
+        it++;
+    }
+}
+
