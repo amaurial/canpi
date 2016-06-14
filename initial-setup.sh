@@ -144,14 +144,12 @@ mv /etc/default/isc-dhcp-server /etc/default/isc-dhcp-server.old
 cp "$canpidir/isc-dhcp-server" /etc/default 
 
 echo "########### CONFIG SCRIPT FILES ###############"
-read
 #copy the configure script
 cp "$canpidir/start_canpi.sh" /etc/init.d/
 chmod +x /etc/init.d/start_canpi.sh
 update-rc.d start_canpi.sh defaults
 
 echo "########### RUN CONFIGURE ###############"
-read
 #run configure
 /etc/init.d/start_canpi.sh configure
 
