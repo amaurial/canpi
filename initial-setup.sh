@@ -39,7 +39,7 @@ create_default_canpi_config(){
   echo "#log config" > $conf
   echo "logfile=\"canpi.log\"" >> $conf
   echo "#INFO,WARN,DEBUG" >> $conf
-  echo "loglevel=\"DEBUG\"" >> $conf
+  echo "loglevel=\"INFO\"" >> $conf
   echo "logappend=\"false\"" >> $conf
   echo "#ed service config" >> $conf
   echo "tcpport=5555" >> $conf
