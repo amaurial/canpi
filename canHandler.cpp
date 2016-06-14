@@ -49,7 +49,9 @@ int canHandler::insert_data(int canid,char *msg,int msize,ClientType ct){
     int j = CAN_MSG_SIZE;
     struct can_frame frame;
     if (msize < 1){
-        return 0;
+        if (canid != CAN_RTR_FLAG){
+            return 0;
+        }
     }
 
     if (msize < CAN_MSG_SIZE){
@@ -107,7 +109,6 @@ int canHandler::start(const char* interface){
 	pthread_create(&queueWriter,nullptr,canHandler::thread_entry_out,this);
 
 	return canInterface;
-
 }
 
 void canHandler::stop(){
@@ -167,6 +168,17 @@ void canHandler::run_queue_reader(void* param){
         if (!in_msgs.empty()){
             frame = in_msgs.front();
             print_frame(&frame,"Received");
+            /*
+            if (auto_enum_mode){
+                sysTimeMS_end = time(0)*1000;
+                if ((sysTimeMS_end - sysTimeMS_start) > WAIT_ENUM){
+                    auto_enum_mode = false;
+                    if (frame.data[0] == OPC_ENUM){
+
+                    }
+                }
+            }
+            */
             if (servers.size() > 0){
                 for (server = servers.begin();server != servers.end(); server++){
                     (*server)->addCanMessage(frame.can_id,(char*)frame.data, frame.can_dlc);
@@ -212,4 +224,15 @@ void canHandler::run_out(void* param){
 
     }
     logger->debug("Stopping the queue writer");
+}
+
+void canHandler::doSelfEnum(){
+    //start can enumeration
+    auto_enum_mode = true;
+    struct can_frame frame;
+    memset(frame.data , 0 , sizeof(frame.data));
+    frame.can_id = CAN_RTR_FLAG;
+    frame.can_dlc = 0;
+    sysTimeMS_start = time(0)*1000;
+    write(canInterface,&frame,CAN_MTU);
 }

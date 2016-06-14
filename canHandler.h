@@ -13,10 +13,12 @@
 #include <queue>
 #include <string>
 #include <vector>
+#include <ctime>
 #include "tcpServer.h"
 #include "utils.h"
 
 #define CAN_MSG_SIZE 8
+#define WAIT_ENUM 200 //ms
 
 using namespace std;
 class tcpServer;
@@ -48,10 +50,15 @@ class canHandler
         vector<tcpServer*> servers;
         std::queue<can_frame> in_msgs;
         std::queue<can_frame> out_msgs;
+        bool auto_enum_mode = false;
+        vector<int> canids;
+        long double sysTimeMS_start;
+        long double sysTimeMS_end;
 
         void run_in(void* param);
         void run_out(void* param);
         void run_queue_reader(void* param);
+        void doSelfEnum();
 
         void print_frame(can_frame *frame,string message);
 

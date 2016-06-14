@@ -43,7 +43,6 @@ class tcpServer
         pthread_t serverThread;
         Turnout* turnouts;
 
-
         void removeClients();
         void run(void* param);
         void run_client(void* param);
