@@ -18,8 +18,13 @@ config_boot_config(){
    sed -i "s/dtparam=spi=off/dtparam=spi=on/" $bootconf
    #in case the entry is not there
    append_to_file "dtparam=spi=on" $bootconf
-   append_to_file "dtoverlay=mcp2515-can0-overlay,oscillator=16000000,interrupt=25" $bootconf
-   append_to_file "dtoverlay=spi-bcm2835-overlay" $bootconf
+   ls /boot/overlay/mcp2515-can0-overlay*
+   if [ $? == 0 ];then
+       append_to_file "dtoverlay=mcp2515-can0-overlay,oscillator=16000000,interrupt=25" $bootconf
+   else
+       append_to_file "dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25" $bootconf
+   fi
+#   append_to_file "dtoverlay=spi-bcm2835-overlay" $bootconf
 }
 
 add_can_interface(){
@@ -63,47 +68,90 @@ read wssid
 echo "Type the Wifi password followed by [ENTER]:"
 read wpassword
 
+echo "########### APT UPDATE ###############"
 apt-get update
-agt-get install git
+echo "########### GIT ###############"
+apt-get install git
+echo "########### HOSTAPD ###############"
 apt-get install hostapd
+echo "########### DHCP ###############"
 apt-get install isc-dhcp-server
+echo "########### CAN UTILS ###############"
+apt-get install can-utils
 
+echo "########### BOOT CONFIG ###############"
 config_boot_config
+echo "########### CAN INTERFACE ###############"
 add_can_interface
 
+echo "########### GET THE CANPI CODE ###############"
 #get the code
 cd $dir
 git clone https://github.com/amaurial/canpi.git
 
+echo "########### COMPILE CANPI ###############"
 #compile the code
 cd canpi
 make clean
 make all
+echo "########### CREATE CONFIG ###############"
 create_default_canpi_config
 #change the router ssid and password
-sed -i 's/SSID/$wssid/' "$canpidir/canpi.cfg"
-sed -i 's/PASSWORD/$wpassword/' "$canpidir/canpi.cfg"
-cd ..
+sed -i 's/SSID/'"$wssid"'/' "$canpidir/canpi.cfg"
+sed -i 's/PASSWORD/'"$wpassword"'/' "$canpidir/canpi.cfg"
+
+echo "########### WEBSERVER ###############"
+#install the webpy
+tar xvf webpy.tar.gz
+mv webpy-webpy-770baf8 webpy
+cd webpy
+python setup.py install
+
+echo "########### CHANGE DIR OWNER ###############"
+cd $dir
 chown -R pi canpi
 
+echo "########### MOVE CONFIG FILES ###############"
 #backup and move some basic files
-mv /etc/hostapd/hostapd.conf /etc/hostapd/hostapd.conf.old
+FILE="/etc/hostapd/hostapd.conf"
+FILEBAK="${FILE}.bak"
+if [ -f $FILE ];
+then
+    mv $FILE $FILEBAK
+fi
 cp "$canpidir/hostapd.conf" /etc/hostapd/
 
-mv /etc/default/hostapd /etc/default/hostapd.old
+
+FILE="/etc/default/hostapd"
+FILEBAK="${FILE}.bak"
+if [ -f $FILE ];
+then
+    mv $FILE $FILEBAK
+fi
+
 cp "$canpidir/hostapd" /etc/default/
 
-mv /etc/dhcp/dhcpd.conf /etc/dhcp/dhcpd.conf.old
+FILE="/etc/dhcp/dhcpd.conf"
+FILEBAK="${FILE}.bak"
+if [ -f $FILE ];
+then
+    mv $FILE $FILEBAK
+fi
+
 cp "$canpidir/dhcpd.conf" /etc/dhcp/
 
 mv /etc/default/isc-dhcp-server /etc/default/isc-dhcp-server.old
 cp "$canpidir/isc-dhcp-server" /etc/default 
 
+echo "########### CONFIG SCRIPT FILES ###############"
+read
 #copy the configure script
-cp "$candir/start_canpi.sh" /etc/init.d/
+cp "$canpidir/start_canpi.sh" /etc/init.d/
 chmod +x /etc/init.d/start_canpi.sh
 update-rc.d start_canpi.sh defaults
 
+echo "########### RUN CONFIGURE ###############"
+read
 #run configure
 /etc/init.d/start_canpi.sh configure
 
