@@ -37,9 +37,9 @@ Extracted from the Developer’s Guide for CBUS (Version 5g)
 //ModuleID
 #define MID 54
 //Software version
-#define MSOFT_VERSION 1
-#define MSOFT_MIN_VERSION 0
-#define MFLAGS 0b00000000
+#define MSOFT_VERSION '1'
+#define MSOFT_MIN_VERSION '0'
+#define MFLAGS 0b01100000
 
 
 // CBUS opcodes list

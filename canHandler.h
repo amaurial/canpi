@@ -14,8 +14,10 @@
 #include <string>
 #include <vector>
 #include <ctime>
+#include <algorithm>
 #include "tcpServer.h"
 #include "utils.h"
+#include "opcodes.h"
 
 #define CAN_MSG_SIZE 8
 #define WAIT_ENUM 200 //ms
@@ -38,6 +40,7 @@ class canHandler
     protected:
     private:
         int canId;
+        int node_number;
         int canInterface;
         int running;
         struct ifreq ifr;
@@ -59,6 +62,8 @@ class canHandler
         void run_out(void* param);
         void run_queue_reader(void* param);
         void doSelfEnum();
+        void finishSelfEnum(int id);
+        void handleCBUSEvents(struct can_frame frame);
 
         void print_frame(can_frame *frame,string message);
 

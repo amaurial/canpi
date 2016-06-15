@@ -80,6 +80,7 @@ void tcpServer::run(void* param){
     logger->info("Waiting for connections on port %d",port);
 
     struct sockaddr_in client_addr;
+    vector<pthread_t> threads;
     socklen_t len = sizeof(client_addr);
     logger->info("Tcp server running");
 
@@ -130,10 +131,16 @@ void tcpServer::run(void* param){
             pthread_t clientThread;
             pthread_create(&clientThread, nullptr, tcpServer::thread_entry_run_client, this);
             clients.insert(std::pair<int,Client*>(counter,cl));
+            threads.push_back(clientThread);
             counter++;
         }
-
     }
+
+    for (vector<pthread_t>::iterator itt = threads.begin();itt!=threads.end();itt++){
+        pthread_cancel(*itt);
+    }
+    threads.clear();
+
 }
 
 void tcpServer::run_client(void* param){
@@ -164,6 +171,7 @@ void tcpServer::removeClient(Client *client){
     else{
         logger->debug("Could not remove tcp client with id: %d",client->getId());
     }
+    delete client;
 }
 
 void tcpServer::setTurnout(Turnout* turnouts){

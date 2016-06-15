@@ -168,17 +168,26 @@ void canHandler::run_queue_reader(void* param){
         if (!in_msgs.empty()){
             frame = in_msgs.front();
             print_frame(&frame,"Received");
-            /*
-            if (auto_enum_mode){
-                sysTimeMS_end = time(0)*1000;
-                if ((sysTimeMS_end - sysTimeMS_start) > WAIT_ENUM){
-                    auto_enum_mode = false;
-                    if (frame.data[0] == OPC_ENUM){
 
-                    }
+            if (frame.data[0] == OPC_QNN ||
+                frame.data[0] == OPC_RQMN ||
+                frame.data[0] == OPC_RQNP ||
+                frame.data[0] == OPC_SNN ){
+                handleCBUSEvents(frame);
+            }
+
+            if (auto_enum_mode){
+                if (frame.can_dlc == 0){
+                    finishSelfEnum(frame.can_id);
                 }
             }
-            */
+            if (frame.data[0] == OPC_ENUM){
+                //get node number
+                int nn=frame.data[1];
+                nn = (nn << 8) | frame.data[2];
+                logger->debug("OPC_ENUM node number %d",nn);
+                doSelfEnum();
+            }
             if (servers.size() > 0){
                 for (server = servers.begin();server != servers.end(); server++){
                     (*server)->addCanMessage(frame.can_id,(char*)frame.data, frame.can_dlc);
@@ -228,6 +237,7 @@ void canHandler::run_out(void* param){
 
 void canHandler::doSelfEnum(){
     //start can enumeration
+    logger->debug("Starting can enumeration");
     auto_enum_mode = true;
     struct can_frame frame;
     memset(frame.data , 0 , sizeof(frame.data));
@@ -236,3 +246,112 @@ void canHandler::doSelfEnum(){
     sysTimeMS_start = time(0)*1000;
     write(canInterface,&frame,CAN_MTU);
 }
+
+void canHandler::finishSelfEnum(int id){
+    sysTimeMS_end = time(0)*1000;
+    canids.push_back(id);
+    if ((sysTimeMS_end - sysTimeMS_start) > WAIT_ENUM){
+        logger->debug("Finishing auto enumeration.");
+        auto_enum_mode = false;
+        //sort and get the smallest free
+        if (canids.size()>0){
+            int c,n;
+            canId = 0;
+            sort(canids.begin(),canids.end());
+            c = canids.front();
+            n = 1;
+            while (canId == 0){
+                if (n != c){
+                    canId = n;
+                }
+                else{
+                    n++;
+                    if (canids.size() > 0){
+                        c = canids.front();
+                    }
+                    else {
+                        canId = n;
+                    }
+                }
+            }
+
+        }
+        else{
+            canId = 1;
+        }
+        logger->debug("New canid is %d", canId);
+    }
+}
+
+void canHandler::handleCBUSEvents(struct can_frame frame){
+
+    char sendframe[CAN_MSG_SIZE];
+    memset(sendframe,0,CAN_MSG_SIZE);
+    byte Hb,Lb;
+
+    switch (frame.data[0]){
+    case OPC_QNN:
+        Lb = node_number & 0xff;
+        Hb = (node_number >> 8) & 0xff;
+        sendframe[0] = OPC_PNN;
+        sendframe[1] = Hb;
+        sendframe[2] = Lb;
+        sendframe[3] = MANU_MERG;
+        sendframe[4] = MID;
+        sendframe[5] = MFLAGS;
+        insert_data(sendframe,6,ClientType::ED);
+    break;
+    case OPC_RQNP:
+        sendframe[0] = OPC_PARAMS;
+        sendframe[1] = MANU_MERG;
+        sendframe[2] = MSOFT_MIN_VERSION;
+        sendframe[3] = MID;
+        sendframe[4] = 0;
+        sendframe[5] = 0;
+        sendframe[6] = 10;//TODO
+        sendframe[7] = MSOFT_VERSION;
+        insert_data(sendframe,8,ClientType::ED);
+    break;
+    case OPC_RQMN:
+        sendframe[0] = OPC_NAME;
+        sendframe[1] = 'C';
+        sendframe[2] = 'A';
+        sendframe[3] = 'N';
+        sendframe[4] = 'W';
+        sendframe[5] = 'I';
+        sendframe[6] = 'F';
+        sendframe[7] = 'I';
+        insert_data(sendframe,8,ClientType::ED);
+    break;
+    }
+}
+
+/*
+OPC_QNN
+case OPC_PNN:
+        prepareMessageBuff(OPC_PNN,highByte(nodeId.getNodeNumber()),lowByte(nodeId.getNodeNumber()),
+                            nodeId.getManufacturerId(),nodeId.getModuleId(),nodeId.getFlags());
+
+        break;
+        OPC_RQMN
+    case OPC_NAME:
+        prepareMessageBuff(OPC_NAME,nodeId.getNodeName()[0],nodeId.getNodeName()[1],
+                            nodeId.getNodeName()[2],nodeId.getNodeName()[3],
+                            nodeId.getNodeName()[4],nodeId.getNodeName()[5],
+                            nodeId.getNodeName()[6]);
+
+        break;
+        OPC_RQNP
+    case OPC_PARAMS:
+        prepareMessageBuff(OPC_PARAMS,nodeId.getManufacturerId(),
+                           nodeId.getMinCodeVersion(),nodeId.getModuleId(),
+                           nodeId.getSuportedEvents(),nodeId.getSuportedEventsVariables(),
+                           nodeId.getSuportedNodeVariables(),nodeId.getMaxCodeVersion());
+
+    OPC_SNN
+   prepareMessageBuff(OPC_NNACK,
+highByte(nodeId.getNodeNumber()),
+lowByte(nodeId.getNodeNumber())  );
+
+
+*/
