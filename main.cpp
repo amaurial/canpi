@@ -21,6 +21,7 @@
 #include "log4cpp/Category.hh"
 #include "log4cpp/Appender.hh"
 #include "log4cpp/FileAppender.hh"
+#include "log4cpp/RollingFileAppender.hh"
 #include "log4cpp/OstreamAppender.hh"
 #ifdef LOG4CPP_HAVE_SYSLOG
 #include "log4cpp/SyslogAppender.hh"
@@ -188,7 +189,6 @@ int main()
             cout << "Failed to get turnout file name. Defaul is turnout.txt" << endl;
             turnoutfile = "turnout.txt";
         }
-
     }
 
     log4cpp::PatternLayout * layout1 = new log4cpp::PatternLayout();
@@ -200,10 +200,11 @@ int main()
 
     log4cpp::PatternLayout * layout2 = new log4cpp::PatternLayout();
     layout2->setConversionPattern("%d [%p] %m%n");
-    log4cpp::Appender *appender2 = new log4cpp::FileAppender("default", logfile, append);
+
+    //log4cpp::Appender *appender2 = new log4cpp::FileAppender("default", logfile, append);
+    log4cpp::Appender *appender2 = new log4cpp::RollingFileAppender("default", logfile,5*1024*1024,10, append);//5M
     appender2->setLayout(new log4cpp::BasicLayout());
     appender2->setLayout(layout2);
-
 
     log4cpp::Category& logger = log4cpp::Category::getRoot();
     //logger.setPriority(log4cpp::Priority::DEBUG);
