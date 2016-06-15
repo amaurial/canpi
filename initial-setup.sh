@@ -109,7 +109,7 @@ python setup.py install
 
 echo "########### CHANGE DIR OWNER ###############"
 cd $dir
-chown -R pi canpi
+chown -R pi.pi canpi
 
 echo "########### MOVE CONFIG FILES ###############"
 #backup and move some basic files
