@@ -16,36 +16,6 @@ enum TurnoutState {CLOSED,THROWN,UNKNOWN};
 
 #define INTERROR 323232
 
-
-/**
-* Save configuration item
-**/
-/*
-int saveConfig(string key,string val){
-    Config cfg;
-    string filename="canpi.cfg";
-    try
-    {
-       cfg.readFile(filename.c_str());
-
-       if (cfg.exists(key)){
-            libconfig::Setting &varkey = cfg.lookup(key);
-            varkey = val;
-            cfg.writeFile(filename.c_str());
-       }
-
-    }
-    catch(const FileIOException &fioex)
-    {
-        std::cerr << "File I/O error" << std::endl;
-    }
-    catch(const ParseException &pex)
-    {
-        std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
-	          << " - " << pex.getError() << std::endl;
-    }
-}
-*/
 //custom exception class
 class my_exception : public std::runtime_error {
     std::string msg;

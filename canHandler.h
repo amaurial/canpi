@@ -64,6 +64,8 @@ class canHandler
         void doSelfEnum();
         void finishSelfEnum(int id);
         void handleCBUSEvents(struct can_frame frame);
+        int saveConfig(string key,string val);
+        int saveConfig(string key,int val);
 
         void print_frame(can_frame *frame,string message);
 

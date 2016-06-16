@@ -210,7 +210,7 @@ void tcpClient::handleEDMessages(char* msgptr){
             if (msgtemp[0] == 'N'){
                 logger->debug("[%d] ED name: %s" ,id, msgtemp);
                 edsession->setEdName(msg.substr(1,msg.length()-1));
-                sendToEd("\n"); //keep alive each 10 seconds
+                sendToEd("*10\n"); //keep alive each 10 seconds
                 continue;
             }
 

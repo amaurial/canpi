@@ -5,9 +5,9 @@
 #include <sys/socket.h>
 #include <arpa/inet.h> //inet_addr
 #include <log4cpp/Category.hh>
+#include "utils.h"
 #include "tcpServer.h"
 #include "canHandler.h"
-#include "utils.h"
 
 using namespace std;
 

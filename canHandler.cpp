@@ -328,6 +328,65 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
     }
 }
 
+/**
+* Save configuration item
+**/
+
+int canHandler::saveConfig(string key,string val){
+    Config cfg;
+    string filename="canpi.cfg";
+    try
+    {
+       cfg.readFile(filename.c_str());
+
+       if (cfg.exists(key)){
+            libconfig::Setting &varkey = cfg.lookup(key);
+            varkey = val;
+            cfg.writeFile(filename.c_str());
+       }
+
+    }
+    catch(const FileIOException &fioex)
+    {
+        std::cerr << "File I/O error" << std::endl;
+        return 1;
+    }
+    catch(const ParseException &pex)
+    {
+        std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
+	          << " - " << pex.getError() << std::endl;
+        return 1;
+    }
+    return 0;
+}
+int canHandler::saveConfig(string key,int val){
+    Config cfg;
+    string filename="canpi.cfg";
+    try
+    {
+       cfg.readFile(filename.c_str());
+
+       if (cfg.exists(key)){
+            libconfig::Setting &varkey = cfg.lookup(key);
+            varkey = val;
+            cfg.writeFile(filename.c_str());
+       }
+
+    }
+    catch(const FileIOException &fioex)
+    {
+        std::cerr << "File I/O error" << std::endl;
+        return 1;
+    }
+    catch(const ParseException &pex)
+    {
+        std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
+	          << " - " << pex.getError() << std::endl;
+        return 1;
+    }
+    return 0;
+}
+
 /*
 OPC_QNN
 case OPC_PNN:

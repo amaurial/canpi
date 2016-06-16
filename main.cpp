@@ -44,16 +44,6 @@ using namespace std;
 using namespace libconfig;
 int running = 1;
 
-void sigterm(int signo)
-{
-   running = 0;
-}
-
-inline bool file_exists (const std::string& name) {
-  struct stat buffer;
-  return (stat (name.c_str(), &buffer) == 0);
-}
-
 /**
 * Usefull function to get string from config file
 **/
@@ -87,6 +77,17 @@ int getIntCfgVal(Config *cfg,string key)
   }
   return ret;
 }
+
+void sigterm(int signo)
+{
+   running = 0;
+}
+
+inline bool file_exists (const std::string& name) {
+  struct stat buffer;
+  return (stat (name.c_str(), &buffer) == 0);
+}
+
 
 int main()
 {
