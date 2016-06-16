@@ -169,24 +169,19 @@ void canHandler::run_queue_reader(void* param){
             frame = in_msgs.front();
             print_frame(&frame,"Received");
 
-            if (frame.data[0] == OPC_QNN ||
-                frame.data[0] == OPC_RQMN ||
-                frame.data[0] == OPC_RQNP ||
-                frame.data[0] == OPC_SNN ){
-                handleCBUSEvents(frame);
-            }
-
+            //finish auto enum
             if (auto_enum_mode){
                 if (frame.can_dlc == 0){
                     finishSelfEnum(frame.can_id);
                 }
             }
-            if (frame.data[0] == OPC_ENUM){
-                //get node number
-                int nn=frame.data[1];
-                nn = (nn << 8) | frame.data[2];
-                logger->debug("OPC_ENUM node number %d",nn);
-                doSelfEnum();
+            //Handle cbus
+            if (frame.data[0] == OPC_QNN ||
+                frame.data[0] == OPC_RQMN ||
+                frame.data[0] == OPC_RQNP ||
+                frame.data[0] == OPC_SNN ||
+                frame.data[0] == OPC_ENUM){
+                handleCBUSEvents(frame);
             }
             if (servers.size() > 0){
                 for (server = servers.begin();server != servers.end(); server++){
@@ -322,6 +317,13 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         sendframe[6] = 'F';
         sendframe[7] = 'I';
         insert_data(sendframe,8,ClientType::ED);
+    break;
+    case OPC_ENUM:
+        //get node number
+        int nn=frame.data[1];
+        nn = (nn << 8) | frame.data[2];
+        logger->debug("OPC_ENUM node number %d",nn);
+        doSelfEnum();
     break;
     }
 }

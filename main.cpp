@@ -36,9 +36,9 @@
 #include "libconfig.h++"
 
 //project classes
+#include "utils.h"
 #include "canHandler.h"
 #include "Turnout.h"
-#define INTERROR 323232
 
 using namespace std;
 using namespace libconfig;
@@ -47,6 +47,11 @@ int running = 1;
 void sigterm(int signo)
 {
    running = 0;
+}
+
+inline bool file_exists (const std::string& name) {
+  struct stat buffer;
+  return (stat (name.c_str(), &buffer) == 0);
 }
 
 /**
@@ -83,11 +88,6 @@ int getIntCfgVal(Config *cfg,string key)
   return ret;
 }
 
-inline bool file_exists (const std::string& name) {
-  struct stat buffer;
-  return (stat (name.c_str(), &buffer) == 0);
-}
-
 int main()
 {
     bool hasconfig = true;
@@ -102,14 +102,14 @@ int main()
     }
     catch(const FileIOException &fioex)
     {
-	std::cerr << "File I/O error" << std::endl;
-	hasconfig = false;
+        std::cerr << "File I/O error" << std::endl;
+        hasconfig = false;
     }
     catch(const ParseException &pex)
     {
-	std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
+        std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
 	          << " - " << pex.getError() << std::endl;
-	hasconfig = false;
+        hasconfig = false;
     }
     //****************
     //default config
