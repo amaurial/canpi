@@ -548,7 +548,9 @@ void tcpClient::handleDirection(string message){
     int sesid = sessions[loco]->getSession();
     sessions[loco]->setDirection(d);
     logger->debug("[%d] Set direction %d for loco %d" ,id, d ,loco);
-    sendCbusMessage(OPC_DSPD,sesid, d * BS + sessions[loco]->getSpeed());
+    int speed = sessions[loco]->getSpeed();
+    if (speed == 1) speed++;
+    sendCbusMessage(OPC_DSPD,sesid, d * BS + speed);
 
 }
 
