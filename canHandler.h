@@ -15,6 +15,7 @@
 #include <vector>
 #include <ctime>
 #include <algorithm>
+#include <wiringPi.h>
 #include "tcpServer.h"
 #include "utils.h"
 #include "opcodes.h"
@@ -68,6 +69,7 @@ class canHandler
         void handleCBUSEvents(struct can_frame frame);
         int saveConfig(string key,string val);
         int saveConfig(string key,int val);
+        void checkButtonPressed();
 
         void print_frame(can_frame *frame,string message);
 

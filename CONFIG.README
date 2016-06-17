@@ -9,11 +9,11 @@ Add the overlays by:
 sudo nano /boot/config.txt
 Add these 3 lines to the end of file:
 
-dtparam=spi=on 
-dtoverlay=mcp2515-can0-overlay,oscillator=16000000,interrupt=25 
+dtparam=spi=on
+dtoverlay=mcp2515-can0-overlay,oscillator=16000000,interrupt=25
 dtoverlay=spi-bcm2835-overlay
 
-Then reboot and 
+Then reboot and
 sudo /sbin/ip link set can0 up type can bitrate 125000
 
 
@@ -29,7 +29,7 @@ iface can0 can static
 
 ######## Canpi automatic start #######
 
-edit the file start_canpi.sh and modify the line 
+edit the file start_canpi.sh and modify the line
 dir="/home/pi/canpi"
 
 and put the path of your canpi
@@ -91,3 +91,8 @@ Apply the new configuration with:
 sudo /etc/init.d/avahi-daemon restart
 
 The entry  <type>_withrottle._tcp</type> is specifically for the Engine Drive. After restarting the service you may see in the ED the entry CANPI 5555
+
+#### Virtual CAN ####
+sudo modprobe vcan
+sudo ip link add dev vcan0 type vcan
+sudo ip link set up vcan0

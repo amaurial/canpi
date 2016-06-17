@@ -18,6 +18,7 @@ canHandler::canHandler(log4cpp::Category *logger, int canId)
     this->logger = logger;
     this->canId = canId;
     this->tcpserver = nullptr;
+   // wiringPiSetup();
 }
 
 canHandler::~canHandler()
@@ -159,6 +160,7 @@ void canHandler::run_in(void* param){
 
 void canHandler::run_queue_reader(void* param){
     struct can_frame frame;
+    byte opc;
 
     logger->debug("Running CBUS queue reader");
 
@@ -176,15 +178,16 @@ void canHandler::run_queue_reader(void* param){
                 }
             }
             //Handle cbus
-            if (frame.data[0] == OPC_QNN ||
-                frame.data[0] == OPC_RQMN ||
-                frame.data[0] == OPC_RQNP ||
-                frame.data[0] == OPC_SNN ||
-                frame.data[0] == OPC_ENUM ||
-                frame.data[0] == OPC_HLT ||
-                frame.data[0] == OPC_BON ||
-                frame.data[0] == OPC_BOOT ||
-                frame.data[0] == OPC_CANID){
+            opc = frame.data[0];
+            if (opc == OPC_QNN ||
+                opc == OPC_RQMN ||
+                opc == OPC_RQNP ||
+                opc == OPC_SNN ||
+                opc == OPC_ENUM ||
+                opc == OPC_HLT ||
+                opc == OPC_BON ||
+                opc == OPC_BOOT ||
+                opc == OPC_CANID){
                 handleCBUSEvents(frame);
             }
             if (servers.size() > 0){
@@ -193,6 +196,8 @@ void canHandler::run_queue_reader(void* param){
                 }
             }
             in_msgs.pop();
+            //check button pressed
+            checkButtonPressed();
         }
         usleep(5000);
     }
@@ -389,7 +394,8 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
     case OPC_ENUM:
         if (setup_mode) return;
         //get node number
-        int nn=frame.data[1];
+        int nn;
+        nn = frame.data[1];
         nn = (nn << 8) | frame.data[2];
         logger->debug("OPC_ENUM node number %d",nn);
         doSelfEnum();
@@ -475,6 +481,9 @@ int canHandler::saveConfig(string key,int val){
     return 0;
 }
 
+void canHandler::checkButtonPressed(){
+
+}
 /*
 OPC_QNN
 case OPC_PNN:
