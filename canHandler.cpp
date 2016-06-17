@@ -180,7 +180,11 @@ void canHandler::run_queue_reader(void* param){
                 frame.data[0] == OPC_RQMN ||
                 frame.data[0] == OPC_RQNP ||
                 frame.data[0] == OPC_SNN ||
-                frame.data[0] == OPC_ENUM){
+                frame.data[0] == OPC_ENUM ||
+                frame.data[0] == OPC_HLT ||
+                frame.data[0] == OPC_BON ||
+                frame.data[0] == OPC_BOOT ||
+                frame.data[0] == OPC_CANID){
                 handleCBUSEvents(frame);
             }
             if (servers.size() > 0){
@@ -215,6 +219,10 @@ void canHandler::run_out(void* param){
             frame = out_msgs.front();
             //frame.can_id = canId;
             //frame.can_dlc = CAN_MSG_SIZE;
+            if (cbus_stopped){
+                logger->warn("CBUS stopped. Discarding outgoing message");
+                continue;
+            }
             nbytes = write(canInterface,&frame,CAN_MTU);
             print_frame(&frame,"Sent [" + to_string(nbytes) + "]");
             //logger->debug("Sent %d bytes to CBUS",nbytes);
@@ -269,11 +277,11 @@ void canHandler::finishSelfEnum(int id){
                     }
                 }
             }
-
         }
         else{
             canId = 1;
         }
+        saveConfig("canid",canId);
         logger->debug("New canid is %d", canId);
     }
 }
@@ -283,11 +291,14 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
     char sendframe[CAN_MSG_SIZE];
     memset(sendframe,0,CAN_MSG_SIZE);
     byte Hb,Lb;
+    int tnn;
 
     switch (frame.data[0]){
     case OPC_QNN:
+        if (setup_mode) return;
         Lb = node_number & 0xff;
         Hb = (node_number >> 8) & 0xff;
+        logger->debug("Sending response for QNN.");
         sendframe[0] = OPC_PNN;
         sendframe[1] = Hb;
         sendframe[2] = Lb;
@@ -297,6 +308,8 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         insert_data(sendframe,6,ClientType::ED);
     break;
     case OPC_RQNP:
+        if (!setup_mode) return;
+        logger->debug("Sending response for RQNP.");
         sendframe[0] = OPC_PARAMS;
         sendframe[1] = MANU_MERG;
         sendframe[2] = MSOFT_MIN_VERSION;
@@ -308,6 +321,8 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         insert_data(sendframe,8,ClientType::ED);
     break;
     case OPC_RQMN:
+        if (!setup_mode) return;
+        logger->debug("Sending response for NAME.");
         sendframe[0] = OPC_NAME;
         sendframe[1] = 'C';
         sendframe[2] = 'A';
@@ -318,12 +333,85 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         sendframe[7] = 'I';
         insert_data(sendframe,8,ClientType::ED);
     break;
+    case OPC_SNN:
+        if (!setup_mode) return;
+        Lb = frame.data[2];
+        Hb = frame.data[1];
+        tnn = Hb;
+        tnn = (tnn << 8) & Lb;
+        node_number = tnn;
+        logger->debug("Saving node number %d.",node_number);
+        if (saveConfig("node_number",node_number) == 0){
+            logger->debug("Save node number success.");
+            Lb = node_number & 0xff;
+            Hb = (node_number >> 8) & 0xff;
+            sendframe[0] = OPC_NNACK;
+            sendframe[1] = Hb;
+            sendframe[2] = Lb;
+        }
+        else{
+            logger->error("Save node number failed.");
+        }
+        setup_mode = false;
+        insert_data(sendframe,3,ClientType::ED);
+    break;
+    case OPC_CANID:
+        if (setup_mode) return;
+        logger->debug("Received set CANID.");
+        Lb = frame.data[2];
+        Hb = frame.data[1];
+        tnn = Hb;
+        tnn = (tnn << 8) & Lb;
+        if (tnn != node_number){
+            logger->debug("Set CANID is for another node. My nn: %d received nn: %d", node_number,tnn);
+            return;
+        }
+        int tcanid;
+        tcanid = frame.data[3];
+        if (tcanid < 1 || tcanid > 99){
+            logger->debug("CANID [%d] out of range 1-99. Sending error.", tcanid);
+            Lb = node_number & 0xff;
+            Hb = (node_number >> 8) & 0xff;
+            sendframe[0] = OPC_CMDERR;
+            sendframe[1] = Hb;
+            sendframe[2] = Lb;
+            sendframe[3] = 7;
+            insert_data(sendframe,4,ClientType::ED);
+            return;
+        }
+        canId = tcanid;
+        logger->debug("Saving new CANID %d",canId);
+        if (saveConfig("canid",canId) != 0){
+            logger->error("Failed to save canid %d",canId);
+        }
+
+    break;
     case OPC_ENUM:
+        if (setup_mode) return;
         //get node number
         int nn=frame.data[1];
         nn = (nn << 8) | frame.data[2];
         logger->debug("OPC_ENUM node number %d",nn);
         doSelfEnum();
+    break;
+    case OPC_HLT:
+        if (setup_mode) return;
+        logger->info("Stopping CBUS");
+        cbus_stopped = true;
+    break;
+    case OPC_BON:
+        if (setup_mode) return;
+        logger->info("Enabling CBUS");
+        cbus_stopped = false;
+    break;
+    case OPC_ARST:
+        if (setup_mode) return;
+        logger->info("Enabling CBUS");
+        cbus_stopped = false;
+    break;
+    case OPC_BOOT:
+        if (setup_mode) return;
+        logger->info("Rebooting");
     break;
     }
 }

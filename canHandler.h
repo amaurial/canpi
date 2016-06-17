@@ -54,6 +54,8 @@ class canHandler
         std::queue<can_frame> in_msgs;
         std::queue<can_frame> out_msgs;
         bool auto_enum_mode = false;
+        bool setup_mode = false;
+        bool cbus_stopped = false;
         vector<int> canids;
         long double sysTimeMS_start;
         long double sysTimeMS_end;
