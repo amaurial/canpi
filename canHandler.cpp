@@ -18,11 +18,19 @@ canHandler::canHandler(log4cpp::Category *logger, int canId)
     this->logger = logger;
     this->canId = canId;
     this->tcpserver = nullptr;
+    pthread_mutex_init(&m_mutex, NULL);
+    pthread_cond_init(&m_condv, NULL);
+    pthread_mutex_init(&m_mutex_in, NULL);
+    pthread_cond_init(&m_condv_in, NULL);
 }
 
 canHandler::~canHandler()
 {
     //dtor
+    pthread_mutex_destroy(&m_mutex);
+    pthread_cond_destroy(&m_condv);
+    pthread_mutex_destroy(&m_mutex_in);
+    pthread_cond_destroy(&m_condv_in);
 }
 
 int canHandler::getCanId(){
@@ -97,7 +105,13 @@ int canHandler::put_to_out_queue(int canid,char *msg,int msize,ClientType ct){
     }
     logger->debug("Add message to cbus queue");
     print_frame(&frame,"Insert");
+    //thread safe insert
+    pthread_mutex_lock(&m_mutex);
+
     out_msgs.push(frame);
+
+    pthread_mutex_unlock(&m_mutex);
+    pthread_cond_signal(&m_condv);
 
     //send to can grid server
     vector<tcpServer*>::iterator server;
@@ -129,7 +143,12 @@ int canHandler::put_to_incoming_queue(int canid,char *msg,int msize,ClientType c
     }
     logger->debug("Add message to incoming cbus queue");
     print_frame(&frame,"Insert");
+    pthread_mutex_lock(&m_mutex_in);
+
     in_msgs.push(frame);
+
+    pthread_mutex_unlock(&m_mutex_in);
+    pthread_cond_signal(&m_condv_in);
 
     return j;
 }
@@ -203,7 +222,10 @@ void canHandler::run_in(void* param){
             logger->error("Can not read CBUS");
         }
         else{
-               in_msgs.push(frame);
+            pthread_mutex_lock(&m_mutex_in);
+            in_msgs.push(frame);
+            pthread_mutex_unlock(&m_mutex_in);
+            pthread_cond_signal(&m_condv_in);
         }
     }
     logger->debug("Shutting down the CBUS socket");
@@ -219,8 +241,15 @@ void canHandler::run_queue_reader(void* param){
     vector<tcpServer*>::iterator server;
 
     while (running){
+        pthread_mutex_lock(&m_mutex_in);
+        while (in_msgs.size() == 0) {
+            pthread_cond_wait(&m_condv_in, &m_mutex_in);
+        }
         if (!in_msgs.empty()){
             frame = in_msgs.front();
+            in_msgs.pop();
+            pthread_mutex_unlock(&m_mutex_in);
+
             print_frame(&frame,"Received");
 
             //finish auto enum
@@ -248,7 +277,9 @@ void canHandler::run_queue_reader(void* param){
                     (*server)->addCanMessage(frame.can_id,(char*)frame.data, frame.can_dlc);
                 }
             }
-            in_msgs.pop();
+        }
+        else {
+            pthread_mutex_unlock(&m_mutex_in);
         }
         //check button pressed
         //finish auto enum
@@ -277,10 +308,14 @@ void canHandler::run_out(void* param){
     logger->debug("Running CBUS queue writer");
 
     while (running){
+        pthread_mutex_lock(&m_mutex);
+        while (out_msgs.size() == 0) {
+            pthread_cond_wait(&m_condv, &m_mutex);
+        }
         if (!out_msgs.empty()){
             frame = out_msgs.front();
-            //frame.can_id = canId;
-            //frame.can_dlc = CAN_MSG_SIZE;
+            out_msgs.pop();
+            pthread_mutex_unlock(&m_mutex);
             if (cbus_stopped){
                 logger->warn("CBUS stopped. Discarding outgoing message");
                 continue;
@@ -291,7 +326,9 @@ void canHandler::run_out(void* param){
             if (nbytes != CAN_MTU){
                 logger->debug("Problem on sending the CBUS, bytes transfered %d, supposed to transfer %d", nbytes, CAN_MTU);
             }
-            out_msgs.pop();
+        }
+        else {
+            pthread_mutex_unlock(&m_mutex);
         }
 
         usleep(5000);
@@ -605,32 +642,4 @@ void canHandler::doPbLogic(){
         }
     }
 }
-/*
-OPC_QNN
-case OPC_PNN:
-        prepareMessageBuff(OPC_PNN,highByte(nodeId.getNodeNumber()),lowByte(nodeId.getNodeNumber()),
-                            nodeId.getManufacturerId(),nodeId.getModuleId(),nodeId.getFlags());
 
-        break;
-        OPC_RQMN
-    case OPC_NAME:
-        prepareMessageBuff(OPC_NAME,nodeId.getNodeName()[0],nodeId.getNodeName()[1],
-                            nodeId.getNodeName()[2],nodeId.getNodeName()[3],
-                            nodeId.getNodeName()[4],nodeId.getNodeName()[5],
-                            nodeId.getNodeName()[6]);
-
-        break;
-        OPC_RQNP
-    case OPC_PARAMS:
-        prepareMessageBuff(OPC_PARAMS,nodeId.getManufacturerId(),
-                           nodeId.getMinCodeVersion(),nodeId.getModuleId(),
-                           nodeId.getSuportedEvents(),nodeId.getSuportedEventsVariables(),
-                           nodeId.getSuportedNodeVariables(),nodeId.getMaxCodeVersion());
-
-    OPC_SNN
-   prepareMessageBuff(OPC_NNACK,
-highByte(nodeId.getNodeNumber()),
-lowByte(nodeId.getNodeNumber())  );
-
-
-*/

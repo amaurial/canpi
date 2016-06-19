@@ -15,6 +15,8 @@
 #include <vector>
 #include <ctime>
 #include <algorithm>
+#include <mutex>
+#include <condition_variable>
 #include "tcpServer.h"
 #include "utils.h"
 #include "opcodes.h"
@@ -77,6 +79,10 @@ class canHandler
         //node number request timer
         long double nnPressTime;
         long double nnReleaseTime;
+        pthread_mutex_t m_mutex;
+        pthread_cond_t  m_condv;
+        pthread_mutex_t m_mutex_in;
+        pthread_cond_t  m_condv_in;
 
         void run_in(void* param);
         void run_out(void* param);
