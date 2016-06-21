@@ -90,7 +90,7 @@ void tcpClientGridConnect::run(void *param){
         }
         else if (nbytes>0){
             try{
-                logger->debug("[%d] Received from client:%s Bytes:%d",id, msg, nbytes);
+                logger->debug("[%d] Received from grid client:%s Bytes:%d",id, msg, nbytes);
                 handleClientGridMessage(msg,nbytes);
             }
             catch(const runtime_error &ex){
@@ -148,9 +148,9 @@ void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
             //get the chars
             data = ms.substr(pos+1,delim - pos-1);
             vcanid.clear();
-            vcanid = getBytes(canid,vcanid);
+            vcanid = getBytes(canid,&vcanid);
             vdata.clear();
-            vdata = getBytes(data,vdata);
+            vdata = getBytes(data,&vdata);
 
             //create a can frame
             int icanid = vcanid.at(0);
@@ -164,11 +164,9 @@ void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
                 candata[i] = vdata.at(i);
             }
 
-            logger->debug("Grid parsed canid:%d data:%s",icanid,candata);
-            can->insert_data(icanid,candata,j,clientType);
+            logger->debug("Grid parsed canid:%d data:%s",icanid && 0x7f,candata);
+            can->put_to_incoming_queue(icanid,candata,j,clientType);
             server->postMessageToAllClients(id,icanid,candata,j,clientType);
-
-
         }
         else{
             logger->warn("[%d] Invalid grid string:[%s] no N found",id,ms.c_str());
@@ -177,12 +175,14 @@ void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
     }
 }
 
-vector<byte> tcpClientGridConnect::getBytes(string hex_chars,vector<byte> &bytes){
+vector<byte> tcpClientGridConnect::getBytes(string hex_chars,vector<byte> *bytes){
 
     //put spaces between each pair of hex
 
     string data;
     stringstream ss;
+
+    logger->debug("Transform hexa bytes to byte %s",hex_chars.c_str());
 
     if (hex_chars.size()>2){
         for (unsigned int i=0;i<(hex_chars.size()/2);i++){
@@ -194,13 +194,15 @@ vector<byte> tcpClientGridConnect::getBytes(string hex_chars,vector<byte> &bytes
     else{
         data = hex_chars;
     }
+    logger->debug("Hexbytes data %s",data.c_str());
 
     istringstream hex_chars_stream(data);
     unsigned int c;
     while (hex_chars_stream >> std::hex >> c)
     {
-        bytes.push_back((byte)c);
+        bytes->push_back((byte)(c & 0xff));
     }
-    return bytes;
+    logger->debug("Hexbytes extracted %d",bytes->size());
+    return *bytes;
 }
 

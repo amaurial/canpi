@@ -15,13 +15,15 @@
 #include <vector>
 #include <ctime>
 #include <algorithm>
-#include <wiringPi.h>
 #include "tcpServer.h"
 #include "utils.h"
 #include "opcodes.h"
+#include "gpio.h"
 
 #define CAN_MSG_SIZE 8
 #define WAIT_ENUM 200 //ms
+#define NN_PB_TIME 7000 //time the button for request node number is pressed is 8 seconds
+#define AENUM_PB_TIME 3000 //time the button for auto enum is pressed is 4 seconds
 
 using namespace std;
 class tcpServer;
@@ -32,12 +34,16 @@ class canHandler
         canHandler(log4cpp::Category *logger,int canId);
         virtual ~canHandler();
         int start(const char* interface);
-        int insert_data(char *msg,int size,ClientType ct);
-        int insert_data(int canid,char *msg,int size,ClientType ct);
+        int put_to_out_queue(char *msg,int size,ClientType ct);
+        int put_to_out_queue(int canid,char *msg,int size,ClientType ct);
+        int put_to_incoming_queue(int canid,char *msg,int size,ClientType ct);
         void stop();
         void setCanId(int id);
         int getCanId();
         void setTcpServer(tcpServer * tcpserver);
+        void setPins(int pb,int gled, int yled);
+        void setNodeNumber(int nn);
+        int getNodeNumber(){return node_number;};
     protected:
     private:
         int canId;
@@ -57,9 +63,20 @@ class canHandler
         bool auto_enum_mode = false;
         bool setup_mode = false;
         bool cbus_stopped = false;
+        bool pb_pressed = false;
+        int pbpin;
+        int glpin;
+        int ylpin;
+        gpio pb;
+        gpio gl;
+        gpio yl;
         vector<int> canids;
+        //auto enum timers
         long double sysTimeMS_start;
         long double sysTimeMS_end;
+        //node number request timer
+        long double nnPressTime;
+        long double nnReleaseTime;
 
         void run_in(void* param);
         void run_out(void* param);
@@ -69,7 +86,7 @@ class canHandler
         void handleCBUSEvents(struct can_frame frame);
         int saveConfig(string key,string val);
         int saveConfig(string key,int val);
-        void checkButtonPressed();
+        void doPbLogic();
 
         void print_frame(can_frame *frame,string message);
 

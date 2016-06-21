@@ -41,7 +41,7 @@ class tcpClientGridConnect:public Client
         int running;
         void run(void * param);
         void handleClientGridMessage(char *msg,int size);
-        vector<byte> getBytes(string hex_chars,vector<byte> &bytes);
+        vector<byte> getBytes(string hex_chars,vector<byte> *bytes);
 };
 
 #endif // TCPCLIENT_H

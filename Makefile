@@ -1,8 +1,8 @@
 CC=g++
 LIB= lib/liblog4cpp.a lib/libconfig++.a -Wl,-Bdynamic -lpthread
-CFLAGS= -c -Wall -fpermissive -lm -std=c++11 -g -I/usr/local/include -I/usr/include -Ilib/include
+CFLAGS= -c -Wall -fpermissive -lm -std=c++11 -g -I/usr/local/include -I/usr/include -Ilib/include 
 LDFLAGS= -L/usr/local/lib -L/usr/lib -Llib
-SOURCES=main.cpp canHandler.cpp tcpServer.cpp tcpClient.cpp edSession.cpp Client.cpp tcpClientGridConnect.cpp Turnout.cpp
+SOURCES=main.cpp canHandler.cpp tcpServer.cpp tcpClient.cpp edSession.cpp Client.cpp tcpClientGridConnect.cpp Turnout.cpp gpio.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=canpi
 
@@ -12,7 +12,7 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) -o $@ $(LIB)
 
 .cpp.o:
-	$(CC) $(CFLAGS) $(LIB) $< -o $@
+	$(CC) $(CFLAGS) $< -o $@
 
 clean:
 	rm -f *.o

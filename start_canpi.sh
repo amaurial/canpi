@@ -29,6 +29,9 @@ web_pid_file="/var/run/$webname.pid"
 web_stdout_log="/var/log/$webname.log"
 web_stderr_log="/var/log/$webname.err"
 
+#clean spaces and ';'
+sed -i 's/ = /=/g' $config
+sed -i 's/;//g' $config
 source $config
 
 #Bonjour files

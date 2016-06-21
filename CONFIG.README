@@ -96,3 +96,16 @@ The entry  <type>_withrottle._tcp</type> is specifically for the Engine Drive. A
 sudo modprobe vcan
 sudo ip link add dev vcan0 type vcan
 sudo ip link set up vcan0
+
+
+####### GPIO Pins ######
+
+canpi Pin(BMC)     header pin   GPIO
+17                  11          0
+18                  12          1
+27                  13          2
+22                  15          3
+23                  16          4
+24                  18          5
+25                  22          6
+4                   7           7
