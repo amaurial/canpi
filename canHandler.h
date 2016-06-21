@@ -3,7 +3,6 @@
 #include <linux/can.h>
 #include <net/if.h>
 #include <linux/can/raw.h>
-#include <log4cpp/Category.hh>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,6 +20,7 @@
 #include "utils.h"
 #include "opcodes.h"
 #include "gpio.h"
+#include "nodeConfigurator.h"
 
 #define CAN_MSG_SIZE 8
 #define WAIT_ENUM 200 //ms
@@ -46,6 +46,7 @@ class canHandler
         void setPins(int pb,int gled, int yled);
         void setNodeNumber(int nn);
         int getNodeNumber(){return node_number;};
+        void setConfigurator(nodeConfigurator *config);
     protected:
     private:
         int canId;
@@ -83,6 +84,7 @@ class canHandler
         pthread_cond_t  m_condv;
         pthread_mutex_t m_mutex_in;
         pthread_cond_t  m_condv_in;
+        nodeConfigurator *config;
 
         void run_in(void* param);
         void run_out(void* param);
@@ -90,8 +92,6 @@ class canHandler
         void doSelfEnum();
         void finishSelfEnum(int id);
         void handleCBUSEvents(struct can_frame frame);
-        int saveConfig(string key,string val);
-        int saveConfig(string key,int val);
         void doPbLogic();
 
         void print_frame(can_frame *frame,string message);

@@ -39,44 +39,11 @@
 #include "utils.h"
 #include "canHandler.h"
 #include "Turnout.h"
+#include "nodeConfigurator.h"
 
 using namespace std;
 using namespace libconfig;
 int running = 1;
-
-/**
-* Usefull function to get string from config file
-**/
-string getStringCfgVal(Config *cfg,string key)
-{
-  string ret;
-  try
-  {
-     cfg->lookupValue(key,ret);
-  }
-  catch(const SettingNotFoundException &nfex)
-  {
-  }
-  return ret;
-
-}
-/**
-* Usefull function to get integer from config file
-**/
-int getIntCfgVal(Config *cfg,string key)
-{
-  int ret;
-  try
-  {
-     bool r = cfg->lookupValue(key,ret);
-     if (!r) ret = INTERROR;
-  }
-  catch(const SettingNotFoundException &nfex)
-  {
-     ret = INTERROR;
-  }
-  return ret;
-}
 
 void sigterm(int signo)
 {
@@ -88,35 +55,18 @@ inline bool file_exists (const std::string& name) {
   return (stat (name.c_str(), &buffer) == 0);
 }
 
-
 int main()
 {
-    bool hasconfig = true;
     signal(SIGTERM, sigterm);
     signal(SIGHUP, sigterm);
     signal(SIGINT, sigterm);
 
-    Config cfg;
-    try
-    {
-       cfg.readFile("canpi.cfg");
-    }
-    catch(const FileIOException &fioex)
-    {
-        std::cerr << "File I/O error" << std::endl;
-        hasconfig = false;
-    }
-    catch(const ParseException &pex)
-    {
-        std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
-	          << " - " << pex.getError() << std::endl;
-        hasconfig = false;
-    }
     //****************
     //default config
     //***************
     log4cpp::Priority::PriorityLevel loglevel = log4cpp::Priority::DEBUG;
     string logfile = "canpi.log";
+    string configfile = "canpi.cfg";
     string turnoutfile = "turnout.txt";
     int port = 5555;
     string candevice = "can0";
@@ -128,98 +78,34 @@ int main()
     int gled_pin=5;
     int yled_pin=6;
     int node_number=4321;
+    nodeConfigurator *config = new nodeConfigurator(configfile);
 
-    if (hasconfig){
+    //get configuration
+    string debugLevel = config->getLogLevel();
 
-        string debugLevel = getStringCfgVal(&cfg,"loglevel");
-
-        if (!debugLevel.empty()){
-            if (debugLevel.compare("INFO")== 0){
-               loglevel = log4cpp::Priority::INFO;
-            }
-            if (debugLevel.compare("WARN")== 0){
-               loglevel = log4cpp::Priority::WARN;
-            }
+    if (!debugLevel.empty()){
+        if (debugLevel.compare("INFO")== 0){
+           loglevel = log4cpp::Priority::INFO;
         }
-
-        logfile = getStringCfgVal(&cfg,"logfile");
-        if (logfile.empty()){
-            cout << "Failed to get log file name. Default is canpi.log" << endl;
-            logfile = "canpi.log";
-        }
-
-        candevice= getStringCfgVal(&cfg,"candevice");
-        if (logfile.empty()){
-            cout << "Failed to get can device. Default is can0" << endl;
-            logfile = "can0";
-        }
-
-        port = getIntCfgVal(&cfg,"tcpport");
-        if (port == INTERROR){
-                cout << "Failed to get tcp port. Default is 5555" << endl;
-            port = 5555;
-        }
-
-        canid = getIntCfgVal(&cfg,"canid");
-        if (canid == INTERROR){
-                cout << "Failed to get canid. Default is 110" << endl;
-            canid = 110;
-        }
-
-        gridport = getIntCfgVal(&cfg,"cangrid_port");
-        if (gridport == INTERROR){
-                cout << "Failed to get tcp port. Default is 5555" << endl;
-            gridport = 5555;
-        }
-
-        string sappend= getStringCfgVal(&cfg,"logappend");
-        if (sappend.empty()){
-            cout << "Failed to get logappend . Default is false" << endl;
-            append = false;
-        }
-        if ((sappend.compare("true") == 0) | (sappend.compare("TRUE") == 0) | (sappend.compare("True") == 0)){
-            append = true;
-        }
-
-        string grid= getStringCfgVal(&cfg,"can_grid");
-        if (grid.empty()){
-            cout << "Failed to get can_grid . Default is false" << endl;
-            start_grid_server = false;
-        }
-        if ((grid.compare("true") == 0) | (grid.compare("TRUE") == 0) | (grid.compare("True") == 0)){
-            start_grid_server = true;
-        }
-
-        turnoutfile = getStringCfgVal(&cfg,"turnout_file");
-        if (turnoutfile.empty()){
-            cout << "Failed to get turnout file name. Defaul is turnout.txt" << endl;
-            turnoutfile = "turnout.txt";
-        }
-
-        pb_pin = getIntCfgVal(&cfg,"button_pin");
-        if (pb_pin == INTERROR || pb_pin < 0 || pb_pin > 16){
-            cout << "Failed to get button pin. Default is 4" << endl;
-            pb_pin = 4;
-        }
-
-        gled_pin = getIntCfgVal(&cfg,"green_led_pin");
-        if (gled_pin == INTERROR|| gled_pin < 0 || gled_pin > 16){
-            cout << "Failed to get green led pin. Default is 5" << endl;
-            gled_pin = 5;
-        }
-
-        yled_pin = getIntCfgVal(&cfg,"yellow_led_pin");
-        if (yled_pin == INTERROR|| yled_pin < 0 || yled_pin > 16){
-            cout << "Failed to get yellow led pin. Default is 6" << endl;
-            yled_pin = 5;
-        }
-
-        node_number = getIntCfgVal(&cfg,"node_number");
-        if (node_number == INTERROR){
-            cout << "Failed to get node number. Default is 4321" << endl;
-            node_number = 4321;
+        if (debugLevel.compare("WARN")== 0){
+           loglevel = log4cpp::Priority::WARN;
         }
     }
+
+    logfile = config->getLogFile();
+    candevice = config->getCanDevice();
+    port = config->getTcpPort();
+    canid = config->getCanID();
+    gridport = config->getcanGridPort();
+    append = config->getLogAppend();
+    start_grid_server = config->isCanGridEnabled();
+    turnoutfile = config->getTurnoutFile();
+    pb_pin = config->getPB();
+    gled_pin = config->getGreenLed();
+    yled_pin = config->getYellowLed();
+    node_number = config->getNodeNumber();
+
+    //config the logger
 
     log4cpp::PatternLayout * layout1 = new log4cpp::PatternLayout();
     layout1->setConversionPattern("%d [%p] %m%n");
@@ -244,9 +130,13 @@ int main()
 
     logger.info("Logger initated");
 
+    //start the components
     canHandler can = canHandler(&logger,canid);
     //set gpio pins
     can.setPins(pb_pin,gled_pin,yled_pin);
+    //set the configurator
+    can.setConfigurator(config);
+    can.setNodeNumber(node_number);
 
     //start threads
     can.start(candevice.c_str());
@@ -280,6 +170,7 @@ int main()
 
     //clear the stuff
     log4cpp::Category::shutdown();
+    delete config;
 
     return 0;
 }

@@ -22,6 +22,7 @@ canHandler::canHandler(log4cpp::Category *logger, int canId)
     pthread_cond_init(&m_condv, NULL);
     pthread_mutex_init(&m_mutex_in, NULL);
     pthread_cond_init(&m_condv_in, NULL);
+    pb_pressed = false;
 }
 
 canHandler::~canHandler()
@@ -45,13 +46,17 @@ void canHandler::setPins(int pbutton,int gledpin,int yledpin){
     stringstream ss;
 
     ss<<pbpin;
+    logger->debug("Setting PB to pin %s",ss.str().c_str());
     pb = gpio(ss.str());
+
     ss.clear();ss.str("");
     ss<<glpin;
+    logger->debug("Setting Green Led to pin %s",ss.str().c_str());
     gl = gpio(ss.str());
 
     ss.clear();ss.str("");
     ss<<ylpin;
+    logger->debug("Setting Yellow Led to pin %s",ss.str().c_str());
     yl = gpio(ss.str());
 
     pb.export_gpio();
@@ -61,6 +66,10 @@ void canHandler::setPins(int pbutton,int gledpin,int yledpin){
     pb.setdir_gpio("in");
     gl.setdir_gpio("out");
     yl.setdir_gpio("out");
+}
+
+void canHandler::setConfigurator(nodeConfigurator *config){
+    this->config = config;
 }
 
 void canHandler::setTcpServer(tcpServer * tcpserver){
@@ -241,11 +250,9 @@ void canHandler::run_queue_reader(void* param){
     vector<tcpServer*>::iterator server;
 
     while (running){
-        pthread_mutex_lock(&m_mutex_in);
-        while (in_msgs.size() == 0) {
-            pthread_cond_wait(&m_condv_in, &m_mutex_in);
-        }
+
         if (!in_msgs.empty()){
+            pthread_mutex_lock(&m_mutex_in);
             frame = in_msgs.front();
             in_msgs.pop();
             pthread_mutex_unlock(&m_mutex_in);
@@ -278,16 +285,13 @@ void canHandler::run_queue_reader(void* param){
                 }
             }
         }
-        else {
-            pthread_mutex_unlock(&m_mutex_in);
-        }
         //check button pressed
         //finish auto enum
         if (auto_enum_mode){
             finishSelfEnum(0);
         }
         doPbLogic();
-        usleep(5000);
+        usleep(4000);
     }
     logger->debug("Stopping the queue reader");
 }
@@ -308,11 +312,9 @@ void canHandler::run_out(void* param){
     logger->debug("Running CBUS queue writer");
 
     while (running){
-        pthread_mutex_lock(&m_mutex);
-        while (out_msgs.size() == 0) {
-            pthread_cond_wait(&m_condv, &m_mutex);
-        }
+
         if (!out_msgs.empty()){
+            pthread_mutex_lock(&m_mutex);
             frame = out_msgs.front();
             out_msgs.pop();
             pthread_mutex_unlock(&m_mutex);
@@ -326,9 +328,6 @@ void canHandler::run_out(void* param){
             if (nbytes != CAN_MTU){
                 logger->debug("Problem on sending the CBUS, bytes transfered %d, supposed to transfer %d", nbytes, CAN_MTU);
             }
-        }
-        else {
-            pthread_mutex_unlock(&m_mutex);
         }
 
         usleep(5000);
@@ -387,7 +386,7 @@ void canHandler::finishSelfEnum(int id){
         else{
             canId = 1;
         }
-        saveConfig("canid",canId);
+        config->setCanID(canId);
         logger->debug("New canid is %d", canId);
     }
 }
@@ -448,7 +447,7 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         tnn = (tnn << 8) | Lb;
 
         logger->debug("Saving node number %d.",tnn);
-        if (saveConfig("node_number",tnn) == 0){
+        if (config->setNodeNumber(tnn)){
             logger->debug("Save node number success.");
             node_number = tnn;
             Lb = node_number & 0xff;
@@ -498,7 +497,7 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         }
         canId = tcanid;
         logger->debug("Saving new CANID %d",canId);
-        if (saveConfig("canid",canId) != 0){
+        if (!config->setCanID(canId)){
             logger->error("Failed to save canid %d",canId);
         }
 
@@ -532,65 +531,6 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         logger->info("Rebooting");
     break;
     }
-}
-
-/**
-* Save configuration item
-**/
-
-int canHandler::saveConfig(string key,string val){
-    Config cfg;
-    string filename="canpi.cfg";
-    try
-    {
-       cfg.readFile(filename.c_str());
-
-       if (cfg.exists(key)){
-            libconfig::Setting &varkey = cfg.lookup(key);
-            varkey = val;
-            cfg.writeFile(filename.c_str());
-       }
-
-    }
-    catch(const FileIOException &fioex)
-    {
-        std::cerr << "File I/O error" << std::endl;
-        return 1;
-    }
-    catch(const ParseException &pex)
-    {
-        std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
-	          << " - " << pex.getError() << std::endl;
-        return 1;
-    }
-    return 0;
-}
-int canHandler::saveConfig(string key,int val){
-    Config cfg;
-    string filename="canpi.cfg";
-    try
-    {
-       cfg.readFile(filename.c_str());
-
-       if (cfg.exists(key)){
-            libconfig::Setting &varkey = cfg.lookup(key);
-            varkey = val;
-            cfg.writeFile(filename.c_str());
-       }
-
-    }
-    catch(const FileIOException &fioex)
-    {
-        std::cerr << "File I/O error" << std::endl;
-        return 1;
-    }
-    catch(const ParseException &pex)
-    {
-        std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
-	          << " - " << pex.getError() << std::endl;
-        return 1;
-    }
-    return 0;
 }
 
 void canHandler::doPbLogic(){

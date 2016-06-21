@@ -25,6 +25,8 @@ class configManager:
                 if ((line.strip().find("#") >= 0) or (len(line.strip())<1)):
                     continue
                 strval = line.strip().replace('"','')
+                strval = strval.strip().replace(';','')
+                strval = strval.strip().replace(' = ','=')
                 (key, val) = strval.split('=')
                 self.config[key.strip()] = val
             f.close()
