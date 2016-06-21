@@ -3,9 +3,12 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 #include "libconfig.h++"
 #include "utils.h"
 #include "opcodes.h"
+
+#define PARAMS_SIZE 60
 
 using namespace std;
 
@@ -14,6 +17,9 @@ class nodeConfigurator
     public:
         nodeConfigurator(string file);
         virtual ~nodeConfigurator();
+
+        byte getParameter(int idx);
+        byte setParameter(int idx,byte val);
 
         string getNodeName();
 
@@ -86,9 +92,13 @@ class nodeConfigurator
     private:
         bool saveConfig(string key,string val);
         bool saveConfig(string key,int val);
+        void startIndexParams();
+        void loadParamsToMemory();
 
         string configFile;
         Config cfg;
+        char PARAMS[PARAMS_SIZE];
+        vector<pair<int,int>> param_index; //the pair is the start position in the array and the parameter length
 };
 
 #endif // NODECONFIGURATOR_H

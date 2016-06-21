@@ -10,6 +10,97 @@ nodeConfigurator::~nodeConfigurator()
     //dtor
 }
 
+byte nodeConfigurator::getParameter(int idx){
+    int i;
+    i = idx - 1;
+    if (i < 0){
+        i = 0;
+    }
+    return PARAMS[i];
+}
+
+byte nodeConfigurator::setParameter(int idx,byte val){
+    int i;
+    i = idx - 1;
+    if (i < 0){
+        i = 0;
+    }
+    PARAMS[i] = val;
+    //TODO need to discover when to save a parameter
+}
+
+void nodeConfigurator::loadParamsToMemory(){
+    byte p1 = 0;
+    if (getAPMode()){
+        p1 = 1;
+    }
+    if (isCanGridEnabled()){
+        p1 = p1 | 0b00000011;
+    }
+    string l = getLogLevel();
+    if (l.compare("INFO") == 0){
+        p1 = p1 | 0b00000011;
+    }
+    else if (l.compare("WARN") == 0){
+        p1 = p1 | 0b00000111;
+    }
+    else if (l.compare("DEBUG") == 0){
+        p1 = p1 | 0b00001011;
+    }
+    else{
+        p1 = p1 | 0b00000011;
+    }
+    PARAMS[0] = p1;
+
+
+}
+
+void nodeConfigurator::startIndexParams(){
+    /**
+    1 byte
+    apmode bit 1, enable can grid bit 2, log level bit 3,4
+
+    2 bytes
+    tcp port
+
+    2 bytes
+    grid tcp port
+
+    1 byte
+    wifi channel
+
+    8 bytes
+    ssid
+
+    8 bytes
+    ssid password
+
+    8 bytes
+    router ssid
+
+    8 bytes
+    router password
+
+    8 bytes
+    service name
+
+    11 bytes
+    turnout file name
+    **/
+
+    param_index.push_back({1,1});//apmode bit 1, enable can grid bit 2, log level bit 3,4
+    param_index.push_back({2,2});//tcp port
+    param_index.push_back({3,2});//grid tcp port
+    param_index.push_back({4,1});//wifi channel
+    param_index.push_back({5,8});//ssid
+    param_index.push_back({6,8});//password
+    param_index.push_back({7,8});//router ssid
+    param_index.push_back({8,8});//router password
+    param_index.push_back({9,8});//service name
+    param_index.push_back({10,11});//turnout file name
+
+}
+
 bool nodeConfigurator::saveConfig(string key,string val){
     Config cfg;
     try
@@ -129,8 +220,8 @@ int nodeConfigurator::getTcpPort(){
     int ret;
     ret = getIntConfig("tcpport");
     if (ret == INTERROR){
-        cout << "Failed to get tcp port. Default is 5555" << endl;
-        ret = 5555;
+        cout << "Failed to get tcp port. Default is 30" << endl;
+        ret = 31;
     }
     return ret;
 }
@@ -142,8 +233,8 @@ int nodeConfigurator::getcanGridPort(){
     int ret;
     ret = getIntConfig("cangrid_port");
     if (ret == INTERROR){
-        cout << "Failed to get the grid tcp port. Default is 4444" << endl;
-        ret = 4444;
+        cout << "Failed to get the grid tcp port. Default is 31" << endl;
+        ret = 31;
     }
     return ret;
 }
