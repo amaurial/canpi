@@ -78,7 +78,8 @@ int main()
     int gled_pin=5;
     int yled_pin=6;
     int node_number=4321;
-    nodeConfigurator *config = new nodeConfigurator(configfile);
+    log4cpp::Category& logger = log4cpp::Category::getRoot();
+    nodeConfigurator *config = new nodeConfigurator(configfile,&logger);
 
     //get configuration
     string debugLevel = config->getLogLevel();
@@ -122,13 +123,14 @@ int main()
     appender2->setLayout(new log4cpp::BasicLayout());
     appender2->setLayout(layout2);
 
-    log4cpp::Category& logger = log4cpp::Category::getRoot();
     //logger.setPriority(log4cpp::Priority::DEBUG);
     logger.setPriority(loglevel);
     logger.addAppender(appender1);
     logger.addAppender(appender2);
 
     logger.info("Logger initated");
+
+    config->printMemoryNVs();
 
     //start the components
     canHandler can = canHandler(&logger,canid);

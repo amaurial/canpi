@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <log4cpp/Category.hh>
 #include "libconfig.h++"
 #include "utils.h"
 #include "opcodes.h"
@@ -45,13 +46,13 @@ turnout file name
 #define P4_SIZE 1 //wifi channel
 #define P5_SIZE 8 //ssid
 #define P6_SIZE 8 //ssid password
-#define P7_SIZE 8 //router ssid
-#define P8_SIZE 8 //router ssid password
+#define P7_SIZE 12 //router ssid
+#define P8_SIZE 12 //router ssid password
 #define P9_SIZE 8 //service name
 #define P10_SIZE 11 //turnout file name
 
 #define PARAMS_SIZE         P1_SIZE + P2_SIZE + P3_SIZE + P4_SIZE + P5_SIZE + P6_SIZE + P7_SIZE + P8_SIZE + P9_SIZE + P10_SIZE
-
+//parameter index in the buffer
 #define PARAM1 0 //apmode bit 1, enable can grid bit 2, log level bit 3,4
 #define P_TCP_PORT           PARAM1 + P1_SIZE
 #define P_GRID_TCP_PORT      P_TCP_PORT + P2_SIZE
@@ -69,11 +70,8 @@ using namespace std;
 class nodeConfigurator
 {
     public:
-        nodeConfigurator(string file);
+        nodeConfigurator(string file,log4cpp::Category *logger);
         virtual ~nodeConfigurator();
-
-        byte getParameter(int idx);
-        byte setParameter(int idx,byte val);
 
         string getNodeName();
 
@@ -142,6 +140,13 @@ class nodeConfigurator
 
         string getStringConfig(string key);
         int getIntConfig(string key);
+
+        void printMemoryNVs();
+        byte getNumberOfNVs(){return PARAMS_SIZE;};
+        byte getNV(int idx);
+        byte setNV(int idx,byte val);
+        void setNodeParams(byte p1,byte p2, byte p3,byte p4,byte p5, byte p6, byte p7, byte p8);
+        byte getNodeParameter(byte idx);
     protected:
     private:
         bool saveConfig(string key,string val);
@@ -149,11 +154,14 @@ class nodeConfigurator
         void startIndexParams();
         void loadParamsToMemory();
         void loadParam1();
-        void loadParamsInt2Bytes();
+        void loadParamsInt2Bytes(int value,unsigned int idx);
+        void loadParamsString(string value,unsigned int idx,unsigned int maxsize);
 
+        log4cpp::Category *logger;
         string configFile;
         Config cfg;
-        char PARAMS[PARAMS_SIZE];
+        char NV[PARAMS_SIZE];
+        char NODEPARAMS[8];
         vector<pair<int,int>> param_index; //the pair is the start position in the array and the parameter length
 };
 

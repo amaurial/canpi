@@ -1,8 +1,10 @@
 #include "nodeConfigurator.h"
 
-nodeConfigurator::nodeConfigurator(string file)
+nodeConfigurator::nodeConfigurator(string file,log4cpp::Category *logger)
 {
     this->configFile = file;
+    this->logger = logger;
+    loadParamsToMemory();
 }
 
 nodeConfigurator::~nodeConfigurator()
@@ -10,34 +12,69 @@ nodeConfigurator::~nodeConfigurator()
     //dtor
 }
 
-byte nodeConfigurator::getParameter(int idx){
+void nodeConfigurator::printMemoryNVs(){
     int i;
-    i = idx - 1;
-    if (i < 0){
-        i = 0;
+    cout << "NVs: ";
+    for (i=0;i<PARAMS_SIZE;i++){
+        cout << int(NV[i]) << " ";
     }
-    return PARAMS[i];
+    cout << endl;
+
+    //logger->debug("Memory NVs:[%s]",NV);
 }
 
-byte nodeConfigurator::setParameter(int idx,byte val){
+void nodeConfigurator::setNodeParams(byte p1,byte p2, byte p3,byte p4,byte p5, byte p6, byte p7, byte p8){
+    NODEPARAMS[0] = p1;
+    NODEPARAMS[1] = p2;
+    NODEPARAMS[2] = p3;
+    NODEPARAMS[3] = p4;
+    NODEPARAMS[4] = p5;
+    NODEPARAMS[5] = p6;
+    NODEPARAMS[6] = p7;
+    NODEPARAMS[7] = p8;
+}
+byte nodeConfigurator::getNodeParameter(byte idx){
+    //idx starts at 1
+    if (idx < 8){
+        return NODEPARAMS[idx-1];
+    }
+    return 0;
+}
+
+byte nodeConfigurator::getNV(int idx){
     int i;
     i = idx - 1;
     if (i < 0){
         i = 0;
     }
-    PARAMS[i] = val;
+    return NV[i];
+}
+
+byte nodeConfigurator::setNV(int idx,byte val){
+    int i;
+    i = idx - 1;
+    if (i < 0){
+        i = 0;
+    }
+    NV[i] = val;
     //TODO need to discover when to save a parameter
 }
 
 void nodeConfigurator::loadParamsToMemory(){
-    loadParams1();
-    loadParamsInt2Bytes(getTcpPort(),1);
-    loadParamsInt2Bytes(getcanGridPort(),3);
-    PARAMS[4] = getApChannel() & 0xff;
-    loadParamsString(getSSID(),5,8);
+    cout << "Loading NVs to memory" << endl;
+    loadParam1();
+    loadParamsInt2Bytes(getTcpPort(), P_TCP_PORT);
+    loadParamsInt2Bytes(getcanGridPort(), P_GRID_TCP_PORT);
+    NV[P_WIFI_CHANNEL] = getApChannel() & 0xff;
+    loadParamsString(getSSID(), P_SSID, P5_SIZE);
+    loadParamsString(getPassword(), P_PASSWD, P6_SIZE);
+    loadParamsString(getRouterSSID(), P_ROUTER_SSID, P7_SIZE);
+    loadParamsString(getRouterPassword(), P_ROUTER_PASSWD, P8_SIZE);
+    loadParamsString(getServiceName(), P_SERVICE_NAME, P9_SIZE);
+    loadParamsString(getTurnoutFile(), P_TURNOUT_FILE, P10_SIZE);
 }
 
-void nodeConfigurator::loadParams1(){
+void nodeConfigurator::loadParam1(){
     byte p1 = 0;
     if (getAPMode()){
         p1 = 1;
@@ -58,22 +95,26 @@ void nodeConfigurator::loadParams1(){
     else{
         p1 = p1 | 0b00000011;
     }
-    PARAMS[0] = p1;
+    NV[PARAM1] = p1;
+    cout << "P1 " << p1 << " " << int(NV[0]) << endl;
 }
 
-void nodeConfigurator::loadParamsInt2Bytes(int value,int idx){
+void nodeConfigurator::loadParamsInt2Bytes(int value, unsigned int idx){
     byte Hb = 0;
     byte Lb = 0;
 
     Lb = value & 0xff;
     Hb = (value >> 8) & 0xff;
 
-    PARAMS[idx] = Hb;
-    PARAMS[idx+1] = Lb;
+    NV[idx] = Hb;
+    NV[idx+1] = Lb;
+
+    cout << "P int " << value << " " << int(NV[idx]) << " " << int(NV[idx+1]) << endl;
+
 }
 
-void nodeConfigurator::loadParamsString(string value,int idx,int maxsize){
-    int i,ssize,pos;
+void nodeConfigurator::loadParamsString(string value, unsigned int idx, unsigned int maxsize){
+    unsigned i,ssize;
 
     ssize = value.size();
     if (value.size() > maxsize){
@@ -81,16 +122,17 @@ void nodeConfigurator::loadParamsString(string value,int idx,int maxsize){
     }
 
     for (int i = 0;i < ssize; i++){
-        PARAMS[idx + i] = value.c_str()[i];
+        NV[idx + i] = value.c_str()[i];
+        cout <<  NV[idx + i] << " ";
     }
 
     //fill the rest with 0
     if (value.size() < maxsize){
         for (i=value.size() ; i < maxsize ; i++){
-            PARAMS[i] = 0;
+            NV[idx + i] = 0;
         }
     }
-
+    cout << endl;
 }
 
 
@@ -126,7 +168,7 @@ void nodeConfigurator::startIndexParams(){
     11 bytes
     turnout file name
     **/
-
+/*
     param_index.push_back({1,1});//apmode bit 1, enable can grid bit 2, log level bit 3,4
     param_index.push_back({2,2});//tcp port
     param_index.push_back({3,2});//grid tcp port
@@ -137,7 +179,7 @@ void nodeConfigurator::startIndexParams(){
     param_index.push_back({8,8});//router password
     param_index.push_back({9,8});//service name
     param_index.push_back({10,11});//turnout file name
-
+*/
 }
 
 bool nodeConfigurator::saveConfig(string key,string val){

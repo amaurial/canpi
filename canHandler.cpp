@@ -70,7 +70,8 @@ void canHandler::setPins(int pbutton,int gledpin,int yledpin){
 
 void canHandler::setConfigurator(nodeConfigurator *config){
     this->config = config;
-}
+    config->setNodeParams(MANU_MERG,MSOFT_MIN_VERSION,MID,0,0,config->getNumberOfNVs(),MSOFT_VERSION,MFLAGS);
+ }
 
 void canHandler::setTcpServer(tcpServer * tcpserver){
     servers.push_back(tcpserver);
@@ -276,7 +277,10 @@ void canHandler::run_queue_reader(void* param){
                 opc == OPC_BON ||
                 opc == OPC_BOOT ||
                 opc == OPC_ARST ||
-                opc == OPC_CANID){
+                opc == OPC_CANID ||
+                opc == OPC_NVSET ||
+                opc == OPC_RQNPN ||
+                opc == OPC_NVRD){
                 handleCBUSEvents(frame);
             }
             if (servers.size() > 0){
@@ -422,7 +426,7 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         sendframe[3] = MID;
         sendframe[4] = 0;
         sendframe[5] = 0;
-        sendframe[6] = 10;//TODO
+        sendframe[6] = config->getNumberOfNVs();//TODO
         sendframe[7] = MSOFT_VERSION;
         put_to_out_queue(sendframe,8,ClientType::ED);
     break;
@@ -439,6 +443,89 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         sendframe[7] = 'I';
         put_to_out_queue(sendframe,8,ClientType::ED);
     break;
+    case OPC_RQNPN:
+        Lb = frame.data[2];
+        Hb = frame.data[1];
+        tnn = Hb;
+        tnn = (tnn << 8) | Lb;
+        byte p;
+        if (tnn != node_number){
+            logger->debug("RQNPN is for another node. My nn: %d received nn: %d", node_number,tnn);
+            return;
+        }
+        if (frame.data[3] > 8) {
+            //index invalid
+            sendframe[0] = OPC_CMDERR;
+            sendframe[1] = Hb;
+            sendframe[2] = Lb;
+            sendframe[3] = 9;
+            put_to_out_queue(sendframe,4,ClientType::ED);
+            return;
+        }
+        p = config->getNodeParameter(frame.data[3]);
+        if (frame.data[3] == 0){
+            p = config->getNumberOfNVs();
+        }
+        sendframe[0] = OPC_PARAN;
+        sendframe[1] = Hb;
+        sendframe[2] = Lb;
+        sendframe[3] = frame.data[3];
+        sendframe[4] = p;
+        put_to_out_queue(sendframe,5,ClientType::ED);
+    break;
+
+    case OPC_NVRD:
+        Lb = frame.data[2];
+        Hb = frame.data[1];
+        tnn = Hb;
+        tnn = (tnn << 8) | Lb;
+        if (tnn != node_number){
+            logger->debug("NVRD is for another node. My nn: %d received nn: %d", node_number,tnn);
+            return;
+        }
+        if (frame.data[3] > config->getNumberOfNVs() || frame.data[3] == 0) {
+            //index invalid
+            sendframe[0] = OPC_CMDERR;
+            sendframe[1] = Hb;
+            sendframe[2] = Lb;
+            sendframe[3] = 9;
+            put_to_out_queue(sendframe,4,ClientType::ED);
+            return;
+        }
+
+        sendframe[0] = OPC_NVANS;
+        sendframe[1] = Hb;
+        sendframe[2] = Lb;
+        sendframe[3] = frame.data[3];
+        sendframe[4] = config->getNV(frame.data[3]);
+        put_to_out_queue(sendframe,5,ClientType::ED);
+    break;
+
+    case OPC_NVSET:
+        Lb = frame.data[2];
+        Hb = frame.data[1];
+        tnn = Hb;
+        tnn = (tnn << 8) | Lb;
+        if (tnn != node_number){
+            logger->debug("NVSET is for another node. My nn: %d received nn: %d", node_number,tnn);
+            return;
+        }
+        if (frame.data[3] > config->getNumberOfNVs() || frame.data[3] == 0) {
+            //index invalid
+            sendframe[0] = OPC_CMDERR;
+            sendframe[1] = Hb;
+            sendframe[2] = Lb;
+            sendframe[3] = 9;
+            put_to_out_queue(sendframe,4,ClientType::ED);
+            return;
+        }
+        config->setNV(frame.data[3],frame.data[4]);
+        sendframe[0] = OPC_WRACK;
+        sendframe[1] = Hb;
+        sendframe[2] = Lb;
+        put_to_out_queue(sendframe,3,ClientType::ED);
+    break;
+
     case OPC_SNN:
         if (!setup_mode) return;
         Lb = frame.data[2];
@@ -471,6 +558,7 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         logger->info("Finished setup. New node number is %d" , node_number);
 
     break;
+
     case OPC_CANID:
         if (setup_mode) return;
         logger->debug("Received set CANID.");
@@ -502,6 +590,7 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         }
 
     break;
+
     case OPC_ENUM:
         if (setup_mode) return;
         //get node number
