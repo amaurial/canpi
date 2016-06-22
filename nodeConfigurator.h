@@ -8,7 +8,61 @@
 #include "utils.h"
 #include "opcodes.h"
 
-#define PARAMS_SIZE 60
+/**
+1 byte
+apmode bit 1, enable can grid bit 2, log level bit 3,4
+
+2 bytes
+tcp port
+
+2 bytes
+grid tcp port
+
+1 byte
+wifi channel
+
+8 bytes
+ssid
+
+8 bytes
+ssid password
+
+8 bytes
+router ssid
+
+8 bytes
+router password
+
+8 bytes
+service name
+
+11 bytes
+turnout file name
+**/
+#define P1_SIZE 1 //apmode bit 1, enable can grid bit 2, log level bit 3,4
+#define P2_SIZE 2 //tcp port
+#define P3_SIZE 2 //grid tcp port
+#define P4_SIZE 1 //wifi channel
+#define P5_SIZE 8 //ssid
+#define P6_SIZE 8 //ssid password
+#define P7_SIZE 8 //router ssid
+#define P8_SIZE 8 //router ssid password
+#define P9_SIZE 8 //service name
+#define P10_SIZE 11 //turnout file name
+
+#define PARAMS_SIZE         P1_SIZE + P2_SIZE + P3_SIZE + P4_SIZE + P5_SIZE + P6_SIZE + P7_SIZE + P8_SIZE + P9_SIZE + P10_SIZE
+
+#define PARAM1 0 //apmode bit 1, enable can grid bit 2, log level bit 3,4
+#define P_TCP_PORT           PARAM1 + P1_SIZE
+#define P_GRID_TCP_PORT      P_TCP_PORT + P2_SIZE
+#define P_WIFI_CHANNEL       P_GRID_TCP_PORT + P3_SIZE
+#define P_SSID               P_WIFI_CHANNEL + P4_SIZE
+#define P_PASSWD             P_SSID + P5_SIZE
+#define P_ROUTER_SSID        P_PASSWD + P6_SIZE
+#define P_ROUTER_PASSWD      P_ROUTER_SSID + P7_SIZE
+#define P_SERVICE_NAME       P_ROUTER_PASSWD + P8_SIZE
+#define P_TURNOUT_FILE       P_SERVICE_NAME + P9_SIZE
+
 
 using namespace std;
 
@@ -94,6 +148,8 @@ class nodeConfigurator
         bool saveConfig(string key,int val);
         void startIndexParams();
         void loadParamsToMemory();
+        void loadParam1();
+        void loadParamsInt2Bytes();
 
         string configFile;
         Config cfg;

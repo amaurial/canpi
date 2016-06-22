@@ -30,6 +30,14 @@ byte nodeConfigurator::setParameter(int idx,byte val){
 }
 
 void nodeConfigurator::loadParamsToMemory(){
+    loadParams1();
+    loadParamsInt2Bytes(getTcpPort(),1);
+    loadParamsInt2Bytes(getcanGridPort(),3);
+    PARAMS[4] = getApChannel() & 0xff;
+    loadParamsString(getSSID(),5,8);
+}
+
+void nodeConfigurator::loadParams1(){
     byte p1 = 0;
     if (getAPMode()){
         p1 = 1;
@@ -51,9 +59,40 @@ void nodeConfigurator::loadParamsToMemory(){
         p1 = p1 | 0b00000011;
     }
     PARAMS[0] = p1;
+}
 
+void nodeConfigurator::loadParamsInt2Bytes(int value,int idx){
+    byte Hb = 0;
+    byte Lb = 0;
+
+    Lb = value & 0xff;
+    Hb = (value >> 8) & 0xff;
+
+    PARAMS[idx] = Hb;
+    PARAMS[idx+1] = Lb;
+}
+
+void nodeConfigurator::loadParamsString(string value,int idx,int maxsize){
+    int i,ssize,pos;
+
+    ssize = value.size();
+    if (value.size() > maxsize){
+        ssize = maxsize;
+    }
+
+    for (int i = 0;i < ssize; i++){
+        PARAMS[idx + i] = value.c_str()[i];
+    }
+
+    //fill the rest with 0
+    if (value.size() < maxsize){
+        for (i=value.size() ; i < maxsize ; i++){
+            PARAMS[i] = 0;
+        }
+    }
 
 }
+
 
 void nodeConfigurator::startIndexParams(){
     /**
