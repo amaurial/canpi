@@ -185,7 +185,7 @@ void tcpServer::postMessageToAllClients(int clientId,int canid,char *msg,int msi
     while(it != clients.end())
     {
         if (it->second->getId() != clientId){
-            logger->info("Stop client %d", it->second->getId());
+            logger->info("Sending msg from ED %d to ED %d",clientId, it->second->getId());
             it->second->canMessage(canid,msg,msize);
         }
         it++;

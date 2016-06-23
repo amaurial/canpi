@@ -40,11 +40,15 @@ class tcpClient : public Client
         edSession* edsession;
         std::map<int,edSession*> sessions; //the loco number is the key
         Turnout *turnouts;
+        std::queue<can_frame> in_msgs;
+        pthread_mutex_t m_mutex_in_cli;
+        pthread_cond_t  m_condv_in_cli;
 
         void run(void * param);
-        void handleCBUS(const char* msg);
+        void handleCBUS(char* msg);
         void handleLearnEvents(const char* msg);
         void sendKeepAlive(void *param);
+        void processCbusQueue(void *param);
         void sendToEd(string msg);
         string generateFunctionsLabel(int loco);
         void handleEDMessages(char* msgptr);
@@ -74,6 +78,10 @@ class tcpClient : public Client
 
         static void* thread_keepalive(void *classPtr){
             ((tcpClient*)classPtr)->sendKeepAlive(classPtr);
+            return nullptr;
+        }
+         static void* thread_processcbus(void *classPtr){
+            ((tcpClient*)classPtr)->processCbusQueue(classPtr);
             return nullptr;
         }
 };

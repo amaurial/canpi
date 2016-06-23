@@ -58,6 +58,7 @@ byte nodeConfigurator::setNV(int idx,byte val){
     }
     NV[i] = val;
     //TODO need to discover when to save a parameter
+    return 0;
 }
 
 void nodeConfigurator::loadParamsToMemory(){

@@ -24,12 +24,17 @@ tcpClient::tcpClient(log4cpp::Category *logger, tcpServer *server, canHandler* c
     this->re_turnout_generic = regex(RE_TURNOUT_GENERIC);
     setStartSessionTime();
     this->clientType = ClientType::ED;
+
+    pthread_mutex_init(&m_mutex_in_cli, NULL);
+    pthread_cond_init(&m_condv_in_cli, NULL);
 }
 
 tcpClient::~tcpClient()
 {
     //dtor
     delete(edsession);
+    pthread_mutex_destroy(&m_mutex_in_cli);
+    pthread_cond_destroy(&m_condv_in_cli);
 }
 
 void tcpClient::setTurnout(Turnout* turnouts){
@@ -68,25 +73,24 @@ void tcpClient::stop(){
 }
 
 void tcpClient::canMessage(int canid,const char* msg, int dlc){
-    //test to send data to client tcp
-    //int nbytes;
-    //char buf[CAN_MSG_SIZE+1];
-    try{
-        char buf[30];
-        memset(buf,0,20);
-        sprintf(buf,"%02x %02x %02x %02x %02x %02x %02x %02x\n", msg[0],msg[1],msg[2],msg[3],msg[4],msg[5],msg[6],msg[7]);
-        logger->debug("[%d] Tcp Client received cbus message: %s",id,buf);
-        //memcpy(buf,msg,CAN_MSG_SIZE);
-        //buf[CAN_MSG_SIZE] = '\n';
-        //nbytes = write(client_sock,buf,CAN_MSG_SIZE + 1);
-        //nbytes = write(client_sock,buf,nbytes);
+    struct can_frame frame;
 
-        handleCBUS(msg);
-    }
-    catch(runtime_error &ex){
-        logger->debug("[%d] Failed to process the can message",id);
-        throw_line("Failed to process the can message");
-    }
+    frame.can_id = canid;
+    frame.can_dlc = dlc;
+    frame.data[0] = msg[0];
+    frame.data[1] = msg[1];
+    frame.data[2] = msg[2];
+    frame.data[3] = msg[3];
+    frame.data[4] = msg[4];
+    frame.data[5] = msg[5];
+    frame.data[6] = msg[6];
+    frame.data[7] = msg[7];
+
+    //pthread_mutex_lock(&m_mutex_in_cli);
+    //cout << "#######@@@###@#@###@" << endl;
+    in_msgs.push(frame);
+    //pthread_mutex_unlock(&m_mutex_in_cli);
+    //pthread_cond_signal(&m_condv_in_cli);
 }
 
 void tcpClient::run(void *param){
@@ -95,6 +99,8 @@ void tcpClient::run(void *param){
 
     pthread_t kalive;
     pthread_create(&kalive, nullptr, tcpClient::thread_keepalive, this);
+    pthread_t cbusin;
+    pthread_create(&cbusin, nullptr, tcpClient::thread_processcbus, this);
 
     while (running){
         memset(msg,0,BUFFER_SIZE);
@@ -122,6 +128,7 @@ void tcpClient::run(void *param){
     usleep(1000*1000); //1sec give some time for any pending thread to finish
     close(client_sock);
     pthread_cancel(kalive);
+    pthread_cancel(cbusin);
     server->removeClient(this);
 }
 
@@ -302,104 +309,159 @@ void tcpClient::handleEDMessages(char* msgptr){
     }
 }
 
-void tcpClient::handleCBUS(const char *msg){
+void tcpClient::processCbusQueue(void *param){
+    struct can_frame frame;
+    char buf[30];
+    logger->debug("[%d] Tcp Client cbus thread read cbus queue",id);
+    while (running){
+        if (!in_msgs.empty()){
+            //pthread_mutex_lock(&m_mutex_in_cli);
+            frame = in_msgs.front();
+            in_msgs.pop();
+            //pthread_mutex_unlock(&m_mutex_in_cli);
+            //pthread_cond_signal(&m_condv_in_cli);
+            try{
+                memset(buf,0,sizeof(buf));
+                sprintf(buf,"%02x %02x %02x %02x %02x %02x %02x %02x\n", frame.data[0],frame.data[1],frame.data[2],frame.data[3],frame.data[4],frame.data[5],frame.data[6],frame.data[7]);
+                logger->debug("[%d] Tcp Client received cbus message: %s",id,buf);
+                //cout << "#######@@@###@#@###@" << endl;
+                handleCBUS(frame.data);
+            }
+            catch(runtime_error &ex){
+                logger->debug("[%d] Failed to process the can message",id);
+                //throw_line("Failed to process the can message");
+            }
+            catch(...){
+                logger->debug("[%d] Failed to process the can message",id);
+            }
+        }
+        usleep(4000);
+    }
+}
+
+void tcpClient::handleCBUS(char *msg){
 
     unsigned char opc = msg[0];
-    int loco;
+    int loco,tcode;
     string message;
     stringstream ss;
     unsigned char speed;
     unsigned char direction ;
     unsigned char session;
-
+    //cout << "$$$$$$$$$$$$$$$$$$$$$$$$$" << endl;
+    logger->info("[%d] Processing CBUS message %02x",id,opc);
     switch (opc){
-    case OPC_PLOC:
-        logger->debug("[%d] Checking result of request session. OPC: PLOC %02x %02x",id,msg[2] ,msg[3]);
-        session = msg[1];
-        loco = msg[2] & 0x3f;
-        loco = (loco << 8) + msg[3];
+        case OPC_PLOC:
+            logger->debug("[%d] Checking result of request session. OPC: PLOC %02x %02x",id,msg[2] ,msg[3]);
+            session = msg[1];
+            loco = msg[2] & 0x3f;
+            loco = (loco << 8) + msg[3];
 
-        if (edsession->getLoco() != loco){
-            logger->debug("[%d] PLOC %d not for this session %d. Discarding." , id,loco, edsession->getLoco());
-            return;
-        }
-        edsession->setSession(session);
-        //decode the DCC format
-        speed = msg[4] & 0x7F; //#0111 1111
-        direction = 0;
-        if ((msg[4] & 0x80) > 127)   direction = 1;
+            if (edsession->getLoco() != loco){
+                logger->debug("[%d] PLOC %d not for this session %d. Discarding." , id,loco, edsession->getLoco());
+                return;
+            }
+            edsession->setSession(session);
+            //decode the DCC format
+            speed = msg[4] & 0x7F; //#0111 1111
+            direction = 0;
+            if ((msg[4] & 0x80) > 127)   direction = 1;
 
-        //put session in array
-        edsession->setDirection(direction);
-        edsession->setSpeed(speed);
+            //put session in array
+            edsession->setDirection(direction);
+            edsession->setSpeed(speed);
 
-        ss << "MT+";
-        ss << edsession->getAddressType();
-        ss << loco;
-        ss << DELIM_BTLT;
-        ss << edsession->getLocoName();
-        ss << '\n';
+            ss << "MT+";
+            ss << edsession->getAddressType();
+            ss << loco;
+            ss << DELIM_BTLT;
+            ss << edsession->getLocoName();
+            ss << '\n';
 
-        message = ss.str();
-        logger->debug("[%d] Ack client session created %d for loco %d :%s" ,id,session, loco, message.c_str());
-        sendToEd(message);
+            message = ss.str();
+            logger->debug("[%d] Ack client session created %d for loco %d :%s" ,id,session, loco, message.c_str());
+            sendToEd(message);
 
-        logger->debug("[%d] Adding loco %d to sessions", id, loco);
-        logger->info("[%d] Loco %d acquired",id,loco);
-        sessions.insert(pair<int,edSession*>(loco,edsession));
-        edsession = new edSession(logger);
-        setStartSessionTime();
+            logger->debug("[%d] Adding loco %d to sessions", id, loco);
+            logger->info("[%d] Loco %d acquired",id,loco);
+            sessions.insert(pair<int,edSession*>(loco,edsession));
+            edsession = new edSession(logger);
+            setStartSessionTime();
 
-        //set speed mode 128 to can
-        logger->debug("[%d] Sending speed mode 128 to CBUS",id);
-        sendCbusMessage(OPC_STMOD, session, 0);
+            //set speed mode 128 to can
+            logger->debug("[%d] Sending speed mode 128 to CBUS",id);
+            sendCbusMessage(OPC_STMOD, session, 0);
 
-        //send the labels to client
-        ss.clear();ss.str();
-        ss << "MTLS";
-        ss << loco;
-        ss << EMPTY_LABELS;
-        ss << "S";
-        ss << generateFunctionsLabel(loco);
-        ss << '\n';
+            //send the labels to client
+            ss.clear();ss.str();
+            ss << "MTLS";
+            ss << loco;
+            ss << EMPTY_LABELS;
+            ss << "S";
+            ss << generateFunctionsLabel(loco);
+            ss << '\n';
 
-        logger->debug("[%d] Sending labels",id);
+            logger->debug("[%d] Sending labels",id);
 
-        sendToEd(ss.str());
+            sendToEd(ss.str());
 
-        logger->debug("[%d] Sending speed mode 128 to ED",id);
-        ss.clear();ss.str();
-        ss << "MT";
-        ss << edsession->getAddressType();
-        ss << loco;
-        ss << DELIM_BTLT;
-        ss << "s0\n";
+            logger->debug("[%d] Sending speed mode 128 to ED",id);
+            ss.clear();ss.str();
+            ss << "MT";
+            ss << edsession->getAddressType();
+            ss << loco;
+            ss << DELIM_BTLT;
+            ss << "s0\n";
 
-        sendToEd(ss.str());
+            sendToEd(ss.str());
         break;
-    case OPC_ERR:
-        logger->debug("[%d] CBUS Error message",id);
-        loco = msg[2] & 0x3f;
-        loco = (loco << 8) + msg[3];
 
-        if (loco != edsession->getLoco()){
-            logger->debug("[%d] Error message for another client. Different loco number %d %d. Discarding.",id,edsession->getLoco(), loco);
-            return;
-        }
+        case OPC_ERR:
+            logger->debug("[%d] CBUS Error message",id);
+            loco = msg[2] & 0x3f;
+            loco = (loco << 8) + msg[3];
 
-        switch (msg[3]){
-        case 1:
-            logger->info("[%d] Can not create session. Reason: stack full",id);
-            break;
-        case 2:
-            logger->info("[%d] Err: Loco %d TAKEN",id, loco);
-            break;
-        case 3:
-            logger->info("[%d] Err: No session %d" ,id, loco);
-            break;
-        default:
-            logger->info("[%d] Err code: %d" ,id, msg[3]);
-        }
+            if (loco != edsession->getLoco()){
+                logger->debug("[%d] Error message for another client. Different loco number %d %d. Discarding.",id,edsession->getLoco(), loco);
+                return;
+            }
+
+            switch (msg[3]){
+            case 1:
+                logger->info("[%d] Can not create session. Reason: stack full",id);
+                break;
+            case 2:
+                logger->info("[%d] Err: Loco %d TAKEN",id, loco);
+                break;
+            case 3:
+                logger->info("[%d] Err: No session %d" ,id, loco);
+                break;
+            default:
+                logger->info("[%d] Err code: %d" ,id, msg[3]);
+            }
+        break;
+        case OPC_ASOF:
+            tcode = msg[3];
+            tcode = (tcode << 8) | msg[4];
+            logger->info("[%d] ASOF received. Checking turnout: %d." ,id,tcode);
+            // check the turnout state and inform the ED
+            if (turnouts->exists(tcode)){
+                logger->debug("[%d] Found turnout: %d. Closing" ,id,tcode);
+                turnouts->CloseTurnout(tcode);
+                sendToEd(turnouts->getTurnoutMsg(tcode) + "\n");
+            }
+        break;
+
+        case OPC_ASON:
+            tcode = msg[3];
+            tcode = (tcode << 8) | msg[4];
+            logger->info("[%d] ASON received. Checking turnout: %d." ,id,tcode);
+            // check the turnout state and inform the ED
+            if (turnouts->exists(tcode)){
+                logger->debug("[%d] Found turnout: %d. Throwing" ,id,tcode);
+                turnouts->ThrownTurnout(tcode);
+                sendToEd(turnouts->getTurnoutMsg(tcode) + "\n");
+            }
         break;
     }
 }
@@ -773,6 +835,8 @@ void tcpClient::handleTurnout(string message){
 
     // the ED always sends an on and off we will consider just the on and toggle the function internally
     //get the function
+    char msg[CAN_MSG_SIZE];
+    memset(msg,0,CAN_MSG_SIZE);
 
     int i = message.find("MT+");
     int j = message.find(";");
@@ -800,12 +864,22 @@ void tcpClient::handleTurnout(string message){
     if (turnouts->getTurnoutState(tcode) == TurnoutState::THROWN){
         turnouts->CloseTurnout(tcode);
         sendCbusMessage(OPC_ASOF, 0, 0 , Hb, Lb );
+        //send to other EDs
+        msg[0] = OPC_ASOF;
     }
     else{
         turnouts->ThrownTurnout(tcode);
         sendCbusMessage(OPC_ASON, 0, 0 , Hb, Lb );
+        //send to other EDs
+        msg[0] = OPC_ASON;
     }
     sendToEd(turnouts->getTurnoutMsg(tcode) + "\n");
+    //send to the other clients
+    msg[1] = 0;
+    msg[2] = 0;
+    msg[3] = Hb;
+    msg[4] = Lb;
+    server->postMessageToAllClients(id,can->getCanId(),msg,5,ClientType::ED);
 }
 
 void tcpClient::handleTurnoutGeneric(string message){
