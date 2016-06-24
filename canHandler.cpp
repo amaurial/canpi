@@ -239,6 +239,7 @@ void canHandler::run_queue_reader(void* param){
                 opc == OPC_HLT ||
                 opc == OPC_BON ||
                 opc == OPC_BOOT ||
+                opc == OPC_ARST ||
                 opc == OPC_CANID){
                 handleCBUSEvents(frame);
             }
