@@ -8,6 +8,7 @@
 #include "utils.h"
 #include "tcpServer.h"
 #include "canHandler.h"
+#include "nodeConfigurator.h"
 
 using namespace std;
 
@@ -24,6 +25,7 @@ class Client
         virtual void stop()=0;
         virtual void canMessage(int canid,const char* msg,int dlc)=0;
 
+
         Client& setIp(char *ip);
         string getIp();
 
@@ -35,6 +37,7 @@ class Client
         Client& setClientSocket(int client_socket);
         Client& setSockAddr(struct sockaddr_in client_addr);
         Client& setServer(tcpServer *server);
+        Client& setNodeConfigurator(nodeConfigurator *config);
 
 
     protected:
@@ -47,6 +50,7 @@ class Client
         struct sockaddr_in client_addr;
         ClientType clientType;
         vector<string> & split(const string &s, char delim, vector<string> &elems);
+        nodeConfigurator *config;
 
         void sendCbusMessage(int nbytes,byte b0, byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7);
         void sendCbusMessage(byte b0);

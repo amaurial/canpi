@@ -1,4 +1,5 @@
 #include "edSession.h"
+#include "nodeConfigurator.h"
 
 edSession::edSession(log4cpp::Category *logger)
 {
@@ -24,6 +25,51 @@ edSession::edSession(log4cpp::Category *logger)
 edSession::~edSession()
 {
     //dtor
+}
+
+void edSession::configChanged(){
+    getMomentaryFNs();
+}
+
+void edSession::getMomentaryFNs(){
+    string val;
+    int i;
+
+    val = config->getMomentaryFn();
+    logger->debug("EDSESSION FNs %s",val.c_str());
+    if (val.size() > 0){
+        vector <string> vals;
+        vals = split(val,',',vals);
+        if (!vals.empty()){
+            logger->debug("Reset the momentary Fns");
+            for (i=0;i<FN_SIZE;i++){
+                fnstype[i]=1;
+            }
+
+            for (auto s:vals){
+                logger->debug("Set Fn %s to momentary", s.c_str());
+                i = atoi(s.c_str());
+                if (i < FN_SIZE){
+                    setFnType(i, 0);
+                }
+            }
+        }
+    }
+}
+
+vector<string> & edSession::split(const string &s, char delim, vector<string> &elems)
+{
+    stringstream ss(s+' ');
+    string item;
+    while(getline(ss, item, delim))
+    {
+        elems.push_back(item);
+    }
+    return elems;
+}
+
+void edSession::setNodeConfigurator(nodeConfigurator *config){
+    this->config = config;
 }
 
 void edSession::setLoco(int loco){

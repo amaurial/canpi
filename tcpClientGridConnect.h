@@ -6,6 +6,7 @@
 #include "opcodes.h"
 #include "msgdata.h"
 #include "utils.h"
+#include "nodeConfigurator.h"
 
 #include <sys/socket.h>
 #include <arpa/inet.h> //inet_addr
@@ -31,7 +32,7 @@ using namespace std;
 class tcpClientGridConnect:public Client
 {
     public:
-        tcpClientGridConnect(log4cpp::Category *logger, tcpServer *server, canHandler* can, int client_sock, struct sockaddr_in client_addr, int id);
+        tcpClientGridConnect(log4cpp::Category *logger, tcpServer *server, canHandler* can, int client_sock, struct sockaddr_in client_addr, int id,nodeConfigurator *config);
         virtual ~tcpClientGridConnect();
         void start(void *param);
         void stop();

@@ -70,7 +70,7 @@ void canHandler::setPins(int pbutton,int gledpin,int yledpin){
 
 void canHandler::setConfigurator(nodeConfigurator *config){
     this->config = config;
-    config->setNodeParams(MANU_MERG,MSOFT_MIN_VERSION,MID,0,0,config->getNumberOfNVs(),MSOFT_VERSION,MFLAGS);
+    //config->setNodeParams(MANU_MERG,MSOFT_MIN_VERSION,MID,0,0,config->getNumberOfNVs(),MSOFT_VERSION,MFLAGS);
  }
 
 void canHandler::setTcpServer(tcpServer * tcpserver){

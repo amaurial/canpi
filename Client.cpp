@@ -14,6 +14,12 @@ Client& Client::setIp(char *ip){
     this->ip = string(ip);
     return *this;
 }
+
+Client& Client::setNodeConfigurator(nodeConfigurator *config){
+    this->config = config;
+    return *this;
+}
+
 string Client::getIp(){
     return ip;
 }

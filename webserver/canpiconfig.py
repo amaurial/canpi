@@ -83,6 +83,7 @@ id_logfile="Logfile"
 id_loglevel="Log Level"
 id_canid="Can ID"
 id_turnout_file="Turnouts"
+id_fns_momentary="Fns momentary"
 
 myform = form.Form(
     form.Checkbox(id_apmode,checked=apmode,value="apmode",id="tapmode"),
@@ -96,6 +97,7 @@ myform = form.Form(
     form.Checkbox(id_grid_enable,checked=gridenable,value="gridenable",id="cangrid"),
     form.Textbox(id_grid_port,value=cm.getValue("cangrid_port"),id="cangripport"),
     form.Textbox(id_canid,value=cm.getValue("canid")),
+    form.Textbox(id_fns_momentary,value=cm.getValue("fn_momentary")),
     form.Textbox(id_turnout_file,value=cm.getValue("turnout_file")),
     form.Dropdown(id_loglevel, ['INFO', 'WARN', 'DEBUG'],value=cm.getValue("loglevel")),
     #form.Textbox(id_logfile,value=cm.getValue("logfile"),id="logfile"),
@@ -126,6 +128,7 @@ def reloadMyForm():
         form.Checkbox(id_grid_enable,checked=gridenable,value="gridenable",id="cangrid"),
         form.Textbox(id_grid_port,value=cm.getValue("cangrid_port"),id="cangripport"),
         form.Textbox(id_canid,value=cm.getValue("canid")),
+        form.Textbox(id_fns_momentary,value=cm.getValue("fn_momentary")),
         form.Textbox(id_turnout_file,value=cm.getValue("turnout_file")),
         form.Dropdown(id_loglevel, ['INFO', 'WARN', 'DEBUG'],value=cm.getValue("loglevel")),
         #form.Textbox(id_logfile,value=cm.getValue("logfile"),id="logfile"),
@@ -172,6 +175,7 @@ class index:
             #cm.setValue("logfile",str(form[id_logfile].value))
             cm.setValue("loglevel",str(form[id_loglevel].value))
             cm.setValue("canid",str(form[id_canid].value))
+            cm.setValue("fn_momentary",str(form[id_fns_momentary].value))
             cm.setValue("turnout_file",str(form[id_turnout_file].value))
             cm.saveFile()
             raise web.seeother('/')

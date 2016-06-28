@@ -18,6 +18,10 @@ tcpServer::~tcpServer()
     //dtor
 }
 
+void tcpServer::setNodeConfigurator(nodeConfigurator *config){
+    this->config = config;
+}
+
 void tcpServer::setPort(int port){
     this->port = port;
 }
@@ -115,11 +119,11 @@ void tcpServer::run(void* param){
             logger->info("Creating client for ip:%s id:%d",s, counter);
             Client *cl;
             if (clientType == GRID){
-                cl = new tcpClientGridConnect(logger,this,can,client_sock, client_addr,counter);
+                cl = new tcpClientGridConnect(logger,this,can,client_sock, client_addr,counter,config);
             }
             else{
                 tcpClient *client;
-                client = new tcpClient(logger,this,can,client_sock, client_addr,counter);
+                client = new tcpClient(logger,this,can,client_sock, client_addr,counter,config);
                 client->setTurnout(turnouts);
                 cl = client;
             }

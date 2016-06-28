@@ -150,11 +150,13 @@ int main()
 
     tcpServer tcpserver = tcpServer(&logger,port,&can,ClientType::ED);
     tcpserver.setTurnout(&turnouts);
+    tcpserver.setNodeConfigurator(config);
     tcpserver.start();
     can.setTcpServer(&tcpserver);
 
     if (start_grid_server){
         tcpServer tcpserverGrid = tcpServer(&logger,gridport,&can,ClientType::GRID);
+        tcpserverGrid.setNodeConfigurator(config);
         tcpserverGrid.start();
         can.setTcpServer(&tcpserverGrid);
     }

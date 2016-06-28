@@ -1,7 +1,7 @@
 #include "tcpClientGridConnect.h"
 #include <stdio.h>
 
-tcpClientGridConnect::tcpClientGridConnect(log4cpp::Category *logger, tcpServer *server, canHandler* can, int client_sock, struct sockaddr_in client_addr,int id)
+tcpClientGridConnect::tcpClientGridConnect(log4cpp::Category *logger, tcpServer *server, canHandler* can, int client_sock, struct sockaddr_in client_addr,int id,nodeConfigurator *config)
 {
     //ctor
 
@@ -13,6 +13,7 @@ tcpClientGridConnect::tcpClientGridConnect(log4cpp::Category *logger, tcpServer 
     this->id = id;
     this->clientType = ClientType::GRID;
     logger->debug("Grid client %d created", id);
+    this->config = config;
 }
 
 tcpClientGridConnect::~tcpClientGridConnect()

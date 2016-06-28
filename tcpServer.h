@@ -8,7 +8,7 @@
 #include "Client.h"
 #include "canHandler.h"
 #include "Turnout.h"
-
+#include "nodeConfigurator.h"
 
 
 class Client;
@@ -27,7 +27,7 @@ class tcpServer
         ClientType getClientType(){return clientType;};
         void setTurnout(Turnout* turnouts);
         void postMessageToAllClients(int clientId,int canid,char *msg,int msize,ClientType ct);
-
+        void setNodeConfigurator(nodeConfigurator *config);
     protected:
     private:
         canHandler *can;
@@ -42,6 +42,7 @@ class tcpServer
         std::map<int,Client*> clients;
         pthread_t serverThread;
         Turnout* turnouts;
+        nodeConfigurator *config;
 
         void removeClients();
         void run(void* param);

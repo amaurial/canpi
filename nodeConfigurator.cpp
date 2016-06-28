@@ -5,6 +5,8 @@ nodeConfigurator::nodeConfigurator(string file,log4cpp::Category *logger)
     this->configFile = file;
     this->logger = logger;
     loadParamsToMemory();
+    nvs_set = 0;
+    setNodeParams(MANU_MERG,MSOFT_MIN_VERSION,MID,0,0,getNumberOfNVs(),MSOFT_VERSION,MFLAGS);
 }
 
 nodeConfigurator::~nodeConfigurator()
@@ -52,12 +54,72 @@ byte nodeConfigurator::getNV(int idx){
 
 byte nodeConfigurator::setNV(int idx,byte val){
     int i;
+    bool r;
     i = idx - 1;
     if (i < 0){
         i = 0;
     }
     NV[i] = val;
-    //TODO need to discover when to save a parameter
+    nvs_set++;
+
+    if (nvs_set >= PARAMS_SIZE){
+        nvs_set = 0;
+
+        logger->debug ("Received all variables. Saving to file.");
+        printMemoryNVs();
+
+        r = setSSID(nvToString(P_SSID,P5_SIZE));
+        if (!r) logger->error ("Failed to save NVs SSID");
+
+        r = setPassword(nvToString(P_PASSWD,P6_SIZE));
+        if (!r) logger->error ("Failed to save NVs Password");
+
+        r = setRouterSSID(nvToString(P_ROUTER_SSID,P7_SIZE));
+        if (!r) logger->error ("Failed to save NVs Router SSID");
+
+        r = setRouterPassword(nvToString(P_ROUTER_PASSWD,P8_SIZE));
+        if (!r) logger->error ("Failed to save NVs Router password");
+
+        r = setTcpPort(nvToInt(P_TCP_PORT,P2_SIZE));
+        if (!r) logger->error ("Failed to save NVs Tcp port");
+
+        r = setCanGridPort(nvToInt(P_GRID_TCP_PORT,P3_SIZE));
+        if (!r) logger->error ("Failed to save NVs grid tcp port");
+
+        r = setTurnoutFile(nvToString(P_TURNOUT_FILE,P10_SIZE));
+        if (!r) logger->error ("Failed to save NVs turnout files");
+
+        r = setMomentaryFn(nvToMomentary());
+        if (!r) logger->error ("Failed to save NVs momentaries");
+
+        r = setAPMode(nvToApMode());
+        if (!r) logger->error ("Failed to save NV ap mode");
+
+        r = setApChannel(NV[P_WIFI_CHANNEL]);
+        if (!r) logger->error ("Failed to save Wifi channel");
+
+        r = enableCanGrid(nvToCanGrid());
+        if (!r) logger->error ("Failed to save NV enable can grid");
+
+        int v;
+        string loglevel;
+        v = nvToLogLevel();
+        switch (v){
+        case 0:
+            loglevel = "INFO";
+            break;
+        case 1:
+            loglevel = "WARN";
+            break;
+        case 2:
+            loglevel = "DEBUG";
+            break;
+        default:
+            loglevel = "INFO";
+        }
+        r = setLogLevel(loglevel);
+        if (!r) logger->error ("Failed to save NVs loglevel");
+    }
     return 0;
 }
 
@@ -73,25 +135,28 @@ void nodeConfigurator::loadParamsToMemory(){
     loadParamsString(getRouterPassword(), P_ROUTER_PASSWD, P8_SIZE);
     loadParamsString(getServiceName(), P_SERVICE_NAME, P9_SIZE);
     loadParamsString(getTurnoutFile(), P_TURNOUT_FILE, P10_SIZE);
+    momentaryFnsToNVs();
 }
 
 void nodeConfigurator::loadParam1(){
     byte p1 = 0;
     if (getAPMode()){
+        cout << "AP Mode set to true" << endl;
         p1 = 1;
     }
     if (isCanGridEnabled()){
-        p1 = p1 | 0b00000011;
+        cout << "Can grid set to true" << endl;
+        p1 = p1 | 0b00000010;
     }
     string l = getLogLevel();
     if (l.compare("INFO") == 0){
-        p1 = p1 | 0b00000011;
+        p1 = p1 | 0b00000000;
     }
     else if (l.compare("WARN") == 0){
-        p1 = p1 | 0b00000111;
+        p1 = p1 | 0b00000100;
     }
     else if (l.compare("DEBUG") == 0){
-        p1 = p1 | 0b00001011;
+        p1 = p1 | 0b00001000;
     }
     else{
         p1 = p1 | 0b00000011;
@@ -106,23 +171,22 @@ void nodeConfigurator::loadParamsInt2Bytes(int value, unsigned int idx){
 
     Lb = value & 0xff;
     Hb = (value >> 8) & 0xff;
-
-    NV[idx] = Hb;
-    NV[idx+1] = Lb;
+    //little indian
+    NV[idx+1] = Hb;
+    NV[idx] = Lb;
 
     cout << "P int " << value << " " << int(NV[idx]) << " " << int(NV[idx+1]) << endl;
-
 }
 
 void nodeConfigurator::loadParamsString(string value, unsigned int idx, unsigned int maxsize){
-    unsigned i,ssize;
+    unsigned int i,ssize;
 
     ssize = value.size();
     if (value.size() > maxsize){
         ssize = maxsize;
     }
 
-    for (int i = 0;i < ssize; i++){
+    for (i = 0;i < ssize; i++){
         NV[idx + i] = value.c_str()[i];
         cout <<  NV[idx + i] << " ";
     }
@@ -134,53 +198,6 @@ void nodeConfigurator::loadParamsString(string value, unsigned int idx, unsigned
         }
     }
     cout << endl;
-}
-
-
-void nodeConfigurator::startIndexParams(){
-    /**
-    1 byte
-    apmode bit 1, enable can grid bit 2, log level bit 3,4
-
-    2 bytes
-    tcp port
-
-    2 bytes
-    grid tcp port
-
-    1 byte
-    wifi channel
-
-    8 bytes
-    ssid
-
-    8 bytes
-    ssid password
-
-    8 bytes
-    router ssid
-
-    8 bytes
-    router password
-
-    8 bytes
-    service name
-
-    11 bytes
-    turnout file name
-    **/
-/*
-    param_index.push_back({1,1});//apmode bit 1, enable can grid bit 2, log level bit 3,4
-    param_index.push_back({2,2});//tcp port
-    param_index.push_back({3,2});//grid tcp port
-    param_index.push_back({4,1});//wifi channel
-    param_index.push_back({5,8});//ssid
-    param_index.push_back({6,8});//password
-    param_index.push_back({7,8});//router ssid
-    param_index.push_back({8,8});//router password
-    param_index.push_back({9,8});//service name
-    param_index.push_back({10,11});//turnout file name
-*/
 }
 
 bool nodeConfigurator::saveConfig(string key,string val){
@@ -198,11 +215,14 @@ bool nodeConfigurator::saveConfig(string key,string val){
     catch(const FileIOException &fioex)
     {
         std::cerr << "File I/O error" << std::endl;
+        std::cout << "File I/O error" << std::endl;
         return false;
     }
     catch(const ParseException &pex)
     {
         std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
+	          << " - " << pex.getError() << std::endl;
+        std::cout << "Parse error at " << pex.getFile() << ":" << pex.getLine()
 	          << " - " << pex.getError() << std::endl;
         return false;
     }
@@ -223,11 +243,14 @@ bool nodeConfigurator::saveConfig(string key,int val){
     catch(const FileIOException &fioex)
     {
         std::cerr << "File I/O error" << std::endl;
+        std::cout << "File I/O error" << std::endl;
         return false;
     }
     catch(const ParseException &pex)
     {
         std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
+	          << " - " << pex.getError() << std::endl;
+        std::cout << "Parse error at " << pex.getFile() << ":" << pex.getLine()
 	          << " - " << pex.getError() << std::endl;
         return false;
     }
@@ -249,15 +272,19 @@ string nodeConfigurator::getStringConfig(string key)
     catch(const FileIOException &fioex)
     {
         std::cerr << "File I/O error" << std::endl;
+        std::cout << "File I/O error" << std::endl;
     }
     catch(const ParseException &pex)
     {
         std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
 	          << " - " << pex.getError() << std::endl;
+        std::cout << "Parse error at " << pex.getFile() << ":" << pex.getLine()
+	          << " - " << pex.getError() << std::endl;
     }
     catch(const SettingNotFoundException &nfex)
     {
         std::cerr << "Key not found" << std::endl;
+        std::cout << "Key not found" << std::endl;
     }
     return ret;
 
@@ -281,15 +308,19 @@ int nodeConfigurator::getIntConfig(string key)
     catch(const FileIOException &fioex)
     {
         std::cerr << "File I/O error" << std::endl;
+        std::cout << "File I/O error" << std::endl;
     }
     catch(const ParseException &pex)
     {
         std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
 	          << " - " << pex.getError() << std::endl;
+        std::cout << "Parse error at " << pex.getFile() << ":" << pex.getLine()
+	          << " - " << pex.getError() << std::endl;
     }
     catch(const SettingNotFoundException &nfex)
     {
         std::cerr << "Key not found" << std::endl;
+        std::cout << "Key not found" << std::endl;
     }
     return ret;
 }
@@ -298,24 +329,181 @@ string nodeConfigurator::getNodeName(){
     return string("CANWIFI");
 }
 
+//saves the string to config file
+string nodeConfigurator::getMomentaryFn(){
+    string ret;
+    ret = getStringConfig("fn_momentary");
+    return ret;
+}
+//gets the string to config file
+bool nodeConfigurator::setMomentaryFn(string val){
+    return saveConfig("fn_momentary",val);
+}
+//transform the bits in the array to the momentary string
+//number comma separated
+string nodeConfigurator::nvToMomentary(){
+    int i;
+    byte a,fn,j;
+    fn = 0;
+    stringstream ss;
+    string fns;
+
+    for (i = 0; i < P11_SIZE ;i++){
+        a = NV[i+P_MOMENTARY_FNS];
+        for (j = 0; j < 8; j++){
+            if ((( a>>(7-j) ) & 0x01) == 1){
+                ss << int(fn);
+                ss << ",";
+            }
+            fn++;
+        }
+    }
+    fns = ss.str();
+    if (fns.size() > 0){
+        //delete the last commma
+        fns = fns.substr(0,fns.size()-1);
+    }
+    return fns;
+}
+
+void nodeConfigurator::momentaryFnsToNVs(){
+    string val;
+    int i;
+    byte t;
+    char fns[P11_SIZE];
+    int idx,ibyte;
+
+    memset(fns,0,P11_SIZE);
+
+    val = getMomentaryFn();
+
+    if (val.size() > 0){
+        vector <string> vals;
+        vals = split(val,',',vals);
+
+        logger->debug("Config: loading fns:%s size:%d to NVs",val.c_str(),vals.size());
+
+        if (!vals.empty()){
+            for (auto s:vals){
+                i = atoi(s.c_str());
+                logger->debug("Config - Set Fn %d to momentary", i);
+                if (i < FN_SIZE){
+                    if (i < 8) ibyte = 0;
+                    if (i > 7 && i < 16) ibyte = 1;
+                    if (i > 15 && i < 24) ibyte = 2;
+                    if (i > 23 && i < 32) ibyte = 3;
+                    if (i > 31) return;
+                    t = 1;
+                    idx = 7 - (i - ibyte*8);
+                    fns[ibyte] = fns[ibyte] | t << idx;
+                }
+            }
+            logger->debug("FN momentary bytes %02x %02x %02x %02x",fns[0],fns[1],fns[2],fns[3]);
+            //copy to memory
+            for (i=0; i< P11_SIZE; i++){
+                NV[i+P_MOMENTARY_FNS]= fns[i];
+            }
+        }
+    }
+}
+
+vector<string> & nodeConfigurator::split(const string &s, char delim, vector<string> &elems)
+{
+    stringstream ss(s+' ');
+    string item;
+    while(getline(ss, item, delim))
+    {
+        elems.push_back(item);
+    }
+    return elems;
+}
+
+//general function that gets an array index and size and get the string
+string nodeConfigurator::nvToString(int index,int slen){
+    stringstream ss;
+    int i;
+    for (i=0; i < slen;i++){
+        ss << NV[index + i];
+    }
+    return ss.str();
+}
+
+//general function that gets an array index and size and get the integer
+// the first byte is the highest byte
+int nodeConfigurator::nvToInt(int index,int slen){
+    int val;
+    int i;
+    val = 0;
+    for (i=0; i < slen ;i++){
+        //val = val << 8;
+        val = val | NV[index + i] << 8*i;
+    }
+    return val;
+}
+
+bool nodeConfigurator::nvToApMode(){
+
+    if ((NV[PARAM1] & 0x01) == 1){
+        return true;
+    }
+    return false;
+}
+
+bool nodeConfigurator::nvToCanGrid(){
+
+    if ((NV[PARAM1] & 0x02) == 2){
+        return true;
+    }
+    return false;
+}
+
+int nodeConfigurator::nvToLogLevel(){
+    return (NV[PARAM1] & 0x0C)>>2;
+}
+
+bool nodeConfigurator::setTcpPort(int val){
+    return saveConfig("tcpport",val);
+}
+
 int nodeConfigurator::getTcpPort(){
     int ret;
     ret = getIntConfig("tcpport");
     if (ret == INTERROR){
-        cout << "Failed to get tcp port. Default is 30" << endl;
-        ret = 31;
+        string r = getStringConfig("tcpport");
+        if (r.size() > 0){
+            //try to convert
+            try{
+                ret = atoi(r.c_str());
+            }
+            catch(...){
+                cout << "Failed to convert " << r << " to int" << endl;
+            }
+        }
+        else{
+            cout << "Failed to get tcp port. Default is 30" << endl;
+        }
+        ret = 30;
     }
     return ret;
-}
-bool nodeConfigurator::setTcpPort(int val){
-    return saveConfig("tcpport",val);
 }
 
 int nodeConfigurator::getcanGridPort(){
     int ret;
     ret = getIntConfig("cangrid_port");
     if (ret == INTERROR){
-        cout << "Failed to get the grid tcp port. Default is 31" << endl;
+        string r = getStringConfig("cangrid_port");
+        if (r.size() > 0){
+            //try to convert
+            try{
+                ret = atoi(r.c_str());
+            }
+            catch(...){
+                cout << "Failed to convert " << r << " to int" << endl;
+            }
+        }
+        else{
+            cout << "Failed to get the grid tcp port. Default is 31" << endl;
+        }
         ret = 31;
     }
     return ret;
@@ -328,7 +516,19 @@ int nodeConfigurator::getCanID(){
     int ret;
     ret = getIntConfig("canid");
     if (ret == INTERROR){
-        cout << "Failed to get the canid. Default is 110" << endl;
+        string r = getStringConfig("canid");
+        if (r.size() > 0){
+            //try to convert
+            try{
+                ret = atoi(r.c_str());
+            }
+            catch(...){
+                cout << "Failed to convert " << r << " to int" << endl;
+            }
+        }
+        else{
+            cout << "Failed to get the canid. Default is 110" << endl;
+        }
         ret = 110;
     }
     return ret;
@@ -341,7 +541,19 @@ int nodeConfigurator::getNodeNumber(){
     int ret;
     ret = getIntConfig("node_number");
     if (ret == INTERROR){
-        cout << "Failed to get the node_number. Default is 4321" << endl;
+        string r = getStringConfig("node_number");
+        if (r.size() > 0){
+            //try to convert
+            try{
+                ret = atoi(r.c_str());
+            }
+            catch(...){
+                cout << "Failed to convert " << r << " to int" << endl;
+            }
+        }
+        else{
+            cout << "Failed to get the node_number. Default is 4321" << endl;
+        }
         ret = 4321;
     }
     return ret;
@@ -515,7 +727,19 @@ int nodeConfigurator::getApChannel(){
     int ret;
     ret = getIntConfig("ap_channel");
     if (ret == INTERROR){
-        cout << "Failed to get the ap_channel. Default is 6" << endl;
+        string r = getStringConfig("ap_channel");
+        if (r.size() > 0){
+            //try to convert
+            try{
+                ret = atoi(r.c_str());
+            }
+            catch(...){
+                cout << "Failed to convert " << r << " to int" << endl;
+            }
+        }
+        else{
+            cout << "Failed to get the ap_channel. Default is 6" << endl;
+        }
         ret = 6;
     }
     return ret;
@@ -535,7 +759,19 @@ int nodeConfigurator::getPB(){
     int ret;
     ret = getIntConfig("button_pin");
     if (ret == INTERROR){
-        cout << "Failed to get the button_pin. Default is 4" << endl;
+        string r = getStringConfig("button_pin");
+        if (r.size() > 0){
+            //try to convert
+            try{
+                ret = atoi(r.c_str());
+            }
+            catch(...){
+                cout << "Failed to convert " << r << " to int" << endl;
+            }
+        }
+        else{
+            cout << "Failed to get the button_pin. Default is 4" << endl;
+        }
         ret = 4;
     }
     return ret;
@@ -548,7 +784,19 @@ int nodeConfigurator::getGreenLed(){
     int ret;
     ret = getIntConfig("green_led_pin");
     if (ret == INTERROR){
-        cout << "Failed to get the green_led_pin. Default is 5" << endl;
+        string r = getStringConfig("green_led_pin");
+        if (r.size() > 0){
+            //try to convert
+            try{
+                ret = atoi(r.c_str());
+            }
+            catch(...){
+                cout << "Failed to convert " << r << " to int" << endl;
+            }
+        }
+        else{
+            cout << "Failed to get the green_led_pin. Default is 5" << endl;
+        }
         ret = 5;
     }
     return ret;
@@ -561,7 +809,19 @@ int nodeConfigurator::getYellowLed(){
     int ret;
     ret = getIntConfig("yellow_led_pin");
     if (ret == INTERROR){
-        cout << "Failed to get the yellow_led_pin. Default is 6" << endl;
+        string r = getStringConfig("yellow_led_pin");
+        if (r.size() > 0){
+            //try to convert
+            try{
+                ret = atoi(r.c_str());
+            }
+            catch(...){
+                cout << "Failed to convert " << r << " to int" << endl;
+            }
+        }
+        else{
+            cout << "Failed to get the yellow_led_pin. Default is 6" << endl;
+        }
         ret = 6;
     }
     return ret;

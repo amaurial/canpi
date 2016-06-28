@@ -28,7 +28,7 @@ using namespace std;
 class tcpClient : public Client
 {
     public:
-        tcpClient(log4cpp::Category *logger, tcpServer *server, canHandler* can, int client_sock, struct sockaddr_in client_addr, int id);
+        tcpClient(log4cpp::Category *logger, tcpServer *server, canHandler* can, int client_sock, struct sockaddr_in client_addr, int id, nodeConfigurator *config);
         virtual ~tcpClient();
         void start(void *param);
         void stop();

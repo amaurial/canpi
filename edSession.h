@@ -1,13 +1,13 @@
 #ifndef EDSESSION_H
 #define EDSESSION_H
 
-#define FN_SIZE 28
-
 #include <string>
 #include <log4cpp/Category.hh>
 #include <time.h>
 
 #include "utils.h"
+#include "nodeConfigurator.h"
+
 using namespace std;
 
 class edSession
@@ -52,8 +52,12 @@ class edSession
         void setLocoName(string loconame);
         string getLocoName();
 
+        void setNodeConfigurator(nodeConfigurator *config);
+
         byte getDccByte(int fn);
 
+        void configChanged();
+        void getMomentaryFNs();
 
     protected:
     private:
@@ -71,10 +75,12 @@ class edSession
         string hname;
         string loconame;
         log4cpp::Category *logger;
+        nodeConfigurator *config;
 
         byte setBit(byte val, int pos);
         byte clearBit(byte val, int pos);
 
+        vector<string> & split(const string &s, char delim, vector<string> &elems);
 };
 
 #endif // EDSESSION_H
