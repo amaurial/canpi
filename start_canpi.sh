@@ -92,18 +92,18 @@ is_hostapd_running(){
 setup_bonjour() {
     echo "Configuring the bonjour service"
     #back the old file
-    sudo mv $bonjour_file "${bonjour_file}.bak"
-    sudo cp $bonjour_template $bonjour_file
+    mv $bonjour_file "${bonjour_file}.bak"
+    cp $bonjour_template $bonjour_file
 
     #change the service name
-    sudo sed -i 's/SERVICENAME/'"$service_name"'/' $bonjour_file
+    sed -i 's/SERVICENAME/'"$service_name"'/' $bonjour_file
 
     #change the port
-    sudo sed -i 's/PORT/'"$tcpport"'/' $bonjour_file
+    sed -i 's/PORT/'"$tcpport"'/' $bonjour_file
 
     #restart the service
     echo "Restarting the bonjour service"
-    sudo /etc/init.d/avahi-daemon restart
+    /etc/init.d/avahi-daemon restart
     sleep 1
     #r=`/etc/init.d/avahi-daemon status`
     #echo $r | grep "active (running)"
@@ -297,6 +297,7 @@ stop_webserver(){
 case "$1" in
     start)
 
+    setup_bonjour
     start_webserver
 
     if is_running; then
@@ -353,7 +354,8 @@ case "$1" in
     fi
     ;;
     startcanpi)
-
+     
+    setup_bonjour
     if is_running; then
         echo "Already started"
     else
@@ -449,7 +451,7 @@ case "$1" in
     fi
     ;;
     *)
-    echo "Usage: $0 {start|stop|restart|status|configure}"
+    echo "Usage: $0 {start|stop|restart|status|configure|startcanpi|stopcanpi|restartcanpi}"
     exit 1
     ;;
 esac

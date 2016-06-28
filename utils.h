@@ -6,6 +6,33 @@
 #include <string>
 #include "libconfig.h++"
 
+//################# Config files definitions
+#define TAG_CANID        "canid"
+#define TAG_GRID_PORT    "cangrid_port"
+#define TAG_TCP_PORT     "tcpport"
+#define TAG_NN           "node_number"
+#define TAG_AP_MODE      "ap_mode"
+#define TAG_CAN_GRID     "can_grid"
+#define TAG_SSID         "ap_ssid"
+#define TAG_PASSWD       "ap_password"
+#define TAG_ROUTER_SSID  "router_ssid"
+#define TAG_ROUTER_PASSWD  "router_password"
+#define TAG_LOGLEVEL     "loglevel"
+#define TAG_LOGFILE      "logfile"
+#define TAG_SERV_NAME    "service_name"
+#define TAG_LOGAPPEND    "logappend"
+#define TAG_TURNOUT      "turnout_file"
+#define TAG_CANDEVICE    "candevice"
+#define TAG_APCHANNEL    "ap_channel"
+#define TAG_BP           "button_pin"
+#define TAG_GL           "green_led_pin"
+#define TAG_YL           "yellow_led_pin"
+#define TAG_FNMOM        "fn_momentary"
+#define TAG_WARN         "WARN"
+#define TAG_INFO         "INFO"
+#define TAG_DEBUG        "DEBUG"
+
+
 using namespace libconfig;
 using namespace std;
 

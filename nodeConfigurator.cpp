@@ -106,16 +106,16 @@ byte nodeConfigurator::setNV(int idx,byte val){
         v = nvToLogLevel();
         switch (v){
         case 0:
-            loglevel = "INFO";
+            loglevel = TAG_INFO;
             break;
         case 1:
-            loglevel = "WARN";
+            loglevel = TAG_WARN;
             break;
         case 2:
-            loglevel = "DEBUG";
+            loglevel = TAG_DEBUG;
             break;
         default:
-            loglevel = "INFO";
+            loglevel = TAG_INFO;
         }
         r = setLogLevel(loglevel);
         if (!r) logger->error ("Failed to save NVs loglevel");
@@ -149,13 +149,13 @@ void nodeConfigurator::loadParam1(){
         p1 = p1 | 0b00000010;
     }
     string l = getLogLevel();
-    if (l.compare("INFO") == 0){
+    if (l.compare(TAG_INFO) == 0){
         p1 = p1 | 0b00000000;
     }
-    else if (l.compare("WARN") == 0){
+    else if (l.compare(TAG_WARN) == 0){
         p1 = p1 | 0b00000100;
     }
-    else if (l.compare("DEBUG") == 0){
+    else if (l.compare(TAG_DEBUG) == 0){
         p1 = p1 | 0b00001000;
     }
     else{
@@ -326,18 +326,18 @@ int nodeConfigurator::getIntConfig(string key)
 }
 
 string nodeConfigurator::getNodeName(){
-    return string("CANWIFI");
+    return string(NODE_NAME);
 }
 
 //saves the string to config file
 string nodeConfigurator::getMomentaryFn(){
     string ret;
-    ret = getStringConfig("fn_momentary");
+    ret = getStringConfig(TAG_FNMOM);
     return ret;
 }
 //gets the string to config file
 bool nodeConfigurator::setMomentaryFn(string val){
-    return saveConfig("fn_momentary",val);
+    return saveConfig(TAG_FNMOM,val);
 }
 //transform the bits in the array to the momentary string
 //number comma separated
@@ -462,14 +462,14 @@ int nodeConfigurator::nvToLogLevel(){
 }
 
 bool nodeConfigurator::setTcpPort(int val){
-    return saveConfig("tcpport",val);
+    return saveConfig(TAG_TCP_PORT,val);
 }
 
 int nodeConfigurator::getTcpPort(){
     int ret;
-    ret = getIntConfig("tcpport");
+    ret = getIntConfig(TAG_TCP_PORT);
     if (ret == INTERROR){
-        string r = getStringConfig("tcpport");
+        string r = getStringConfig(TAG_TCP_PORT);
         if (r.size() > 0){
             //try to convert
             try{
@@ -489,9 +489,9 @@ int nodeConfigurator::getTcpPort(){
 
 int nodeConfigurator::getcanGridPort(){
     int ret;
-    ret = getIntConfig("cangrid_port");
+    ret = getIntConfig(TAG_GRID_PORT);
     if (ret == INTERROR){
-        string r = getStringConfig("cangrid_port");
+        string r = getStringConfig(TAG_GRID_PORT);
         if (r.size() > 0){
             //try to convert
             try{
@@ -509,14 +509,14 @@ int nodeConfigurator::getcanGridPort(){
     return ret;
 }
 bool nodeConfigurator::setCanGridPort(int val){
-    return saveConfig("cangrid_port",val);
+    return saveConfig(TAG_GRID_PORT,val);
 }
 
 int nodeConfigurator::getCanID(){
     int ret;
-    ret = getIntConfig("canid");
+    ret = getIntConfig(TAG_CANID);
     if (ret == INTERROR){
-        string r = getStringConfig("canid");
+        string r = getStringConfig(TAG_CANID);
         if (r.size() > 0){
             //try to convert
             try{
@@ -534,14 +534,14 @@ int nodeConfigurator::getCanID(){
     return ret;
 }
 bool nodeConfigurator::setCanID(int val){
-    return saveConfig("canid",val);
+    return saveConfig(TAG_CANID,val);
 }
 
 int nodeConfigurator::getNodeNumber(){
     int ret;
-    ret = getIntConfig("node_number");
+    ret = getIntConfig(TAG_NN);
     if (ret == INTERROR){
-        string r = getStringConfig("node_number");
+        string r = getStringConfig(TAG_NN);
         if (r.size() > 0){
             //try to convert
             try{
@@ -559,12 +559,12 @@ int nodeConfigurator::getNodeNumber(){
     return ret;
 }
 bool nodeConfigurator::setNodeNumber(int val){
-    return saveConfig("node_number",val);
+    return saveConfig(TAG_NN,val);
 }
 
 bool nodeConfigurator::getAPMode(){
     string ret;
-    ret = getStringConfig("ap_mode");
+    ret = getStringConfig(TAG_AP_MODE);
     if (ret.empty()){
         cout << "Failed to get ap_mode . Default is false" << endl;
         return false;
@@ -576,16 +576,16 @@ bool nodeConfigurator::getAPMode(){
 }
 bool nodeConfigurator::setAPMode(bool apmode){
     if (apmode){
-        return saveConfig("ap_mode","True");
+        return saveConfig(TAG_AP_MODE,"True");
     }
     else{
-        return saveConfig("ap_mode","False");
+        return saveConfig(TAG_AP_MODE,"False");
     }
 }
 
 bool nodeConfigurator::isCanGridEnabled(){
     string ret;
-    ret = getStringConfig("can_grid");
+    ret = getStringConfig(TAG_CAN_GRID);
     if (ret.empty()){
         cout << "Failed to get can_grid . Default is false" << endl;
         return false;
@@ -597,56 +597,56 @@ bool nodeConfigurator::isCanGridEnabled(){
 }
 bool nodeConfigurator::enableCanGrid(bool grid){
     if (grid){
-        return saveConfig("can_grid","True");
+        return saveConfig(TAG_CAN_GRID,"True");
     }
     else{
-        return saveConfig("can_grid","False");
+        return saveConfig(TAG_CAN_GRID,"False");
     }
 }
 
 bool nodeConfigurator::setSSID(string val){
-    return saveConfig("ap_ssid",val);
+    return saveConfig(TAG_SSID,val);
 }
 string nodeConfigurator::getSSID(){
     string ret;
-    ret = getStringConfig("ap_ssid");
+    ret = getStringConfig(TAG_SSID);
     return ret;
 }
 
 bool nodeConfigurator::setPassword(string val){
-    return saveConfig("ap_password",val);
+    return saveConfig(TAG_PASSWD,val);
 }
 string nodeConfigurator::getPassword(){
     string ret;
-    ret = getStringConfig("ap_password");
+    ret = getStringConfig(TAG_PASSWD);
     return ret;
 }
 
 bool nodeConfigurator::setRouterSSID(string val){
-    return saveConfig("router_ssid",val);
+    return saveConfig(TAG_ROUTER_SSID,val);
 }
 
 string nodeConfigurator::getRouterSSID(){
     string ret;
-    ret = getStringConfig("router_ssid");
+    ret = getStringConfig(TAG_ROUTER_SSID);
     return ret;
 }
 
 bool nodeConfigurator::setRouterPassword(string val){
-    return saveConfig("router_password",val);
+    return saveConfig(TAG_ROUTER_PASSWD,val);
 }
 string nodeConfigurator::getRouterPassword(){
     string ret;
-    ret = getStringConfig("router_password");
+    ret = getStringConfig(TAG_ROUTER_PASSWD);
     return ret;
 }
 
 bool nodeConfigurator::setLogLevel(string val){
-    return saveConfig("loglevel",val);
+    return saveConfig(TAG_LOGLEVEL,val);
 }
 string nodeConfigurator::getLogLevel(){
     string ret;
-    ret = getStringConfig("loglevel");
+    ret = getStringConfig(TAG_LOGLEVEL);
     if (ret.empty()){
         cout << "Failed to get log level name. Default is WARN" << endl;
         ret = "WARN";
@@ -655,11 +655,11 @@ string nodeConfigurator::getLogLevel(){
 }
 
 bool nodeConfigurator::setLogFile(string val){
-    return saveConfig("logfile",val);
+    return saveConfig(TAG_LOGFILE,val);
 }
 string nodeConfigurator::getLogFile(){
     string ret;
-    ret = getStringConfig("logfile");
+    ret = getStringConfig(TAG_LOGFILE);
     if (ret.empty()){
         cout << "Failed to get log file name. Default is canpi.log" << endl;
         ret = "canpi.log";
@@ -668,25 +668,25 @@ string nodeConfigurator::getLogFile(){
 }
 
 bool nodeConfigurator::setServiceName(string val){
-    return saveConfig("service_name",val);
+    return saveConfig(TAG_SERV_NAME,val);
 }
 string nodeConfigurator::getServiceName(){
     string ret;
-    ret = getStringConfig("service_name");
+    ret = getStringConfig(TAG_SERV_NAME);
     return ret;
 }
 
 bool nodeConfigurator::setLogAppend(bool val){
     if (val){
-        return saveConfig("logappend","True");
+        return saveConfig(TAG_LOGAPPEND,"True");
     }
     else{
-        return saveConfig("logappend","False");
+        return saveConfig(TAG_LOGAPPEND,"False");
     }
 }
 bool nodeConfigurator::getLogAppend(){
     string ret;
-    ret = getStringConfig("logappend");
+    ret = getStringConfig(TAG_LOGAPPEND);
     if (ret.empty()){
         cout << "Failed to get logappend . Default is false" << endl;
         return false;
@@ -698,11 +698,11 @@ bool nodeConfigurator::getLogAppend(){
 }
 
 bool nodeConfigurator::setTurnoutFile(string val){
-    return saveConfig("turnout_file",val);
+    return saveConfig(TAG_TURNOUT,val);
 }
 string nodeConfigurator::getTurnoutFile(){
     string ret;
-    ret = getStringConfig("turnout_file");
+    ret = getStringConfig(TAG_TURNOUT);
     if (ret.empty()){
         cout << "Failed to get turnout file name. Defaul is turnout.txt" << endl;
         ret = "turnout.txt";
@@ -711,11 +711,11 @@ string nodeConfigurator::getTurnoutFile(){
 }
 
 bool nodeConfigurator::setCanDevice(string val){
-    return saveConfig("candevice",val);
+    return saveConfig(TAG_CANDEVICE,val);
 }
 string nodeConfigurator::getCanDevice(){
     string ret;
-    ret = getStringConfig("candevice");
+    ret = getStringConfig(TAG_CANDEVICE);
     if (ret.empty()){
         cout << "Failed to get the can device. Default is can0" << endl;
         ret = "can0";
@@ -725,9 +725,9 @@ string nodeConfigurator::getCanDevice(){
 
 int nodeConfigurator::getApChannel(){
     int ret;
-    ret = getIntConfig("ap_channel");
+    ret = getIntConfig(TAG_APCHANNEL);
     if (ret == INTERROR){
-        string r = getStringConfig("ap_channel");
+        string r = getStringConfig(TAG_APCHANNEL);
         if (r.size() > 0){
             //try to convert
             try{
@@ -745,7 +745,7 @@ int nodeConfigurator::getApChannel(){
     return ret;
 }
 bool nodeConfigurator::setApChannel(int val){
-    return saveConfig("ap_channel",val);
+    return saveConfig(TAG_APCHANNEL,val);
 }
 
 string nodeConfigurator::getConfigFile(){
@@ -757,9 +757,9 @@ void nodeConfigurator::setConfigFile(string val){
 
 int nodeConfigurator::getPB(){
     int ret;
-    ret = getIntConfig("button_pin");
+    ret = getIntConfig(TAG_BP);
     if (ret == INTERROR){
-        string r = getStringConfig("button_pin");
+        string r = getStringConfig(TAG_BP);
         if (r.size() > 0){
             //try to convert
             try{
@@ -777,14 +777,14 @@ int nodeConfigurator::getPB(){
     return ret;
 }
 bool nodeConfigurator::setPB(int val){
-    return saveConfig("button_pin",val);
+    return saveConfig(TAG_BP,val);
 }
 
 int nodeConfigurator::getGreenLed(){
     int ret;
-    ret = getIntConfig("green_led_pin");
+    ret = getIntConfig(TAG_GL);
     if (ret == INTERROR){
-        string r = getStringConfig("green_led_pin");
+        string r = getStringConfig(TAG_GL);
         if (r.size() > 0){
             //try to convert
             try{
@@ -802,14 +802,14 @@ int nodeConfigurator::getGreenLed(){
     return ret;
 }
 bool nodeConfigurator::setGreenLed(int val){
-    return saveConfig("green_led_pin",val);
+    return saveConfig(TAG_GL,val);
 }
 
 int nodeConfigurator::getYellowLed(){
     int ret;
-    ret = getIntConfig("yellow_led_pin");
+    ret = getIntConfig(TAG_YL);
     if (ret == INTERROR){
-        string r = getStringConfig("yellow_led_pin");
+        string r = getStringConfig(TAG_YL);
         if (r.size() > 0){
             //try to convert
             try{
@@ -827,5 +827,5 @@ int nodeConfigurator::getYellowLed(){
     return ret;
 }
 bool nodeConfigurator::setYellowLed(int val){
-    return saveConfig("yellow_led_pin",val);
+    return saveConfig(TAG_YL,val);
 }

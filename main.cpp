@@ -85,10 +85,10 @@ int main()
     string debugLevel = config->getLogLevel();
 
     if (!debugLevel.empty()){
-        if (debugLevel.compare("INFO")== 0){
+        if (debugLevel.compare(TAG_INFO)== 0){
            loglevel = log4cpp::Priority::INFO;
         }
-        if (debugLevel.compare("WARN")== 0){
+        if (debugLevel.compare(TAG_WARN)== 0){
            loglevel = log4cpp::Priority::WARN;
         }
     }
