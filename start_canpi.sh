@@ -92,19 +92,20 @@ is_hostapd_running(){
 setup_bonjour() {
     echo "Configuring the bonjour service"
     #back the old file
-    mv $bonjour_file "${bonjour_file}.bak"
-    cp $bonjour_template $bonjour_file
+    #mv $bonjour_file "${bonjour_file}.bak"
+    cp $bonjour_template "${bonjour_template}.tmp" 
 
     #change the service name
-    sed -i 's/SERVICENAME/'"$service_name"'/' $bonjour_file
+    sed -i 's/SERVICENAME/'"$service_name"'/' "${bonjour_template}.tmp"
 
     #change the port
-    sed -i 's/PORT/'"$tcpport"'/' $bonjour_file
+    sed -i 's/PORT/'"$tcpport"'/' "${bonjour_template}.tmp"
+    mv "${bonjour_template}.tmp" $bonjour_file
 
     #restart the service
-    echo "Restarting the bonjour service"
-    /etc/init.d/avahi-daemon restart
-    sleep 1
+    #echo "Restarting the bonjour service"
+    #/etc/init.d/avahi-daemon restart
+    #sleep 1
     #r=`/etc/init.d/avahi-daemon status`
     #echo $r | grep "active (running)"
     if is_avahi_running;
