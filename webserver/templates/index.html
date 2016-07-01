@@ -1,4 +1,5 @@
 $def with (form, title,msg)
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,17 +16,22 @@ $def with (form, title,msg)
   <div class="row-fluid">
     <div class="span4">
       
-      </div>
-    <div class="content">
-    <div class="span8">
-        <img src="/static/merg_logo.png" />      
-        <header><h3>Canpi Configuration<br/></h3></header>
-        <header><h4>$msg<br/></h4></header>
-        <form class="form" method="post"> 
-        $:form.render()
-        </form>
-       
     </div>
+    <div class="content">
+       <div class="span8">
+           <img src="/static/merg_logo.png" />      
+           <header><h3>Canpi Configuration<br/></h3></header>
+           <header><h4>$msg<br/></h4></header>
+           <form class="form" method="post"> 
+              $:form.apmode.description : 
+	      $:form.apmode.render()
+	      <br>
+              $:form.ap_ssid.description : 
+              $:form.ap_ssid.render()
+	      <hr>
+              $:form.btnSave.render()
+           </form>
+       </div>
     </div>
   </div>
 </div>
