@@ -7,8 +7,8 @@ import time
 import shlex
 from subprocess import Popen, PIPE
 
-#configpath="/home/amaurial/projetos/canpi/canpi.cfg"
-configpath="/home/user/amauriala/Projects/canpi/canpi.cfg"
+configpath="/home/amaurial/projetos/canpi/canpi.cfg"
+#configpath="/home/user/amauriala/Projects/canpi/canpi.cfg"
 #configpath="/home/pi/canpi/canpi.cfg"
 
 render = web.template.render('templates/')
@@ -88,7 +88,7 @@ id_btn_save="btnSave"
 id_btn_apply="btnApply"
 id_btn_restart="btnRestart"
 
-desc_apmode="Apmode"
+desc_apmode="AP mode"
 desc_ssid="SSID"
 desc_password="Password"
 desc_channel="Channel"
@@ -237,8 +237,6 @@ class index:
         exitcode = proc.returncode
         #
         return exitcode, out, err
-
-
 
 if __name__=="__main__":
     web.internalerror = web.debugerror
