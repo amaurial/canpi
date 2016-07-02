@@ -59,6 +59,7 @@ create_default_canpi_config(){
   echo "router_password=\"PASSWORD\"" >> $conf
   echo "node_number=7890" >> $conf
   echo "turnout_file=\"turnout.txt\"" >> $conf
+  echo "fn_momentary=\"2\"" >> $conf
   echo "canid=110" >> $conf
 }
 
@@ -68,6 +69,11 @@ read wssid
 echo "Type the Wifi password followed by [ENTER]:"
 read wpassword
 
+echo "#############  Stop swap services and delete swap file ###############
+swapoff -a
+update-rc.d -f dphys-swapfile remove
+rm /var/swap
+
 echo "########### APT UPDATE ###############"
 apt-get update
 echo "########### GIT ###############"
@@ -75,7 +81,7 @@ apt-get install git
 echo "########### HOSTAPD ###############"
 apt-get install hostapd
 echo "########### DHCP ###############"
-apt-get install isc-dhcp-server
+#apt-get install isc-dhcp-server
 echo "########### CAN UTILS ###############"
 apt-get install can-utils
 
@@ -133,15 +139,15 @@ cp "$canpidir/hostapd" /etc/default/
 
 FILE="/etc/dhcp/dhcpd.conf"
 FILEBAK="${FILE}.bak"
-if [ -f $FILE ];
-then
-    mv $FILE $FILEBAK
-fi
+#if [ -f $FILE ];
+#then
+#    mv $FILE $FILEBAK
+#fi
 
-cp "$canpidir/dhcpd.conf" /etc/dhcp/
+#cp "$canpidir/dhcpd.conf" /etc/dhcp/
 
-mv /etc/default/isc-dhcp-server /etc/default/isc-dhcp-server.old
-cp "$canpidir/isc-dhcp-server" /etc/default 
+#mv /etc/default/isc-dhcp-server /etc/default/isc-dhcp-server.old
+#cp "$canpidir/isc-dhcp-server" /etc/default 
 
 echo "########### CONFIG SCRIPT FILES ###############"
 #copy the configure script
@@ -151,5 +157,5 @@ update-rc.d start_canpi.sh defaults
 
 echo "########### RUN CONFIGURE ###############"
 #run configure
-/etc/init.d/start_canpi.sh configure
+#/etc/init.d/start_canpi.sh configure
 
