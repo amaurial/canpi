@@ -35,7 +35,7 @@ Extracted from the Developer’s Guide for CBUS (Version 5g)
 #define MTYP_SLIM 0 // default for SLiM nodes
 #define MTYP_FLIM 1 // default for SLiM nodes
 //ModuleID
-#define MID 54
+#define MID 46
 //Software version
 #define MSOFT_VERSION '1'
 #define MSOFT_MIN_VERSION 'a'

@@ -29,10 +29,10 @@ ssid
 8 bytes
 ssid password
 
-8 bytes
+12 bytes
 router ssid
 
-8 bytes
+12 bytes
 router password
 
 8 bytes

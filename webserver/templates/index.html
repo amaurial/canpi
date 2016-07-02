@@ -1,5 +1,25 @@
 $def with (form, title,msg)
 
+$code:
+	id_apmode="apmode"
+	id_ssid="ap_ssid"
+	id_password="ap_password"
+	id_channel="ap_channel"
+	id_router_ssid="router_ssid"
+	id_router_password="router_password"
+	id_bonjour_name="service_name"
+	id_ed_tcpport="tcpport"
+	id_grid_enable="gridenable"
+	id_grid_port="cangrid_port"
+	id_logfile="logfile"
+	id_loglevel="loglevel"
+	id_canid="canid"
+	id_turnout_file="turnout_file"
+	id_fns_momentary="fn_momentary"
+	id_btn_save="btnSave"
+	id_btn_apply="btnApply"
+	id_btn_restart="btnRestart"
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,16 +40,59 @@ $def with (form, title,msg)
     <div class="content">
        <div class="span8">
            <img src="/static/merg_logo.png" />      
-           <header><h3>Canpi Configuration<br/></h3></header>
+           <header><h3>CANPiWi Configuration<br/></h3></header>
            <header><h4>$msg<br/></h4></header>
            <form class="form" method="post"> 
-              $:form.apmode.description : 
-	      $:form.apmode.render()
+              $:form[id_apmode].description : 
+	      $:form[id_apmode].render()
+	      <br><br>
+              $:form[id_ssid].description : 
+              $:form[id_ssid].render()
 	      <br>
-              $:form.ap_ssid.description : 
-              $:form.ap_ssid.render()
+              $:form[id_password].description : 
+              $:form[id_password].render()
+	      <br>
+              Wifi channel : 
+              $:form[id_channel].render()
+	      <br>
+              $:form[id_router_ssid].description : 
+              $:form[id_router_ssid].render()
+	      <br>
+              $:form[id_router_password].description : 
+              $:form[id_router_password].render()
+	      <br>
+              $:form[id_bonjour_name].description : 
+              $:form[id_bonjour_name].render()
+	      <br>
+              $:form[id_grid_enable].description : 
+              $:form[id_grid_enable].render()
+              <br><br>
+              $:form[id_ed_tcpport].description : 
+              $:form[id_ed_tcpport].render()
+	      <br>
+              $:form[id_grid_port].description : 
+              $:form[id_grid_port].render()
+	      <br>
+              $:form[id_turnout_file].description : 
+              $:form[id_turnout_file].render()
+	      <br>
+              $:form[id_fns_momentary].description : 
+              $:form[id_fns_momentary].render()
+	      <br>
+              Log level : 
+              $:form[id_loglevel].render()
 	      <hr>
-              $:form.btnSave.render()
+              $:form[id_btn_save].render()
+              <br><br>
+	      $:form[id_btn_apply].render()
+              <br><br>
+	      $:form[id_btn_restart].render()              
+              <hr>
+              Log files. Usefull to debug<br>
+              
+              <a href="README.md" download="canpi.log">Log file</a>
+              <br>
+              <a href="/home/pi/canpi/canpi.log" download="canpi.log">Log file</a>
            </form>
        </div>
     </div>
