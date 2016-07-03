@@ -71,11 +71,13 @@ read wssid
 echo "Type the Wifi password followed by [ENTER]:"
 read wpassword
 
-echo "#############  Stop swap services and delete swap file ###############
+echo "#############  Stop swap services and delete swap file ###############"
+
 swapoff -a
-update-rc.d -f dphys-swapfile remove
+update-rc.d dphys-swapfile remove
 rm /var/swap
 apt-get -y purge dphys-swapfile
+apt-get -y autoremove
 
 echo "########### APT UPDATE ###############"
 apt-get -y update
@@ -101,8 +103,8 @@ git clone https://github.com/amaurial/canpi.git
 echo "########### COMPILE CANPI ###############"
 #compile the code
 cd canpi
-#make clean
-#make all
+make clean
+make all
 echo "########### CREATE CONFIG ###############"
 create_default_canpi_config
 #change the router ssid and password
