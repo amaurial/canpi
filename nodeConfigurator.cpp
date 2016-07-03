@@ -95,6 +95,9 @@ byte nodeConfigurator::setNV(int idx,byte val){
         r = setAPMode(nvToApMode());
         if (!r) logger->error ("Failed to save NV ap mode");
 
+        r = setAPNoPassword(nvToApNoPassword());
+        if (!r) logger->error ("Failed to save NV ap no password");
+
         r = setApChannel(NV[P_WIFI_CHANNEL]);
         if (!r) logger->error ("Failed to save Wifi channel");
 
@@ -161,6 +164,12 @@ void nodeConfigurator::loadParam1(){
     else{
         p1 = p1 | 0b00000011;
     }
+
+    if (getAPNoPassword()){
+        cout << "Ap no password set to true" << endl;
+        p1 = p1 | 0b00010000;
+    }
+
     NV[PARAM1] = p1;
     cout << "P1 " << p1 << " " << int(NV[0]) << endl;
 }
@@ -457,6 +466,14 @@ bool nodeConfigurator::nvToCanGrid(){
     return false;
 }
 
+bool nodeConfigurator::nvToApNoPassword(){
+
+    if ((NV[PARAM1] & 0x10) == 0x10){
+        return true;
+    }
+    return false;
+}
+
 int nodeConfigurator::nvToLogLevel(){
     return (NV[PARAM1] & 0x0C)>>2;
 }
@@ -580,6 +597,27 @@ bool nodeConfigurator::setAPMode(bool apmode){
     }
     else{
         return saveConfig(TAG_AP_MODE,"False");
+    }
+}
+
+bool nodeConfigurator::getAPNoPassword(){
+    string ret;
+    ret = getStringConfig(TAG_NO_PASSWD);
+    if (ret.empty()){
+        cout << "Failed to get ap no password. Default is false" << endl;
+        return false;
+    }
+    if ((ret.compare("true") == 0) | (ret.compare("TRUE") == 0) | (ret.compare("True") == 0)){
+        return true;
+    }
+    return false;
+}
+bool nodeConfigurator::setAPNoPassword(bool mode){
+    if (mode){
+        return saveConfig(TAG_NO_PASSWD,"True");
+    }
+    else{
+        return saveConfig(TAG_NO_PASSWD,"False");
     }
 }
 
@@ -820,12 +858,12 @@ int nodeConfigurator::getYellowLed(){
             }
             catch(...){
                 cout << "Failed to convert " << r << " to int" << endl;
-                ret = 2;
+                ret = 27;
             }
         }
         else{
             cout << "Failed to get the yellow_led_pin. Default is 2" << endl;
-            ret = 2;
+            ret = 27;
         }
     }
     return ret;
