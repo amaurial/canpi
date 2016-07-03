@@ -173,7 +173,10 @@ int canHandler::start(const char* interface){
 
 	addr.can_family = AF_CAN;
 	strcpy(ifr.ifr_name, interface);
-	ioctl(canInterface, SIOCGIFINDEX, &ifr);
+	if (ioctl(canInterface, SIOCGIFINDEX, &ifr) < 0){
+        logger->error("Failed to start can socket. SIOCGIFINDEX");
+        return -1;
+	}
 	addr.can_ifindex = ifr.ifr_ifindex;
 
 	if (bind(canInterface, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
@@ -333,9 +336,7 @@ void canHandler::run_out(void* param){
                 logger->debug("Problem on sending the CBUS, bytes transfered %d, supposed to transfer %d", nbytes, CAN_MTU);
             }
         }
-
         usleep(5000);
-
     }
     logger->debug("Stopping the queue writer");
 }
@@ -434,13 +435,13 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         if (!setup_mode) return;
         logger->debug("Sending response for NAME.");
         sendframe[0] = OPC_NAME;
-        sendframe[1] = 'C';
-        sendframe[2] = 'A';
-        sendframe[3] = 'N';
-        sendframe[4] = 'W';
-        sendframe[5] = 'I';
-        sendframe[6] = 'F';
-        sendframe[7] = 'I';
+        sendframe[1] = 'P';
+        sendframe[2] = 'i';
+        sendframe[3] = 'W';
+        sendframe[4] = 'i';
+        sendframe[5] = ' ';
+        sendframe[6] = ' ';
+        sendframe[7] = ' ';
         put_to_out_queue(sendframe,8,ClientType::ED);
     break;
     case OPC_RQNPN:

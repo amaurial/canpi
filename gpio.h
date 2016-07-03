@@ -11,6 +11,7 @@ class gpio
 {
 public:
     gpio();  // create a GPIO object that controls GPIO4 (default
+    virtual ~gpio();
     gpio(string x); // create a GPIO object that controls GPIOx, where x is passed to this constructor
     int export_gpio(); // exports GPIO
     int unexport_gpio(); // unexport GPIO
@@ -20,6 +21,7 @@ public:
     string get_gpionum(); // return the GPIO number associated with the instance of an object
 private:
     string gpionum; // GPIO number associated with the instance of an object
+    bool exported=false;
 };
 
 #endif // GPIO_H

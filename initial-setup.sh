@@ -1,4 +1,4 @@
-#!/bin/bash
+#/bin/bash
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 . /lib/lsb/init-functions
@@ -18,13 +18,12 @@ config_boot_config(){
    sed -i "s/dtparam=spi=off/dtparam=spi=on/" $bootconf
    #in case the entry is not there
    append_to_file "dtparam=spi=on" $bootconf
-   ls /boot/overlay/mcp2515-can0-overlay*
+   ls /boot/overlays/mcp2515-can0-overlay*
    if [ $? == 0 ];then
        append_to_file "dtoverlay=mcp2515-can0-overlay,oscillator=16000000,interrupt=25" $bootconf
    else
        append_to_file "dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25" $bootconf
    fi
-#   append_to_file "dtoverlay=spi-bcm2835-overlay" $bootconf
 }
 
 add_can_interface(){
@@ -60,7 +59,10 @@ create_default_canpi_config(){
   echo "node_number=7890" >> $conf
   echo "turnout_file=\"turnout.txt\"" >> $conf
   echo "fn_momentary=\"2\"" >> $conf
-  echo "canid=110" >> $conf
+  echo "canid=100" >> $conf
+  echo "button_pin=4" >> $conf
+  echo "green_led_pin=18" >> $conf
+  echo "yellow_led_pin=2" >> $conf
 }
 
 echo "Type the Wifi SSID followed by [ENTER]:"
@@ -73,17 +75,18 @@ echo "#############  Stop swap services and delete swap file ###############
 swapoff -a
 update-rc.d -f dphys-swapfile remove
 rm /var/swap
+apt-get -y purge dphys-swapfile
 
 echo "########### APT UPDATE ###############"
-apt-get update
+apt-get -y update
 echo "########### GIT ###############"
-apt-get install git
+apt-get -y install git
 echo "########### HOSTAPD ###############"
-apt-get install hostapd
+apt-get -y install hostapd
 echo "########### DHCP ###############"
-#apt-get install isc-dhcp-server
+apt-get -y install isc-dhcp-server
 echo "########### CAN UTILS ###############"
-apt-get install can-utils
+apt-get -y install can-utils
 
 echo "########### BOOT CONFIG ###############"
 config_boot_config
@@ -98,8 +101,8 @@ git clone https://github.com/amaurial/canpi.git
 echo "########### COMPILE CANPI ###############"
 #compile the code
 cd canpi
-make clean
-make all
+#make clean
+#make all
 echo "########### CREATE CONFIG ###############"
 create_default_canpi_config
 #change the router ssid and password
@@ -139,15 +142,15 @@ cp "$canpidir/hostapd" /etc/default/
 
 FILE="/etc/dhcp/dhcpd.conf"
 FILEBAK="${FILE}.bak"
-#if [ -f $FILE ];
-#then
-#    mv $FILE $FILEBAK
-#fi
+if [ -f $FILE ];
+then
+    mv $FILE $FILEBAK
+fi
 
-#cp "$canpidir/dhcpd.conf" /etc/dhcp/
+cp "$canpidir/dhcpd.conf" /etc/dhcp/
 
-#mv /etc/default/isc-dhcp-server /etc/default/isc-dhcp-server.old
-#cp "$canpidir/isc-dhcp-server" /etc/default 
+mv /etc/default/isc-dhcp-server /etc/default/isc-dhcp-server.old
+cp "$canpidir/isc-dhcp-server" /etc/default
 
 echo "########### CONFIG SCRIPT FILES ###############"
 #copy the configure script
@@ -157,5 +160,5 @@ update-rc.d start_canpi.sh defaults
 
 echo "########### RUN CONFIGURE ###############"
 #run configure
-#/etc/init.d/start_canpi.sh configure
+/etc/init.d/start_canpi.sh configure
 

@@ -38,9 +38,11 @@ Extracted from the Developer’s Guide for CBUS (Version 5g)
 #define MID 54
 //Software version
 #define MSOFT_VERSION '1'
-#define MSOFT_MIN_VERSION '0'
+#define MSOFT_MIN_VERSION 'a'
 #define MFLAGS 0b11100000
-#define NODE_NAME "CANPIWI"
+#define NODE_NAME "CANPiWi"
+#define DEFAULT_CANID 100
+#define DEFAULT_NN 4321
 
 
 // CBUS opcodes list

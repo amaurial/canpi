@@ -141,7 +141,10 @@ int main()
     can.setNodeNumber(node_number);
 
     //start threads
-    can.start(candevice.c_str());
+    if (can.start(candevice.c_str()) == -1 ){
+        logger.error("Failed to start can Handler.");
+        return 1;
+    };
 
     Turnout turnouts=Turnout(&logger);
     if (file_exists(turnoutfile)){

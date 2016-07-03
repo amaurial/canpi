@@ -16,6 +16,12 @@ gpio::gpio(string gnum)
     this->gpionum = gnum;  //Instatiate GPIOClass object for GPIO pin number "gnum"
 }
 
+gpio::~gpio(){
+    if (exported){
+        //unexport_gpio();
+    }
+}
+
 int gpio::export_gpio()
 {
     string export_str = "/sys/class/gpio/export";
@@ -26,6 +32,7 @@ int gpio::export_gpio()
     }
     exportgpio << this->gpionum ; //write GPIO number to export
     exportgpio.close(); //close export file
+    exported = true;
     return 0;
 }
 

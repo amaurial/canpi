@@ -529,7 +529,7 @@ int nodeConfigurator::getCanID(){
         else{
             cout << "Failed to get the canid. Default is 110" << endl;
         }
-        ret = 110;
+        ret = DEFAULT_CANID;
     }
     return ret;
 }
@@ -552,9 +552,9 @@ int nodeConfigurator::getNodeNumber(){
             }
         }
         else{
-            cout << "Failed to get the node_number. Default is 4321" << endl;
+            cout << "Failed to get the node_number. Default is " <<  DEFAULT_NN << endl;
         }
-        ret = 4321;
+        ret = DEFAULT_NN;
     }
     return ret;
 }
@@ -767,12 +767,14 @@ int nodeConfigurator::getPB(){
             }
             catch(...){
                 cout << "Failed to convert " << r << " to int" << endl;
+                ret = 4;
             }
         }
         else{
             cout << "Failed to get the button_pin. Default is 4" << endl;
+            ret = 4;
         }
-        ret = 4;
+
     }
     return ret;
 }
@@ -792,12 +794,13 @@ int nodeConfigurator::getGreenLed(){
             }
             catch(...){
                 cout << "Failed to convert " << r << " to int" << endl;
+                ret = 18;
             }
         }
         else{
-            cout << "Failed to get the green_led_pin. Default is 5" << endl;
+            cout << "Failed to get the green_led_pin. Default is 18" << endl;
+            ret = 18;
         }
-        ret = 5;
     }
     return ret;
 }
@@ -817,12 +820,13 @@ int nodeConfigurator::getYellowLed(){
             }
             catch(...){
                 cout << "Failed to convert " << r << " to int" << endl;
+                ret = 2;
             }
         }
         else{
-            cout << "Failed to get the yellow_led_pin. Default is 6" << endl;
+            cout << "Failed to get the yellow_led_pin. Default is 2" << endl;
+            ret = 2;
         }
-        ret = 6;
     }
     return ret;
 }
