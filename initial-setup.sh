@@ -62,7 +62,7 @@ create_default_canpi_config(){
   echo "canid=100" >> $conf
   echo "button_pin=4" >> $conf
   echo "green_led_pin=18" >> $conf
-  echo "yellow_led_pin=2" >> $conf
+  echo "yellow_led_pin=27" >> $conf
 }
 
 echo "Type the Wifi SSID followed by [ENTER]:"
