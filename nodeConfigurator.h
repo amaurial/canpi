@@ -94,6 +94,9 @@ class nodeConfigurator
         bool getAPMode();
         bool setAPMode(bool apmode);
 
+        bool getAPNoPassword();
+        bool setAPNoPassword(bool mode);
+
         bool isCanGridEnabled();
         bool enableCanGrid(bool grid);
 
@@ -175,6 +178,7 @@ class nodeConfigurator
         bool nvToApMode();
         bool nvToCanGrid();
         int nvToLogLevel();
+        bool nvToApNoPassword();
         void momentaryFnsToNVs();
         vector<string> & split(const string &s, char delim, vector<string> &elems);
 
