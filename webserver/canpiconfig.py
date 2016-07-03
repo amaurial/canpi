@@ -34,7 +34,9 @@ class configManager:
             #print(self.config)
 
     def getValue(self,key):
-        return self.config[key]
+        if key in self.config:
+            return self.config[key]
+        return ""
 
     def setValue(self,key,value):
         self.config[key] = value
@@ -47,7 +49,7 @@ class configManager:
             for k,v in self.config.iteritems():
                 line = ""
                 #dont put quotes on numbers
-                if k in ["tcpport","cangrid_port","ap_channel","node_number","canid"]:
+                if k in ["tcpport","cangrid_port","ap_channel","node_number","canid","button_pin","green_led_pin","yellow_led_pin"]:
                      line = k + "=" + v + "\n"
                 else:
                      line = k + "=\"" + v + "\"\n"
