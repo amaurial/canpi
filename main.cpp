@@ -119,7 +119,7 @@ int main()
     appender1->setLayout(layout1);
     logger.addAppender(appender1);
 
-    if (debugLevel.compare(TAG_OFF)!= 0){
+    if (config->getCreateLogfile()){
 
         log4cpp::PatternLayout * layout2 = new log4cpp::PatternLayout();
         layout2->setConversionPattern("%d [%p] %m%n");

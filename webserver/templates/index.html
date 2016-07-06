@@ -20,6 +20,7 @@ $code:
 	id_btn_save="btnSave"
 	id_btn_apply="btnApply"
 	id_btn_restart="btnRestart"
+        id_create_logfile="create_log_file"
 
 <!DOCTYPE html>
 <html lang="en">
@@ -85,6 +86,9 @@ $code:
 	      <br>
               Log level : 
               $:form[id_loglevel].render()
+              <br>
+              $:form[id_create_logfile].description : 
+	      $:form[id_create_logfile].render()
 	      <hr>
               $:form[id_btn_save].render()
               <br><br>

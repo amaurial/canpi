@@ -170,6 +170,11 @@ void nodeConfigurator::loadParam1(){
         p1 = p1 | 0b00010000;
     }
 
+    if (getCreateLogfile()){
+        cout << "Create log file to true" << endl;
+        p1 = p1 | 0b00100000;
+    }
+
     NV[PARAM1] = p1;
     cout << "P1 " << p1 << " " << int(NV[0]) << endl;
 }
@@ -474,6 +479,14 @@ bool nodeConfigurator::nvToApNoPassword(){
     return false;
 }
 
+bool nodeConfigurator::nvToCreateLogfile(){
+
+    if ((NV[PARAM1] & 0b00100000) == 0b00100000){
+        return true;
+    }
+    return false;
+}
+
 int nodeConfigurator::nvToLogLevel(){
     return (NV[PARAM1] & 0x0C)>>2;
 }
@@ -618,6 +631,27 @@ bool nodeConfigurator::setAPNoPassword(bool mode){
     }
     else{
         return saveConfig(TAG_NO_PASSWD,"False");
+    }
+}
+
+bool nodeConfigurator::getCreateLogfile(){
+    string ret;
+    ret = getStringConfig(TAG_CREATE_LOGFILE);
+    if (ret.empty()){
+        cout << "Failed to get create log tag. Default is false" << endl;
+        return false;
+    }
+    if ((ret.compare("true") == 0) | (ret.compare("TRUE") == 0) | (ret.compare("True") == 0)){
+        return true;
+    }
+    return false;
+}
+bool nodeConfigurator::setCreateLogfile(bool mode){
+    if (mode){
+        return saveConfig(TAG_CREATE_LOGFILE,"True");
+    }
+    else{
+        return saveConfig(TAG_CREATE_LOGFILE,"False");
     }
 }
 

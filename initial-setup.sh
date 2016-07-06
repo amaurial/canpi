@@ -63,6 +63,8 @@ create_default_canpi_config(){
   echo "button_pin=4" >> $conf
   echo "green_led_pin=18" >> $conf
   echo "yellow_led_pin=27" >> $conf
+  echo "ap_no_password=\"True\"" >> $conf
+  echo "create_log_file=\"False\"" >> $conf
 }
 
 echo "Type the Wifi SSID followed by [ENTER]:"
