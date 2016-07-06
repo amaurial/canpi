@@ -7,9 +7,9 @@ import time
 import shlex
 from subprocess import Popen, PIPE
 
-configpath="/home/amaurial/projetos/canpi/canpi.cfg"
+#configpath="/home/amaurial/projetos/canpi/canpi.cfg"
 #configpath="/home/user/amauriala/Projects/canpi/canpi.cfg"
-#configpath="/home/pi/canpi/canpi.cfg"
+configpath="/home/pi/canpi/canpi.cfg"
 
 render = web.template.render('templates/')
 urls = ('/', 'index')
@@ -64,14 +64,18 @@ class configManager:
 cm = configManager()
 cm.readConfig()
 apmode=True
+apmode_no_passwd=True
 gridenable=True
 
 if cm.getValue("ap_mode").lower()!="true":
     apmode=False
+if cm.getValue("ap_no_password").lower()!="true":
+    apmode_no_passwd=False
 if cm.getValue("can_grid").lower()!="true":
     gridenable=False
 
 id_apmode="apmode"
+id_apmode_no_passwd="ap_no_password"
 id_ssid="ap_ssid"
 id_password="ap_password"
 id_channel="ap_channel"
@@ -91,6 +95,7 @@ id_btn_apply="btnApply"
 id_btn_restart="btnRestart"
 
 desc_apmode="AP mode"
+desc_apmode_no_passwd="No password in AP mode"
 desc_ssid="SSID"
 desc_password="Password"
 desc_channel="Channel"
@@ -109,57 +114,72 @@ desc_btn_save="btnSave"
 desc_btn_apply="btnApply"
 desc_btn_restart="btnRestart"
 
+#validators
+ssid_length = form.Validator("SSID length should be between 1 and 8 characters", lambda p: p is None or len(p)>8)
+passwd_length = form.Validator("Password length should be 8 characters", lambda p: len(p)!= 8)
+router_ssid_length = form.Validator("Router SSID length should be between 1 and 12 characters", lambda p: p is None or len(p)>12)
+router_passwd_length = form.Validator("Router password length should be less then 12 characters", lambda p: len(p)> 12)
+turnout_length = form.Validator("Turnout name length should less than 11 characters", lambda p: p is None or len(p)>11)
+service_name_length = form.Validator("Service name length should less than 8 characters", lambda p: p is None or len(p)>8)
+
 
 myform = form.Form(
     form.Checkbox(id_apmode,description=desc_apmode,checked=apmode,value="apmode",id="tapmode"),
-    form.Textbox(id_ssid,description=desc_ssid,value=cm.getValue("ap_ssid"),id="apssid"),
-    form.Textbox(id_password,description=desc_password, value=cm.getValue("ap_password"),id="appasswd"),
+    form.Checkbox(id_apmode_no_passwd,description=desc_apmode_no_passwd,checked=apmode_no_passwd,value="apmode_no_passwd",id="tapmode_no_passwd"),
+    form.Textbox(id_ssid,ssid_length,description=desc_ssid,value=cm.getValue("ap_ssid"),id="apssid"),
+    form.Textbox(id_password,passwd_length,description=desc_password, value=cm.getValue("ap_password"),id="appasswd"),
     form.Dropdown(id_channel, ['1', '2', '3','4','5','6','7','8','9','10','11','12','13'],value=cm.getValue("ap_channel")),
-    form.Textbox(id_router_ssid,description=desc_router_ssid,value=cm.getValue("router_ssid"),id="routerssid"),
-    form.Textbox(id_router_password, description=desc_router_password,value=cm.getValue("router_password"),id="routerpasswd"),
-    form.Textbox(id_bonjour_name,description=desc_bonjour_name,value=cm.getValue("service_name"),id="servicename"),
+    form.Textbox(id_router_ssid,router_ssid_length,description=desc_router_ssid,value=cm.getValue("router_ssid"),id="routerssid"),
+    form.Textbox(id_router_password,router_passwd_length, description=desc_router_password,value=cm.getValue("router_password"),id="routerpasswd"),
+    form.Textbox(id_bonjour_name,service_name_length,description=desc_bonjour_name,value=cm.getValue("service_name"),id="servicename"),
     form.Textbox(id_ed_tcpport,description=desc_ed_tcpport,value=cm.getValue("tcpport"),id="tcpport"),
     form.Checkbox(id_grid_enable,description=desc_grid_enable,checked=gridenable,value="gridenable",id="cangrid"),
     form.Textbox(id_grid_port,description=desc_grid_port,value=cm.getValue("cangrid_port"),id="cangripport"),
     form.Textbox(id_canid,description=desc_canid,value=cm.getValue("canid")),
     form.Textbox(id_fns_momentary,description=desc_fns_momentary,value=cm.getValue("fn_momentary")),
-    form.Textbox(id_turnout_file,description=desc_turnout_file,value=cm.getValue("turnout_file")),
-    form.Dropdown(id_loglevel,  ['INFO', 'WARN', 'DEBUG'],value=cm.getValue("loglevel")),
+    form.Textbox(id_turnout_file,turnout_length,description=desc_turnout_file,value=cm.getValue("turnout_file")),
+    form.Dropdown(id_loglevel,  ['OFF','INFO', 'WARN', 'DEBUG'],value=cm.getValue("loglevel")),
     #form.Textbox(id_logfile,description=,value=cm.getValue("logfile"),id="logfile"),
-    form.Button("btn", id=id_btn_save, value="save", html="Save changes"),
-    form.Button("btn", id=id_btn_apply, value="apply", html="Apply changes and reboot"),
-    form.Button("btn", id=id_btn_restart, value="restart", html="Restart Throttle service"))
+    form.Button(desc_btn_save, id=id_btn_save, value="save", html="Save changes"),
+    form.Button(desc_btn_apply, id=id_btn_apply, value="apply", html="Apply changes and reboot"),
+    form.Button(desc_btn_restart, id=id_btn_restart, value="restart", html="Restart Throttle service"))
 def reloadMyForm():
     global myform
     global apmode
     global gridenable
+    global apmode_no_passwd
 
     apmode=True
     gridenable=True
+    apmode_no_passwd=True
+
     if cm.getValue("ap_mode").lower()!="true":
         apmode=False
     if cm.getValue("can_grid").lower()!="true":
         gridenable=False
+    if cm.getValue("ap_no_password").lower()!="true":
+        apmode_no_passwd=False
 
     myform = form.Form(
         form.Checkbox(id_apmode,description=desc_apmode,checked=apmode,value="apmode",id="tapmode"),
-        form.Textbox(id_ssid,description=desc_ssid,value=cm.getValue("ap_ssid"),id="apssid"),
-        form.Textbox(id_password,description=desc_password, value=cm.getValue("ap_password"),id="appasswd"),
+        form.Checkbox(id_apmode_no_passwd,description=desc_apmode_no_passwd,checked=apmode_no_passwd,value="apmode_no_passwd",id="tapmode_no_passwd"),
+        form.Textbox(id_ssid,ssid_length,description=desc_ssid,value=cm.getValue("ap_ssid"),id="apssid"),
+        form.Textbox(id_password,passwd_length,description=desc_password, value=cm.getValue("ap_password"),id="appasswd"),
         form.Dropdown(id_channel, ['1', '2', '3','4','5','6','7','8','9','10','11','12','13'],value=cm.getValue("ap_channel")),
-        form.Textbox(id_router_ssid,description=desc_router_ssid,value=cm.getValue("router_ssid"),id="routerssid"),
-        form.Textbox(id_router_password, description=desc_router_password,value=cm.getValue("router_password"),id="routerpasswd"),
-        form.Textbox(id_bonjour_name,description=desc_bonjour_name,value=cm.getValue("service_name"),id="servicename"),
+        form.Textbox(id_router_ssid,router_ssid_length,description=desc_router_ssid,value=cm.getValue("router_ssid"),id="routerssid"),
+        form.Textbox(id_router_password,router_passwd_length, description=desc_router_password,value=cm.getValue("router_password"),id="routerpasswd"),
+        form.Textbox(id_bonjour_name,service_name_length,description=desc_bonjour_name,value=cm.getValue("service_name"),id="servicename"),
         form.Textbox(id_ed_tcpport,description=desc_ed_tcpport,value=cm.getValue("tcpport"),id="tcpport"),
         form.Checkbox(id_grid_enable,description=desc_grid_enable,checked=gridenable,value="gridenable",id="cangrid"),
         form.Textbox(id_grid_port,description=desc_grid_port,value=cm.getValue("cangrid_port"),id="cangripport"),
         form.Textbox(id_canid,description=desc_canid,value=cm.getValue("canid")),
         form.Textbox(id_fns_momentary,description=desc_fns_momentary,value=cm.getValue("fn_momentary")),
-        form.Textbox(id_turnout_file,description=desc_turnout_file,value=cm.getValue("turnout_file")),
-        form.Dropdown(id_loglevel,  ['INFO', 'WARN', 'DEBUG'],value=cm.getValue("loglevel")),
+        form.Textbox(id_turnout_file,turnout_length,description=desc_turnout_file,value=cm.getValue("turnout_file")),
+        form.Dropdown(id_loglevel,  ['OFF','INFO', 'WARN', 'DEBUG'],value=cm.getValue("loglevel")),
         #form.Textbox(id_logfile,description=,value=cm.getValue("logfile"),id="logfile"),
-        form.Button(id_btn_save, id=id_btn_save, value="save", html="Save changes"),
-        form.Button(id_btn_apply, id=id_btn_apply, value="apply", html="Apply changes and reboot"),
-        form.Button(id_btn_restart, id=id_btn_restart, value="restart", html="Restart Throttle service"))
+        form.Button(desc_btn_save, id=id_btn_save, value="save", html="Save changes"),
+        form.Button(desc_btn_apply, id=id_btn_apply, value="apply", html="Apply changes and reboot"),
+        form.Button(desc_btn_restart, id=id_btn_restart, value="restart", html="Restart Throttle service"))
 
 def restartPi():
     #time.sleep(3)
@@ -182,12 +202,14 @@ class index:
         myuri = ctx.realhome
         form = myform()
         form.fill()
+
         #if not form.validates():
-        #    return render.index(form,"Canpi Configuration")
+        #    return render.index(form,"Canpi Configuration","Invalid information")
 
         if id_btn_save in userData:
             #get all the values and update
             cm.setValue("ap_mode",str(form[id_apmode].checked))
+            cm.setValue("ap_no_password",str(form[id_apmode_no_passwd].checked))
             cm.setValue("ap_ssid",str(form[id_ssid].value))
             cm.setValue("ap_password",str(form[id_password].value))
             cm.setValue("ap_channel",str(form[id_channel].value))
@@ -204,6 +226,7 @@ class index:
             cm.setValue("turnout_file",str(form[id_turnout_file].value))
             cm.saveFile()
             raise web.seeother('/')
+            #return render.index(form,"Canpi Configuration","Saved")
         if id_btn_apply in userData:
             print("Apply button pressed")
             #subprocess.call(['sudo /etc/init.d/start_canpi.sh', 'configure'])
@@ -227,7 +250,7 @@ class index:
             #subprocess.call( [ 'sudo /bin/bash /etc/init.d/start_canpi.sh', 'restart'])
             return render.index(form,"Canpi Configuration",msg)
 
-        return render.index(form,"Canpi Configuration")
+        return render.index(form,"Canpi Configuration","")
     def get_exitcode_stdout_stderr(self,cmd):
         """
         Execute the external command and get its exitcode, stdout and stderr.

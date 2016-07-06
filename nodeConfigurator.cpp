@@ -468,7 +468,7 @@ bool nodeConfigurator::nvToCanGrid(){
 
 bool nodeConfigurator::nvToApNoPassword(){
 
-    if ((NV[PARAM1] & 0x10) == 0x10){
+    if ((NV[PARAM1] & 0b00010000) == 0b00010000){
         return true;
     }
     return false;
@@ -858,12 +858,12 @@ int nodeConfigurator::getYellowLed(){
             }
             catch(...){
                 cout << "Failed to convert " << r << " to int" << endl;
-                ret = 27;
+                ret = 2;
             }
         }
         else{
             cout << "Failed to get the yellow_led_pin. Default is 2" << endl;
-            ret = 27;
+            ret = 2;
         }
     }
     return ret;

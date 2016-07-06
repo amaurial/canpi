@@ -2,6 +2,7 @@ $def with (form, title,msg)
 
 $code:
 	id_apmode="apmode"
+        id_apmode_no_passwd="ap_no_password"
 	id_ssid="ap_ssid"
 	id_password="ap_password"
 	id_channel="ap_channel"
@@ -45,6 +46,9 @@ $code:
            <form class="form" method="post"> 
               $:form[id_apmode].description : 
 	      $:form[id_apmode].render()
+	      <br><br>
+              $:form[id_apmode_no_passwd].description : 
+	      $:form[id_apmode_no_passwd].render()
 	      <br><br>
               $:form[id_ssid].description : 
               $:form[id_ssid].render()
