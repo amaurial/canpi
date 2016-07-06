@@ -7,9 +7,9 @@ import time
 import shlex
 from subprocess import Popen, PIPE
 
-#configpath="/home/amaurial/projetos/canpi/canpi.cfg"
+configpath="/home/amaurial/projetos/canpi/canpi.cfg"
 #configpath="/home/user/amauriala/Projects/canpi/canpi.cfg"
-configpath="/home/pi/canpi/canpi.cfg"
+#configpath="/home/pi/canpi/canpi.cfg"
 
 render = web.template.render('templates/')
 urls = ('/', 'index')
@@ -63,80 +63,57 @@ class configManager:
 
 cm = configManager()
 cm.readConfig()
-apmode=True
-gridenable=True
 
-if cm.getValue("ap_mode").lower()!="true":
-    apmode=False
-if cm.getValue("can_grid").lower()!="true":
-    gridenable=False
+id_apmode="apmode"
+id_apmode_no_passwd="ap_no_password"
+id_ssid="ap_ssid"
+id_password="ap_password"
+id_channel="ap_channel"
+id_router_ssid="router_ssid"
+id_router_password="router_password"
+id_bonjour_name="service_name"
+id_ed_tcpport="tcpport"
+id_grid_enable="gridenable"
+id_grid_port="cangrid_port"
+id_logfile="logfile"
+id_loglevel="loglevel"
+id_canid="canid"
+id_turnout_file="turnout_file"
+id_fns_momentary="fn_momentary"
+id_btn_save="btnSave"
+id_btn_apply="btnApply"
+id_btn_restart="btnRestart"
+id_create_logfile="create_log_file"
 
-id_apmode="Apmode"
-id_ssid="SSID"
-id_password="Password"
-id_channel="Channel"
-id_router_ssid="Router SSID"
-id_router_password="Router Password"
-id_bonjour_name="Bonjour service name"
-id_ed_tcpport="ED Throttle Service port"
-id_grid_enable="Cangrid enable"
-id_grid_port="Grid connect Service port"
-id_logfile="Logfile"
-id_loglevel="Log Level"
-id_canid="Can ID"
-id_turnout_file="Turnouts"
-id_fns_momentary="Fns momentary"
+desc_apmode="AP mode"
+desc_apmode_no_passwd="No password in AP mode"
+desc_ssid="SSID"
+desc_password="Password"
+desc_channel="Channel"
+desc_router_ssid="Router SSID"
+desc_router_password="Router Password"
+desc_bonjour_name="Bonjour service name"
+desc_ed_tcpport="ED Throttle Service port"
+desc_grid_enable="Cangrid enable"
+desc_grid_port="Grid connect Service port"
+desc_logfile="Logfile"
+desc_loglevel="Log Level"
+desc_canid="Can ID"
+desc_turnout_file="Turnouts"
+desc_fns_momentary="Fns momentary"
+desc_btn_save="btnSave"
+desc_btn_apply="btnApply"
+desc_btn_restart="btnRestart"
+desc_create_logfile="Creates log file"
 
-myform = form.Form(
-    form.Checkbox(id_apmode,checked=apmode,value="apmode",id="tapmode"),
-    form.Textbox(id_ssid,value=cm.getValue("ap_ssid"),id="apssid"),
-    form.Textbox(id_password, value=cm.getValue("ap_password"),id="appasswd"),
-    form.Dropdown(id_channel, ['1', '2', '3','4','5','6','7','8','9','10','11','12','13'],value=cm.getValue("ap_channel")),
-    form.Textbox(id_router_ssid,value=cm.getValue("router_ssid"),id="routerssid"),
-    form.Textbox(id_router_password, value=cm.getValue("router_password"),id="routerpasswd"),
-    form.Textbox(id_bonjour_name,value=cm.getValue("service_name"),id="servicename"),
-    form.Textbox(id_ed_tcpport,value=cm.getValue("tcpport"),id="tcpport"),
-    form.Checkbox(id_grid_enable,checked=gridenable,value="gridenable",id="cangrid"),
-    form.Textbox(id_grid_port,value=cm.getValue("cangrid_port"),id="cangripport"),
-    form.Textbox(id_canid,value=cm.getValue("canid")),
-    form.Textbox(id_fns_momentary,value=cm.getValue("fn_momentary")),
-    form.Textbox(id_turnout_file,value=cm.getValue("turnout_file")),
-    form.Dropdown(id_loglevel, ['INFO', 'WARN', 'DEBUG'],value=cm.getValue("loglevel")),
-    #form.Textbox(id_logfile,value=cm.getValue("logfile"),id="logfile"),
-    form.Button("btn", id="btnSave", value="save", html="Save changes"),
-    form.Button("btn", id="btnApply", value="apply", html="Apply changes and reboot"),
-    form.Button("btn", id="btnRestart", value="restart", html="Restart Throttle service"))
-def reloadMyForm():
-    global myform
-    global apmode
-    global gridenable
+#validators
+ssid_length = form.Validator("SSID length should be between 1 and 8 characters", lambda p: p is None or len(p)>8)
+passwd_length = form.Validator("Password length should be 8 characters", lambda p: len(p)!= 8)
+router_ssid_length = form.Validator("Router SSID length should be between 1 and 12 characters", lambda p: p is None or len(p)>12)
+router_passwd_length = form.Validator("Router password length should be less then 12 characters", lambda p: len(p)> 12)
+turnout_length = form.Validator("Turnout name length should less than 11 characters", lambda p: p is None or len(p)>11)
+service_name_length = form.Validator("Service name length should less than 8 characters", lambda p: p is None or len(p)>8)
 
-    apmode=True
-    gridenable=True
-    if cm.getValue("ap_mode").lower()!="true":
-        apmode=False
-    if cm.getValue("can_grid").lower()!="true":
-        gridenable=False
-
-    myform = form.Form(
-        form.Checkbox(id_apmode,checked=apmode,value="apmode",id="tapmode"),
-        form.Textbox(id_ssid,value=cm.getValue("ap_ssid"),id="apssid"),
-        form.Textbox(id_password, value=cm.getValue("ap_password"),id="appasswd"),
-        form.Dropdown(id_channel, ['1', '2', '3','4','5','6','7','8','9','10','11','12','13'],value=cm.getValue("ap_channel")),
-        form.Textbox(id_router_ssid,value=cm.getValue("router_ssid"),id="routerssid"),
-        form.Textbox(id_router_password, value=cm.getValue("router_password"),id="routerpasswd"),
-        form.Textbox(id_bonjour_name,value=cm.getValue("service_name"),id="servicename"),
-        form.Textbox(id_ed_tcpport,value=cm.getValue("tcpport"),id="tcpport"),
-        form.Checkbox(id_grid_enable,checked=gridenable,value="gridenable",id="cangrid"),
-        form.Textbox(id_grid_port,value=cm.getValue("cangrid_port"),id="cangripport"),
-        form.Textbox(id_canid,value=cm.getValue("canid")),
-        form.Textbox(id_fns_momentary,value=cm.getValue("fn_momentary")),
-        form.Textbox(id_turnout_file,value=cm.getValue("turnout_file")),
-        form.Dropdown(id_loglevel, ['INFO', 'WARN', 'DEBUG'],value=cm.getValue("loglevel")),
-        #form.Textbox(id_logfile,value=cm.getValue("logfile"),id="logfile"),
-        form.Button("btn", id="btnSave", value="save", html="Save changes"),
-        form.Button("btn", id="btnApply", value="apply", html="Apply changes and reboot"),
-        form.Button("btn", id="btnRestart", value="restart", html="Restart Throttle service"))
 
 def restartPi():
     #time.sleep(3)
@@ -144,11 +121,12 @@ def restartPi():
 
 class index:
 
+    myform=form.Form()
+
     def GET(self):
         cm.readConfig()
-        reloadMyForm()
-
-        form = myform()
+        form = self.reloadMyForm()
+        self.myform = form()
         # make sure you create a copy of the form by calling it (line above)
         # Otherwise changes will appear globally
         return render.index(form,"Canpi Configuration","")
@@ -157,14 +135,17 @@ class index:
         userData = web.input()
         ctx=web.ctx
         myuri = ctx.realhome
-        form = myform()
+        form = self.reloadMyForm()
         form.fill()
+
         #if not form.validates():
+        #    return render.index(form,"Canpi Configuration","Invalid information")
         #    return render.index(form,"Canpi Configuration")
-        print ("Button " + userData.btn)
-        if userData.btn == "save":
+
+        if id_btn_save in userData:
             #get all the values and update
             cm.setValue("ap_mode",str(form[id_apmode].checked))
+            cm.setValue("ap_no_password",str(form[id_apmode_no_passwd].checked))
             cm.setValue("ap_ssid",str(form[id_ssid].value))
             cm.setValue("ap_password",str(form[id_password].value))
             cm.setValue("ap_channel",str(form[id_channel].value))
@@ -176,12 +157,14 @@ class index:
             cm.setValue("tcpport",str(form[id_ed_tcpport].value))
             #cm.setValue("logfile",str(form[id_logfile].value))
             cm.setValue("loglevel",str(form[id_loglevel].value))
+            cm.setValue(id_create_logfile,str(form[id_create_logfile].checked))
             cm.setValue("canid",str(form[id_canid].value))
             cm.setValue("fn_momentary",str(form[id_fns_momentary].value))
             cm.setValue("turnout_file",str(form[id_turnout_file].value))
             cm.saveFile()
             raise web.seeother('/')
-        if userData.btn == "apply":
+            #return render.index(form,"Canpi Configuration","Saved")
+        if id_btn_apply in userData:
             print("Apply button pressed")
             #subprocess.call(['sudo /etc/init.d/start_canpi.sh', 'configure'])
             cpid=os.fork()
@@ -189,7 +172,7 @@ class index:
                 restartPi()
             #os.system("/etc/init.d/start_canpi.sh configure")
             return render.reboot("Restarting",myuri)
-        if userData.btn == "restart":
+        if id_btn_restart in userData:
             print("Restart button pressed")
             #render.restart("Restarting",myuri)
             os.system("/etc/init.d/start_canpi.sh restartcanpi")
@@ -204,7 +187,7 @@ class index:
             #subprocess.call( [ 'sudo /bin/bash /etc/init.d/start_canpi.sh', 'restart'])
             return render.index(form,"Canpi Configuration",msg)
 
-        return render.index(form,"Canpi Configuration")
+        return render.index(form,"Canpi Configuration","")
     def get_exitcode_stdout_stderr(self,cmd):
         """
         Execute the external command and get its exitcode, stdout and stderr.
@@ -217,7 +200,45 @@ class index:
         #
         return exitcode, out, err
 
+    def reloadMyForm(self):
 
+        apmode=True
+        gridenable=True
+        apmode_no_passwd=True
+        create_logfile=True
+
+        if cm.getValue("ap_mode").lower()!="true":
+            apmode=False
+        if cm.getValue("can_grid").lower()!="true":
+            gridenable=False
+        if cm.getValue(id_apmode_no_passwd).lower()!="true":
+            apmode_no_passwd=False
+        if cm.getValue(id_create_logfile).lower()!="true":
+            create_logfile=False
+
+        myform = form.Form(
+            form.Checkbox(id_apmode,description=desc_apmode,checked=apmode,value="apmode",id="tapmode"),
+            form.Checkbox(id_apmode_no_passwd,description=desc_apmode_no_passwd,checked=apmode_no_passwd,value="apmode_no_passwd",id="tapmode_no_passwd"),
+            form.Textbox(id_ssid,ssid_length,description=desc_ssid,value=cm.getValue("ap_ssid"),id="apssid"),
+            form.Textbox(id_password,passwd_length,description=desc_password, value=cm.getValue("ap_password"),id="appasswd"),
+            form.Dropdown(id_channel, ['1', '2', '3','4','5','6','7','8','9','10','11','12','13'],value=cm.getValue("ap_channel")),
+            form.Textbox(id_router_ssid,router_ssid_length,description=desc_router_ssid,value=cm.getValue("router_ssid"),id="routerssid"),
+            form.Textbox(id_router_password,router_passwd_length, description=desc_router_password,value=cm.getValue("router_password"),id="routerpasswd"),
+            form.Textbox(id_bonjour_name,service_name_length,description=desc_bonjour_name,value=cm.getValue("service_name"),id="servicename"),
+            form.Textbox(id_ed_tcpport,description=desc_ed_tcpport,value=cm.getValue("tcpport"),id="tcpport"),
+            form.Checkbox(id_grid_enable,description=desc_grid_enable,checked=gridenable,value="gridenable",id="cangrid"),
+            form.Textbox(id_grid_port,description=desc_grid_port,value=cm.getValue("cangrid_port"),id="cangripport"),
+            form.Textbox(id_canid,description=desc_canid,value=cm.getValue("canid")),
+            form.Textbox(id_fns_momentary,description=desc_fns_momentary,value=cm.getValue("fn_momentary")),
+            form.Textbox(id_turnout_file,turnout_length,description=desc_turnout_file,value=cm.getValue("turnout_file")),
+            form.Dropdown(id_loglevel,  ['INFO', 'WARN', 'DEBUG'],value=cm.getValue("loglevel")),
+            form.Checkbox(id_create_logfile,description=desc_create_logfile,checked=create_logfile,value=id_create_logfile,id="tcreate_logfile"),
+            #form.Textbox(id_logfile,description=,value=cm.getValue("logfile"),id="logfile"),
+            form.Button(desc_btn_save, id=id_btn_save, value="save", html="Save changes"),
+            form.Button(desc_btn_apply, id=id_btn_apply, value="apply", html="Apply changes and reboot"),
+            form.Button(desc_btn_restart, id=id_btn_restart, value="restart", html="Restart Throttle service"))
+
+        return myform()
 
 if __name__=="__main__":
     web.internalerror = web.debugerror

@@ -31,6 +31,8 @@
 #define TAG_WARN         "WARN"
 #define TAG_INFO         "INFO"
 #define TAG_DEBUG        "DEBUG"
+#define TAG_NO_PASSWD    "ap_no_password"
+#define TAG_CREATE_LOGFILE "create_log_file"
 
 
 using namespace libconfig;

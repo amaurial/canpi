@@ -72,6 +72,7 @@ int main()
     string candevice = "can0";
     bool append = false;
     bool start_grid_server = false;
+    bool empty_debug_level = true;
     int gridport = 31;
     int canid = 110;
     int pb_pin=4;
@@ -85,6 +86,7 @@ int main()
     string debugLevel = config->getLogLevel();
 
     if (!debugLevel.empty()){
+        empty_debug_level = false;
         if (debugLevel.compare(TAG_INFO)== 0){
            loglevel = log4cpp::Priority::INFO;
         }
@@ -107,6 +109,7 @@ int main()
     node_number = config->getNodeNumber();
 
     //config the logger
+    logger.setPriority(loglevel);
 
     log4cpp::PatternLayout * layout1 = new log4cpp::PatternLayout();
     layout1->setConversionPattern("%d [%p] %m%n");
@@ -114,20 +117,19 @@ int main()
     log4cpp::Appender *appender1 = new log4cpp::OstreamAppender("console", &std::cout);
     appender1->setLayout(new log4cpp::BasicLayout());
     appender1->setLayout(layout1);
-
-    log4cpp::PatternLayout * layout2 = new log4cpp::PatternLayout();
-    layout2->setConversionPattern("%d [%p] %m%n");
-
-    //log4cpp::Appender *appender2 = new log4cpp::FileAppender("default", logfile, append);
-    log4cpp::Appender *appender2 = new log4cpp::RollingFileAppender("default", logfile,5*1024*1024,10, append);//5M
-    appender2->setLayout(new log4cpp::BasicLayout());
-    appender2->setLayout(layout2);
-
-    //logger.setPriority(log4cpp::Priority::DEBUG);
-    logger.setPriority(loglevel);
     logger.addAppender(appender1);
-    logger.addAppender(appender2);
 
+    if (config->getCreateLogfile()){
+
+        log4cpp::PatternLayout * layout2 = new log4cpp::PatternLayout();
+        layout2->setConversionPattern("%d [%p] %m%n");
+
+        //log4cpp::Appender *appender2 = new log4cpp::FileAppender("default", logfile, append);
+        log4cpp::Appender *appender2 = new log4cpp::RollingFileAppender("default", logfile,5*1024*1024,10, append);//5M
+        appender2->setLayout(new log4cpp::BasicLayout());
+        appender2->setLayout(layout2);
+        logger.addAppender(appender2);
+    }
     logger.info("Logger initated");
 
     config->printMemoryNVs();

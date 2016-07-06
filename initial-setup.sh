@@ -63,6 +63,8 @@ create_default_canpi_config(){
   echo "button_pin=4" >> $conf
   echo "green_led_pin=18" >> $conf
   echo "yellow_led_pin=27" >> $conf
+  echo "ap_no_password=\"True\"" >> $conf
+  echo "create_log_file=\"False\"" >> $conf
 }
 
 echo "Type the Wifi SSID followed by [ENTER]:"
@@ -100,11 +102,11 @@ echo "########### GET THE CANPI CODE ###############"
 cd $dir
 git clone https://github.com/amaurial/canpi.git
 
-echo "########### COMPILE CANPI ###############"
+#echo "########### COMPILE CANPI ###############"
 #compile the code
 cd canpi
-make clean
-make all
+#make clean
+#make all
 echo "########### CREATE CONFIG ###############"
 create_default_canpi_config
 #change the router ssid and password

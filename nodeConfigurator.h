@@ -29,10 +29,10 @@ ssid
 8 bytes
 ssid password
 
-8 bytes
+12 bytes
 router ssid
 
-8 bytes
+12 bytes
 router password
 
 8 bytes
@@ -41,7 +41,7 @@ service name
 11 bytes
 turnout file name
 **/
-#define P1_SIZE 1    //apmode bit 1, enable can grid bit 2, log level bit 3,4
+#define P1_SIZE 1    //apmode bit 0, enable can grid bit 1, log level bit 2,3, ap no password bit 4, no log file bit 5
 #define P2_SIZE 2    //tcp port
 #define P3_SIZE 2    //grid tcp port
 #define P4_SIZE 1    //wifi channel
@@ -93,6 +93,12 @@ class nodeConfigurator
 
         bool getAPMode();
         bool setAPMode(bool apmode);
+
+        bool getAPNoPassword();
+        bool setAPNoPassword(bool mode);
+
+        bool getCreateLogfile();
+        bool setCreateLogfile(bool mode);
 
         bool isCanGridEnabled();
         bool enableCanGrid(bool grid);
@@ -175,6 +181,8 @@ class nodeConfigurator
         bool nvToApMode();
         bool nvToCanGrid();
         int nvToLogLevel();
+        bool nvToApNoPassword();
+        bool nvToCreateLogfile();
         void momentaryFnsToNVs();
         vector<string> & split(const string &s, char delim, vector<string> &elems);
 

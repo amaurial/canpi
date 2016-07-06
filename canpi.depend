@@ -267,7 +267,7 @@
 	"canHandler.h"
 	"nodeConfigurator.h"
 
-1467791538 /home/amaurial/projetos/canpi/utils.h
+1467829699 /home/amaurial/projetos/canpi/utils.h
 	<stdexcept>
 	<sstream>
 	<string>
@@ -342,7 +342,7 @@
 	<vector>
 	<regex>
 
-1467616400 /home/amaurial/projetos/canpi/opcodes.h
+1467826391 /home/amaurial/projetos/canpi/opcodes.h
 
 1465752454 /home/amaurial/projetos/canpi/msgdata.h
 
@@ -386,7 +386,7 @@
 1467542125 /home/amaurial/projetos/canpi/gpio.h
 	<string>
 
-1467616400 /home/amaurial/projetos/canpi/nodeConfigurator.h
+1467829526 /home/amaurial/projetos/canpi/nodeConfigurator.h
 	<iostream>
 	<string.h>
 	<vector>
