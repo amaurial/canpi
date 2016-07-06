@@ -59,8 +59,12 @@
 		<Unit filename="canHandler.h" />
 		<Unit filename="edSession.cpp" />
 		<Unit filename="edSession.h" />
+		<Unit filename="gpio.cpp" />
+		<Unit filename="gpio.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="msgdata.h" />
+		<Unit filename="nodeConfigurator.cpp" />
+		<Unit filename="nodeConfigurator.h" />
 		<Unit filename="opcodes.h" />
 		<Unit filename="tcpClient.cpp" />
 		<Unit filename="tcpClient.h" />

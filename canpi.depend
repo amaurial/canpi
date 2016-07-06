@@ -221,14 +221,13 @@
 	<sstream>
 	<vector>
 
-1464433894 source:/home/amaurial/projetos/canpi/canHandler.cpp
+1467542126 source:/home/amaurial/projetos/canpi/canHandler.cpp
 	"canHandler.h"
 
-1464428872 /home/amaurial/projetos/canpi/canHandler.h
+1466430380 /home/amaurial/projetos/canpi/canHandler.h
 	<linux/can.h>
 	<net/if.h>
 	<linux/can/raw.h>
-	<log4cpp/Category.hh>
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
@@ -238,10 +237,17 @@
 	<queue>
 	<string>
 	<vector>
+	<ctime>
+	<algorithm>
+	<mutex>
+	<condition_variable>
 	"tcpServer.h"
 	"utils.h"
+	"opcodes.h"
+	"gpio.h"
+	"nodeConfigurator.h"
 
-1465705846 /home/amaurial/projetos/canpi/tcpServer.h
+1467010790 /home/amaurial/projetos/canpi/tcpServer.h
 	<sys/socket.h>
 	<arpa/inet.h>
 	<log4cpp/Category.hh>
@@ -249,33 +255,39 @@
 	"Client.h"
 	"canHandler.h"
 	"Turnout.h"
+	"nodeConfigurator.h"
 
-1464418805 /home/amaurial/projetos/canpi/Client.h
+1467010767 /home/amaurial/projetos/canpi/Client.h
 	<string>
 	<sys/socket.h>
 	<arpa/inet.h>
 	<log4cpp/Category.hh>
+	"utils.h"
 	"tcpServer.h"
 	"canHandler.h"
-	"utils.h"
+	"nodeConfigurator.h"
 
-1465702211 /home/amaurial/projetos/canpi/utils.h
+1467791538 /home/amaurial/projetos/canpi/utils.h
 	<stdexcept>
 	<sstream>
+	<string>
+	"libconfig.h++"
 
-1464418779 source:/home/amaurial/projetos/canpi/Client.cpp
+1467008256 source:/home/amaurial/projetos/canpi/Client.cpp
 	"Client.h"
 
-1463379182 source:/home/amaurial/projetos/canpi/edSession.cpp
+1467090222 source:/home/amaurial/projetos/canpi/edSession.cpp
 	"edSession.h"
+	"nodeConfigurator.h"
 
-1463376231 /home/amaurial/projetos/canpi/edSession.h
+1467090343 /home/amaurial/projetos/canpi/edSession.h
 	<string>
 	<log4cpp/Category.hh>
 	<time.h>
 	"utils.h"
+	"nodeConfigurator.h"
 
-1465741285 source:/home/amaurial/projetos/canpi/main.cpp
+1467542125 source:/home/amaurial/projetos/canpi/main.cpp
 	<iostream>
 	<stdio.h>
 	<stdlib.h>
@@ -295,6 +307,7 @@
 	"log4cpp/Category.hh"
 	"log4cpp/Appender.hh"
 	"log4cpp/FileAppender.hh"
+	"log4cpp/RollingFileAppender.hh"
 	"log4cpp/OstreamAppender.hh"
 	"log4cpp/SyslogAppender.hh"
 	"log4cpp/Layout.hh"
@@ -304,14 +317,16 @@
 	"log4cpp/Priority.hh"
 	"log4cpp/NDC.hh"
 	"libconfig.h++"
+	"utils.h"
 	"canHandler.h"
 	"Turnout.h"
+	"nodeConfigurator.h"
 
-1465720182 source:/home/amaurial/projetos/canpi/tcpClient.cpp
+1467090299 source:/home/amaurial/projetos/canpi/tcpClient.cpp
 	"tcpClient.h"
 	<stdio.h>
 
-1465751703 /home/amaurial/projetos/canpi/tcpClient.h
+1467011194 /home/amaurial/projetos/canpi/tcpClient.h
 	"Client.h"
 	"edSession.h"
 	"opcodes.h"
@@ -327,20 +342,21 @@
 	<vector>
 	<regex>
 
-1465387737 /home/amaurial/projetos/canpi/opcodes.h
+1467616400 /home/amaurial/projetos/canpi/opcodes.h
 
-1465751576 /home/amaurial/projetos/canpi/msgdata.h
+1465752454 /home/amaurial/projetos/canpi/msgdata.h
 
-1464435195 source:/home/amaurial/projetos/canpi/tcpClientGridConnect.cpp
+1467616400 source:/home/amaurial/projetos/canpi/tcpClientGridConnect.cpp
 	"tcpClientGridConnect.h"
 	<stdio.h>
 
-1464426378 /home/amaurial/projetos/canpi/tcpClientGridConnect.h
+1467050556 /home/amaurial/projetos/canpi/tcpClientGridConnect.h
 	"Client.h"
 	"canHandler.h"
 	"opcodes.h"
 	"msgdata.h"
 	"utils.h"
+	"nodeConfigurator.h"
 	<sys/socket.h>
 	<arpa/inet.h>
 	<log4cpp/Category.hh>
@@ -350,7 +366,7 @@
 	<sstream>
 	<vector>
 
-1465708699 source:/home/amaurial/projetos/canpi/tcpServer.cpp
+1467050516 source:/home/amaurial/projetos/canpi/tcpServer.cpp
 	"tcpServer.h"
 	"tcpClient.h"
 	"tcpClientGridConnect.h"
@@ -364,6 +380,28 @@
 	"utils.h"
 	"msgdata.h"
 
-1465711697 source:/home/amaurial/projetos/canpi/Turnout.cpp
+1465751121 source:/home/amaurial/projetos/canpi/Turnout.cpp
 	"Turnout.h"
+
+1467542125 /home/amaurial/projetos/canpi/gpio.h
+	<string>
+
+1467616400 /home/amaurial/projetos/canpi/nodeConfigurator.h
+	<iostream>
+	<string.h>
+	<vector>
+	<log4cpp/Category.hh>
+	"libconfig.h++"
+	"utils.h"
+	"opcodes.h"
+
+1467785216 source:/home/amaurial/projetos/canpi/nodeConfigurator.cpp
+	"nodeConfigurator.h"
+
+1467542125 source:/home/amaurial/projetos/canpi/gpio.cpp
+	"gpio.h"
+	<fstream>
+	<string>
+	<iostream>
+	<sstream>
 
