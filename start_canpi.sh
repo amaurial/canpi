@@ -93,7 +93,7 @@ setup_bonjour() {
     echo "Configuring the bonjour service"
     #back the old file
     #mv $bonjour_file "${bonjour_file}.bak"
-    cp $bonjour_template "${bonjour_template}.tmp" 
+    cp $bonjour_template "${bonjour_template}.tmp"
 
     #change the service name
     sed -i 's/SERVICENAME/'"$service_name"'/' "${bonjour_template}.tmp"
@@ -146,6 +146,21 @@ setup_hostapd(){
     sudo sed -i 's/CHANNEL/'"$ap_channel"'/' $hostapd_file
 }
 
+setup_hostapd_no_password(){
+    echo "Configuring the hostapd with no password"
+    #back the old file
+    sudo mv $hostapd_file "${hostapd_file}.bak"
+    sudo cp "${hostapd_template}.nopassword" $hostapd_file
+
+    #change the ssid
+    sudo sed -i 's/SSID/'"$ap_ssid"'/' $hostapd_file
+
+    #change the channel
+    sudo sed -i 's/CHANNEL/'"$ap_channel"'/' $hostapd_file
+}
+
+
+
 setup_iface_wifi(){
     #back the old file
     sudo mv $iface_file "${iface_file}.bak"
@@ -192,7 +207,12 @@ setup_ap_mode()
     echo "Restarting wlan0"
     sudo ip link set wlan0 down
     setup_iface_ap
-    setup_hostapd
+    if [[ $ap_no_password == "true" || $ap_no_password == "True" || $ap_no_password == "TRUE" ]];then
+        setup_hostapd_no_password
+    else
+        setup_hostapd
+    fi
+
     sleep 1
     sudo ip link set wlan0 up
 
@@ -355,7 +375,7 @@ case "$1" in
     fi
     ;;
     startcanpi)
-     
+
     setup_bonjour
     if is_running; then
         echo "Already started"
