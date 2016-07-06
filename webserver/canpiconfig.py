@@ -7,9 +7,9 @@ import time
 import shlex
 from subprocess import Popen, PIPE
 
-#configpath="/home/amaurial/projetos/canpi/canpi.cfg"
+configpath="/home/amaurial/projetos/canpi/canpi.cfg"
 #configpath="/home/user/amauriala/Projects/canpi/canpi.cfg"
-configpath="/home/pi/canpi/canpi.cfg"
+#configpath="/home/pi/canpi/canpi.cfg"
 
 render = web.template.render('templates/')
 urls = ('/', 'index')
@@ -114,6 +114,7 @@ desc_btn_save="btnSave"
 desc_btn_apply="btnApply"
 desc_btn_restart="btnRestart"
 
+<<<<<<< HEAD
 #validators
 ssid_length = form.Validator("SSID length should be between 1 and 8 characters", lambda p: p is None or len(p)>8)
 passwd_length = form.Validator("Password length should be 8 characters", lambda p: len(p)!= 8)
@@ -132,6 +133,16 @@ myform = form.Form(
     form.Textbox(id_router_ssid,router_ssid_length,description=desc_router_ssid,value=cm.getValue("router_ssid"),id="routerssid"),
     form.Textbox(id_router_password,router_passwd_length, description=desc_router_password,value=cm.getValue("router_password"),id="routerpasswd"),
     form.Textbox(id_bonjour_name,service_name_length,description=desc_bonjour_name,value=cm.getValue("service_name"),id="servicename"),
+=======
+
+myform = form.Form(
+    form.Checkbox(id_apmode,description=desc_apmode,checked=apmode,value="apmode",id="tapmode"),
+    form.Textbox(id_ssid,description=desc_ssid,value=cm.getValue("ap_ssid"),id="apssid"),
+    form.Textbox(id_password,description=desc_password, value=cm.getValue("ap_password"),id="appasswd"),
+    form.Dropdown(id_channel, ['1', '2', '3','4','5','6','7','8','9','10','11','12','13'],value=cm.getValue("ap_channel")),
+    form.Textbox(id_router_ssid,description=desc_router_ssid,value=cm.getValue("router_ssid"),id="routerssid"),
+    form.Textbox(id_router_password, description=desc_router_password,value=cm.getValue("router_password"),id="routerpasswd"),
+    form.Textbox(id_bonjour_name,description=desc_bonjour_name,value=cm.getValue("service_name"),id="servicename"),
     form.Textbox(id_ed_tcpport,description=desc_ed_tcpport,value=cm.getValue("tcpport"),id="tcpport"),
     form.Checkbox(id_grid_enable,description=desc_grid_enable,checked=gridenable,value="gridenable",id="cangrid"),
     form.Textbox(id_grid_port,description=desc_grid_port,value=cm.getValue("cangrid_port"),id="cangripport"),
@@ -205,6 +216,7 @@ class index:
 
         #if not form.validates():
         #    return render.index(form,"Canpi Configuration","Invalid information")
+        #    return render.index(form,"Canpi Configuration")
 
         if id_btn_save in userData:
             #get all the values and update

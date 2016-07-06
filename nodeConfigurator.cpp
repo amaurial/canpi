@@ -858,12 +858,12 @@ int nodeConfigurator::getYellowLed(){
             }
             catch(...){
                 cout << "Failed to convert " << r << " to int" << endl;
-                ret = 2;
+                ret = 27;
             }
         }
         else{
             cout << "Failed to get the yellow_led_pin. Default is 2" << endl;
-            ret = 2;
+            ret = 27;
         }
     }
     return ret;
