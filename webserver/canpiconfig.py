@@ -7,9 +7,9 @@ import time
 import shlex
 from subprocess import Popen, PIPE
 
-configpath="/home/amaurial/projetos/canpi/canpi.cfg"
+#configpath="/home/amaurial/projetos/canpi/canpi.cfg"
 #configpath="/home/user/amauriala/Projects/canpi/canpi.cfg"
-#configpath="/home/pi/canpi/canpi.cfg"
+configpath="/home/pi/canpi/canpi.cfg"
 
 render = web.template.render('templates/')
 urls = ('/', 'index')

@@ -286,6 +286,7 @@ void canHandler::run_queue_reader(void* param){
                 opc == OPC_NVRD){
                 handleCBUSEvents(frame);
             }
+
             if (servers.size() > 0){
                 for (server = servers.begin();server != servers.end(); server++){
                     (*server)->addCanMessage(frame.can_id,(char*)frame.data, frame.can_dlc);
@@ -401,7 +402,7 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
     char sendframe[CAN_MSG_SIZE];
     memset(sendframe,0,CAN_MSG_SIZE);
     byte Hb,Lb;
-    int tnn;
+    int tnn, status;
     print_frame(&frame,"Handling CBUS config event");
 
     switch (frame.data[0]){
@@ -520,11 +521,34 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
             put_to_out_queue(sendframe,4,ClientType::ED);
             return;
         }
-        config->setNV(frame.data[3],frame.data[4]);
-        sendframe[0] = OPC_WRACK;
-        sendframe[1] = Hb;
-        sendframe[2] = Lb;
-        put_to_out_queue(sendframe,3,ClientType::ED);
+        //1 error, 2 reconfigure , 3 restart the service
+        status = config->setNV(frame.data[3],frame.data[4]);
+        if (status == 1){
+            sendframe[0] = OPC_CMDERR;
+            sendframe[1] = Hb;
+            sendframe[2] = Lb;
+            sendframe[3] = 9;
+            put_to_out_queue(sendframe,4,ClientType::ED);
+        }
+        else{
+            sendframe[0] = OPC_WRACK;
+            sendframe[1] = Hb;
+            sendframe[2] = Lb;
+            put_to_out_queue(sendframe,3,ClientType::ED);
+        }
+
+        if (status == 2 || status == 3){
+            //all parameters saved, we can restart or reconfigure the module
+            vector<tcpServer*>::iterator server;
+            if (servers.size() > 0){
+                for (server = servers.begin();server != servers.end(); server++){
+                    (*server)->stop();
+                }
+            }
+            usleep(5000);
+            restart_module(status);
+        }
+
     break;
 
     case OPC_SNN:
@@ -622,6 +646,33 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
     break;
     }
 }
+
+void canHandler::restart_module(int status){
+    int ret;
+    string command;
+    //MTA*<;>*
+
+    if (status == 2){
+        command = "/etc/init.d/start_canpi.sh configure";
+    }
+    else if (status == 3){
+        command = "/etc/init.d/start_canpi.sh restart";
+    }
+    else{
+        return;
+    }
+
+    if(fork() == 0){
+        logger->info("Restarting the module.");
+        //stop all threads
+        //
+        ret = system(command.c_str());
+        exit(0);
+    }else{
+        logger->info("Main module stopping the services");
+    }
+}
+
 
 void canHandler::doPbLogic(){
     string pbstate;

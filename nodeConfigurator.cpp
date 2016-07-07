@@ -55,6 +55,12 @@ byte nodeConfigurator::getNV(int idx){
 byte nodeConfigurator::setNV(int idx,byte val){
     int i;
     bool r;
+    int status = 0;//1 error, 2 reconfigure , 3 restart the service
+    string tosave;
+    string original;
+    int itosave;
+    int ioriginal;
+
     i = idx - 1;
     if (i < 0){
         i = 0;
@@ -67,42 +73,148 @@ byte nodeConfigurator::setNV(int idx,byte val){
 
         logger->debug ("Received all variables. Saving to file.");
         printMemoryNVs();
+        // SSID
+        tosave = nvToString(P_SSID,P5_SIZE);
+        original = getSSID();
+        if (tosave.compare(original) != 0){
+            //changed. need reconfigure
+            status = 2;
+        }
 
-        r = setSSID(nvToString(P_SSID,P5_SIZE));
-        if (!r) logger->error ("Failed to save NVs SSID");
+        r = setSSID(tosave);
+        if (!r) {
+            logger->error ("Failed to save NVs SSID");
+            status = 1;
+        }
 
-        r = setPassword(nvToString(P_PASSWD,P6_SIZE));
-        if (!r) logger->error ("Failed to save NVs Password");
+        //Password
+        tosave = nvToString(P_PASSWD,P6_SIZE);
+        original = getPassword();
+        if (tosave.compare(original) != 0){
+            //changed. need reconfigure
+            status = 2;
+        }
+        r = setPassword(tosave);
+        if (!r) {
+            logger->error ("Failed to save NVs Password");
+            status = 1;
+        }
 
-        r = setRouterSSID(nvToString(P_ROUTER_SSID,P7_SIZE));
-        if (!r) logger->error ("Failed to save NVs Router SSID");
+        //Router SSID
+        tosave = nvToString(P_ROUTER_SSID,P7_SIZE);
+        original = getPassword();
+        if (tosave.compare(original) != 0){
+            //changed need restart service
+            status = 2;
+        }
 
-        r = setRouterPassword(nvToString(P_ROUTER_PASSWD,P8_SIZE));
-        if (!r) logger->error ("Failed to save NVs Router password");
+        r = setRouterSSID(tosave);
+        if (!r) {
+            logger->error ("Failed to save NVs Router SSID");
+            status = 1;
+        }
 
-        r = setTcpPort(nvToInt(P_TCP_PORT,P2_SIZE));
-        if (!r) logger->error ("Failed to save NVs Tcp port");
+        //Router password
+        tosave = nvToString(P_ROUTER_PASSWD,P8_SIZE);
+        original = getRouterPassword();
+        if (tosave.compare(original) != 0){
+            //changed
+            status = 2;
+        }
 
-        r = setCanGridPort(nvToInt(P_GRID_TCP_PORT,P3_SIZE));
-        if (!r) logger->error ("Failed to save NVs grid tcp port");
+        r = setRouterPassword(tosave);
+        if (!r) {
+            logger->error ("Failed to save NVs Router password");
+            status = 1;
+        }
 
-        r = setTurnoutFile(nvToString(P_TURNOUT_FILE,P10_SIZE));
-        if (!r) logger->error ("Failed to save NVs turnout files");
+        //tcp port
+        itosave = nvToInt(P_TCP_PORT,P2_SIZE);
+        ioriginal = getTcpPort();
+        if (itosave != ioriginal){
+            //changed
+            status = 3;
+        }
+
+        r = setTcpPort(itosave);
+        if (!r) {
+            logger->error ("Failed to save NVs Tcp port");
+            status = 1;
+        }
+
+        //grid tcp port
+        itosave = nvToInt(P_GRID_TCP_PORT,P3_SIZE);
+        ioriginal = getTcpPort();
+        if (itosave != ioriginal){
+            //changed
+            status = 3;
+        }
+        r = setCanGridPort(itosave);
+        if (!r) {
+            logger->error ("Failed to save NVs grid tcp port");
+            status = 1;
+        }
+
+        //turnout
+        tosave = nvToString(P_TURNOUT_FILE,P10_SIZE);
+        original = getTcpPort();
+        if (tosave.compare(original) != 0){
+            //changed
+            status = 3;
+        }
+        r = setTurnoutFile(tosave);
+        if (!r) {
+            logger->error ("Failed to save NVs turnout files");
+            status = 1;
+        }
 
         r = setMomentaryFn(nvToMomentary());
-        if (!r) logger->error ("Failed to save NVs momentaries");
+        if (!r) {
+            logger->error ("Failed to save NVs momentaries");
+            status = 1;
+        }
+
+        if (nvToApMode() != getAPMode()){
+            //changed
+            status = 3;
+        }
 
         r = setAPMode(nvToApMode());
-        if (!r) logger->error ("Failed to save NV ap mode");
+        if (!r) {
+            logger->error ("Failed to save NV ap mode");
+            status = 1;
+        }
+
+        if (nvToApNoPassword() != getAPNoPassword()){
+            //changed
+            status = 3;
+        }
 
         r = setAPNoPassword(nvToApNoPassword());
-        if (!r) logger->error ("Failed to save NV ap no password");
+        if (!r) {
+            logger->error ("Failed to save NV ap no password");
+            status = 1;
+        }
 
+        if (NV[P_WIFI_CHANNEL] != getApChannel()){
+            //changed
+            status = 3;
+        }
         r = setApChannel(NV[P_WIFI_CHANNEL]);
-        if (!r) logger->error ("Failed to save Wifi channel");
+        if (!r) {
+            logger->error ("Failed to save Wifi channel");
+            status = 1;
+        }
 
+        if (nvToCanGrid() != isCanGridEnabled()){
+            //changed
+            status = 3;
+        }
         r = enableCanGrid(nvToCanGrid());
-        if (!r) logger->error ("Failed to save NV enable can grid");
+        if (!r) {
+            logger->error ("Failed to save NV enable can grid");
+            status = 1;
+        }
 
         int v;
         string loglevel;
@@ -121,9 +233,12 @@ byte nodeConfigurator::setNV(int idx,byte val){
             loglevel = TAG_INFO;
         }
         r = setLogLevel(loglevel);
-        if (!r) logger->error ("Failed to save NVs loglevel");
+        if (!r) {
+            logger->error ("Failed to save NVs loglevel");
+            status = 1;
+        }
     }
-    return 0;
+    return status;
 }
 
 void nodeConfigurator::loadParamsToMemory(){

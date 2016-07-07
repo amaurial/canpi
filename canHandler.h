@@ -93,6 +93,7 @@ class canHandler
         void finishSelfEnum(int id);
         void handleCBUSEvents(struct can_frame frame);
         void doPbLogic();
+        void restart_module(int status);
 
         void print_frame(can_frame *frame,string message);
 
