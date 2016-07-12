@@ -7,7 +7,8 @@
 #include <string.h>
 #include <vector>
 #include <log4cpp/Category.hh>
-#include "libconfig.h++"
+#include <map>
+#include <fstream>
 #include "utils.h"
 #include "opcodes.h"
 
@@ -79,6 +80,7 @@ class nodeConfigurator
         nodeConfigurator(string file,log4cpp::Category *logger);
         virtual ~nodeConfigurator();
 
+        bool loadConfig();
         string getNodeName();
 
         int getTcpPort();
@@ -169,13 +171,11 @@ class nodeConfigurator
         string nvToMomentary();
         log4cpp::Category *logger = nullptr;
         string configFile;
-        Config cfg;
         char NV[PARAMS_SIZE];
         char NODEPARAMS[8];
         int nvs_set; //used to count how many nvs were written before saving the data do the file
 
-        bool saveConfig(string key,string val);
-        bool saveConfig(string key,int val);
+        bool saveConfig();
         void loadParamsToMemory();
         void loadParam1();
         void loadParamsInt2Bytes(int value,unsigned int idx);
@@ -189,6 +189,10 @@ class nodeConfigurator
         bool nvToCreateLogfile();
         void momentaryFnsToNVs();
         vector<string> & split(const string &s, char delim, vector<string> &elems);
+        map<string,string> config;
+        string removeChar(string val,char c);
+        string cleanString(string val);
+        pair <string,string> getpair(string val);
 
 };
 

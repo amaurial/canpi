@@ -33,8 +33,6 @@
 #include "log4cpp/Priority.hh"
 #include "log4cpp/NDC.hh"
 
-#include "libconfig.h++"
-
 //project classes
 #include "utils.h"
 #include "canHandler.h"
@@ -42,7 +40,7 @@
 #include "nodeConfigurator.h"
 
 using namespace std;
-using namespace libconfig;
+//using namespace libconfig;
 int running = 1;
 
 void sigterm(int signo)

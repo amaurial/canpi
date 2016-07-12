@@ -73,6 +73,7 @@ void tcpClient::start(void *param){
 
 void tcpClient::stop(){
     running = 0;
+    close(client_sock);
 }
 
 void tcpClient::canMessage(int canid,const char* msg, int dlc){
@@ -129,7 +130,7 @@ void tcpClient::run(void *param){
     }
     logger->info("[%d] Quiting client connection ip:%s id:%d.",id, ip.c_str(),id);
     usleep(1000*1000); //1sec give some time for any pending thread to finish
-    close(client_sock);
+
     pthread_cancel(kalive);
     pthread_cancel(cbusin);
     server->removeClient(this);

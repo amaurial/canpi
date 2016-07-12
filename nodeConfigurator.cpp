@@ -4,6 +4,7 @@ nodeConfigurator::nodeConfigurator(string file,log4cpp::Category *logger)
 {
     this->configFile = file;
     this->logger = logger;
+    loadConfig();
     loadParamsToMemory();
     nvs_set = 0;
     setNodeParams(MANU_MERG,MSOFT_MIN_VERSION,MID,0,0,getNumberOfNVs(),MSOFT_VERSION,MFLAGS);
@@ -70,6 +71,7 @@ byte nodeConfigurator::setNV(int idx,byte val){
 
     if (nvs_set >= PARAMS_SIZE){
         nvs_set = 0;
+        loadConfig();
 
         logger->debug ("Received all variables. Saving to file.");
         printMemoryNVs();
@@ -248,6 +250,7 @@ byte nodeConfigurator::setNV(int idx,byte val){
             logger->error ("Failed to save NVs loglevel");
             status = 1;
         }
+        saveConfig();
     }
     return status;
 }
@@ -340,194 +343,64 @@ void nodeConfigurator::loadParamsString(string value, unsigned int idx, unsigned
     cout << endl;
 }
 
-bool nodeConfigurator::saveConfig(string key,string val){
-    Config cfg;
-    try
-    {
-       cfg.readFile(configFile.c_str());
 
-       if (cfg.exists(key)){
-            libconfig::Setting &varkey = cfg.lookup(key);
-            varkey = val;
-            cfg.writeFile(configFile.c_str());
-       }
-    }
-    catch(const FileIOException &fioex)
-    {
-        if (logger != nullptr) logger->error("Error reading the config file.");
-        else{
-            std::cerr << "File I/O error" << std::endl;
-            std::cout << "File I/O error" << std::endl;
-        }
+bool nodeConfigurator::saveConfig(){
+
+    map<string, string>::iterator it;
+    ofstream f (configFile, ios::trunc);
+
+    if (!f.is_open()){
+        if (logger != nullptr) logger->error("Error writing the config file.");
+        else std::cerr << "Error writing the config file." << std::endl;
         return false;
     }
-    catch(const ParseException &pex)
-    {
-        if (logger != nullptr){
-            stringstream ss;
-            ss << "Parser exception at ";
-            ss << pex.getFile();ss << " - ";
-            ss << pex.getLine();ss << " - ";
-            ss << pex.getError();
 
-            logger->error(ss.str().c_str());
-        }
-        else{
-            std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
-                  << " - " << pex.getError() << std::endl;
-            std::cout << "Parse error at " << pex.getFile() << ":" << pex.getLine()
-                  << " - " << pex.getError() << std::endl;
-        }
-        return false;
+    for (it = config.begin(); it != config.end(); it++){
+        f << it->first << "=" << it->second << endl;
     }
+    f.close();
+    loadConfig();
     return true;
-}
-bool nodeConfigurator::saveConfig(string key,int val){
-    Config cfg;
-    try
-    {
-       cfg.readFile(configFile.c_str());
 
-       if (cfg.exists(key)){
-            libconfig::Setting &varkey = cfg.lookup(key);
-            varkey = val;
-            cfg.writeFile(configFile.c_str());
-       }
-    }
-    catch(const FileIOException &fioex)
-    {
-        if (logger != nullptr) logger->error("Error reading the config file.");
-        else{
-            std::cerr << "File I/O error" << std::endl;
-            std::cout << "File I/O error" << std::endl;
-        }
-        return false;
-    }
-    catch(const ParseException &pex)
-    {
-        if (logger != nullptr){
-            stringstream ss;
-            ss << "Parser exception at ";
-            ss << pex.getFile();ss << " - ";
-            ss << pex.getLine();ss << " - ";
-            ss << pex.getError();
-
-            logger->error(ss.str().c_str());
-        }
-        else{
-            std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
-                << " - " << pex.getError() << std::endl;
-            std::cout << "Parse error at " << pex.getFile() << ":" << pex.getLine()
-                << " - " << pex.getError() << std::endl;
-        }
-        return false;
-    }
-    return true;
 }
 
 string nodeConfigurator::getStringConfig(string key)
 {
-    Config cfg;
     string ret;
     ret = "";
-    try
-    {
-       cfg.readFile(configFile.c_str());
-       if (cfg.exists(key)){
-            cfg.lookupValue(key,ret);
-       }
-    }
-    catch(const FileIOException &fioex)
-    {
-        if (logger != nullptr) logger->error("Error reading the config file.");
-        else{
-            std::cerr << "File I/O error" << std::endl;
-            std::cout << "File I/O error" << std::endl;
-        }
-    }
-    catch(const ParseException &pex)
-    {
-        if (logger != nullptr){
-            stringstream ss;
-            ss << "Parser exception at ";
-            ss << pex.getFile();ss << " - ";
-            ss << pex.getLine();ss << " - ";
-            ss << pex.getError();
 
-            logger->error(ss.str().c_str());
-        }
-        else{
-            std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
-                << " - " << pex.getError() << std::endl;
-            std::cout << "Parse error at " << pex.getFile() << ":" << pex.getLine()
-                << " - " << pex.getError() << std::endl;
-        }
+    if (config.size() == 0){
+        return ret;
     }
-    catch(const SettingNotFoundException &nfex)
-    {
-        if (logger != nullptr) logger->error("Key not found");
-        else{
-            std::cerr << "Key not found" << std::endl;
-            std::cout << "Key not found" << std::endl;
-        }
+    map<string,string>::iterator it;
+    it = config.find(key);
+    if (it == config.end()){
+        return ret;
     }
-    return ret;
+    return it->second;
 
 }
-/**
-* Usefull function to get integer from config file
-**/
+
 int nodeConfigurator::getIntConfig(string key)
 {
-    int ret;
-    Config cfg;
-    ret = INTERROR;
-    try
-    {
-       cfg.readFile(configFile.c_str());
-       if (cfg.exists(key)){
-            bool r = cfg.lookupValue(key,ret);
-            if (!r) ret = INTERROR;
-       }
+    int ret = INTERROR;
+
+    if (config.size() == 0) return ret;
+
+    map<string,string>::iterator it;
+    it = config.find(key);
+
+    if (it == config.end()) return ret;
+
+    try{
+        ret = atoi(it->second.c_str());
     }
-    catch(const FileIOException &fioex)
-    {
-        if (logger != nullptr) logger->error("Erro reading the config file.");
-        else{
-            std::cerr << "File I/O error" << std::endl;
-            std::cout << "File I/O error" << std::endl;
-        }
-
-    }
-    catch(const ParseException &pex)
-    {
-        if (logger != nullptr){
-            stringstream ss;
-            ss << "Parser exception at ";
-            ss << pex.getFile();ss << " - ";
-            ss << pex.getLine();ss << " - ";
-            ss << pex.getError();
-
-            logger->error(ss.str().c_str());
-        }
-        else{
-            std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
-	          << " - " << pex.getError() << std::endl;
-            std::cout << "Parse error at " << pex.getFile() << ":" << pex.getLine()
-	          << " - " << pex.getError() << std::endl;
-        }
-
-    }
-    catch(const SettingNotFoundException &nfex)
-    {
-        if (logger != nullptr) logger->error("Key not found");
-        else{
-            std::cerr << "Key not found" << std::endl;
-            std::cout << "Key not found" << std::endl;
-        }
-
+    catch(...){
+        if (logger != nullptr) logger->error("Failed to convert %s to int", it->second.c_str());
+        else cout << "Failed to convert " << it->second.c_str() << " to int" << endl;
     }
     return ret;
+
 }
 
 string nodeConfigurator::getNodeName(){
@@ -542,7 +415,9 @@ string nodeConfigurator::getMomentaryFn(){
 }
 //gets the string to config file
 bool nodeConfigurator::setMomentaryFn(string val){
-    return saveConfig(TAG_FNMOM,val);
+    if (config.find(TAG_FNMOM) == config.end()) return false;
+    config[TAG_FNMOM] = "\"" + val + "\"";
+    return true;
 }
 //transform the bits in the array to the momentary string
 //number comma separated
@@ -683,7 +558,11 @@ int nodeConfigurator::nvToLogLevel(){
 }
 
 bool nodeConfigurator::setTcpPort(int val){
-    return saveConfig(TAG_TCP_PORT,val);
+    if (config.find(TAG_TCP_PORT) == config.end()) return false;
+    stringstream ss;
+    ss << val;
+    config[TAG_TCP_PORT] = ss.str();
+    return true;
 }
 
 int nodeConfigurator::getTcpPort(){
@@ -734,7 +613,11 @@ int nodeConfigurator::getcanGridPort(){
     return ret;
 }
 bool nodeConfigurator::setCanGridPort(int val){
-    return saveConfig(TAG_GRID_PORT,val);
+    if (config.find(TAG_GRID_PORT) == config.end()) return false;
+    stringstream ss;
+    ss << val;
+    config[TAG_GRID_PORT] = ss.str();
+    return true;
 }
 
 int nodeConfigurator::getCanID(){
@@ -761,7 +644,11 @@ int nodeConfigurator::getCanID(){
     return ret;
 }
 bool nodeConfigurator::setCanID(int val){
-    return saveConfig(TAG_CANID,val);
+    if (config.find(TAG_CANID) == config.end()) return false;
+    stringstream ss;
+    ss << val;
+    config[TAG_CANID] = ss.str();
+    return true;
 }
 
 int nodeConfigurator::getNodeNumber(){
@@ -788,7 +675,11 @@ int nodeConfigurator::getNodeNumber(){
     return ret;
 }
 bool nodeConfigurator::setNodeNumber(int val){
-    return saveConfig(TAG_NN,val);
+    if (config.find(TAG_NN) == config.end()) return false;
+    stringstream ss;
+    ss << val;
+    config[TAG_NN] = ss.str();
+    return true;
 }
 
 bool nodeConfigurator::getAPMode(){
@@ -805,12 +696,13 @@ bool nodeConfigurator::getAPMode(){
     return false;
 }
 bool nodeConfigurator::setAPMode(bool apmode){
-    if (apmode){
-        return saveConfig(TAG_AP_MODE,"True");
-    }
-    else{
-        return saveConfig(TAG_AP_MODE,"False");
-    }
+    string r;
+    if (apmode) r = "True";
+    else r = "False";
+
+    if (config.find(TAG_AP_MODE) == config.end()) return false;
+    config[TAG_AP_MODE] = "\"" + r + "\"";
+    return true;
 }
 
 bool nodeConfigurator::getAPNoPassword(){
@@ -827,12 +719,13 @@ bool nodeConfigurator::getAPNoPassword(){
     return false;
 }
 bool nodeConfigurator::setAPNoPassword(bool mode){
-    if (mode){
-        return saveConfig(TAG_NO_PASSWD,"True");
-    }
-    else{
-        return saveConfig(TAG_NO_PASSWD,"False");
-    }
+    string r;
+    if (mode) r = "True";
+    else r = "False";
+
+    if (config.find(TAG_NO_PASSWD) == config.end()) return false;
+    config[TAG_NO_PASSWD] = "\"" + r + "\"";
+    return true;
 }
 
 bool nodeConfigurator::getCreateLogfile(){
@@ -849,12 +742,13 @@ bool nodeConfigurator::getCreateLogfile(){
     return false;
 }
 bool nodeConfigurator::setCreateLogfile(bool mode){
-    if (mode){
-        return saveConfig(TAG_CREATE_LOGFILE,"True");
-    }
-    else{
-        return saveConfig(TAG_CREATE_LOGFILE,"False");
-    }
+    string r;
+    if (mode) r = "True";
+    else r = "False";
+
+    if (config.find(TAG_CREATE_LOGFILE) == config.end()) return false;
+    config[TAG_CREATE_LOGFILE] = "\"" + r + "\"";
+    return true;
 }
 
 bool nodeConfigurator::isCanGridEnabled(){
@@ -871,16 +765,19 @@ bool nodeConfigurator::isCanGridEnabled(){
     return false;
 }
 bool nodeConfigurator::enableCanGrid(bool grid){
-    if (grid){
-        return saveConfig(TAG_CAN_GRID,"True");
-    }
-    else{
-        return saveConfig(TAG_CAN_GRID,"False");
-    }
+    string r;
+    if (grid) r = "True";
+    else r = "False";
+
+    if (config.find(TAG_CAN_GRID) == config.end()) return false;
+    config[TAG_CAN_GRID] = "\"" + r + "\"";
+    return true;
 }
 
 bool nodeConfigurator::setSSID(string val){
-    return saveConfig(TAG_SSID,val);
+    if (config.find(TAG_SSID) == config.end()) return false;
+    config[TAG_SSID] = "\"" + val + "\"";
+    return true;
 }
 string nodeConfigurator::getSSID(){
     string ret;
@@ -889,7 +786,9 @@ string nodeConfigurator::getSSID(){
 }
 
 bool nodeConfigurator::setPassword(string val){
-    return saveConfig(TAG_PASSWD,val);
+    if (config.find(TAG_PASSWD) == config.end()) return false;
+    config[TAG_PASSWD] = "\"" + val + "\"";
+    return true;
 }
 string nodeConfigurator::getPassword(){
     string ret;
@@ -898,7 +797,9 @@ string nodeConfigurator::getPassword(){
 }
 
 bool nodeConfigurator::setRouterSSID(string val){
-    return saveConfig(TAG_ROUTER_SSID,val);
+    if (config.find(TAG_ROUTER_SSID) == config.end()) return false;
+    config[TAG_ROUTER_SSID] = "\"" + val + "\"";
+    return true;
 }
 
 string nodeConfigurator::getRouterSSID(){
@@ -908,7 +809,9 @@ string nodeConfigurator::getRouterSSID(){
 }
 
 bool nodeConfigurator::setRouterPassword(string val){
-    return saveConfig(TAG_ROUTER_PASSWD,val);
+    if (config.find(TAG_ROUTER_PASSWD) == config.end()) return false;
+    config[TAG_ROUTER_PASSWD] = "\"" + val + "\"";
+    return true;
 }
 string nodeConfigurator::getRouterPassword(){
     string ret;
@@ -917,7 +820,9 @@ string nodeConfigurator::getRouterPassword(){
 }
 
 bool nodeConfigurator::setLogLevel(string val){
-    return saveConfig(TAG_LOGLEVEL,val);
+    if (config.find(TAG_LOGLEVEL) == config.end()) return false;
+    config[TAG_LOGLEVEL] = "\"" + val + "\"";
+    return true;
 }
 string nodeConfigurator::getLogLevel(){
     string ret;
@@ -931,7 +836,9 @@ string nodeConfigurator::getLogLevel(){
 }
 
 bool nodeConfigurator::setLogFile(string val){
-    return saveConfig(TAG_LOGFILE,val);
+    if (config.find(TAG_LOGFILE) == config.end()) return false;
+    config[TAG_LOGFILE] = "\"" + val + "\"";
+    return true;
 }
 string nodeConfigurator::getLogFile(){
     string ret;
@@ -945,7 +852,9 @@ string nodeConfigurator::getLogFile(){
 }
 
 bool nodeConfigurator::setServiceName(string val){
-    return saveConfig(TAG_SERV_NAME,val);
+    if (config.find(TAG_SERV_NAME) == config.end()) return false;
+    config[TAG_SERV_NAME] = "\"" + val + "\"";
+    return true;
 }
 string nodeConfigurator::getServiceName(){
     string ret;
@@ -954,12 +863,13 @@ string nodeConfigurator::getServiceName(){
 }
 
 bool nodeConfigurator::setLogAppend(bool val){
-    if (val){
-        return saveConfig(TAG_LOGAPPEND,"True");
-    }
-    else{
-        return saveConfig(TAG_LOGAPPEND,"False");
-    }
+    string r;
+    if (val) r = "True";
+    else r = "False";
+
+    if (config.find(TAG_SERV_NAME) == config.end()) return false;
+    config[TAG_SERV_NAME] = "\"" + r + "\"";
+    return true;
 }
 bool nodeConfigurator::getLogAppend(){
     string ret;
@@ -976,7 +886,9 @@ bool nodeConfigurator::getLogAppend(){
 }
 
 bool nodeConfigurator::setTurnoutFile(string val){
-    return saveConfig(TAG_TURNOUT,val);
+    if (config.find(TAG_TURNOUT) == config.end()) return false;
+    config[TAG_TURNOUT] = "\"" + val + "\"";
+    return true;
 }
 string nodeConfigurator::getTurnoutFile(){
     string ret;
@@ -990,7 +902,9 @@ string nodeConfigurator::getTurnoutFile(){
 }
 
 bool nodeConfigurator::setCanDevice(string val){
-    return saveConfig(TAG_CANDEVICE,val);
+    if (config.find(TAG_CANDEVICE) == config.end()) return false;
+    config[TAG_CANDEVICE] = "\"" + val + "\"";
+    return true;
 }
 string nodeConfigurator::getCanDevice(){
     string ret;
@@ -1027,7 +941,11 @@ int nodeConfigurator::getApChannel(){
     return ret;
 }
 bool nodeConfigurator::setApChannel(int val){
-    return saveConfig(TAG_APCHANNEL,val);
+    if (config.find(TAG_APCHANNEL) == config.end()) return false;
+    stringstream ss;
+    ss << val;
+    config[TAG_APCHANNEL] = ss.str();
+    return true;
 }
 
 string nodeConfigurator::getConfigFile(){
@@ -1063,7 +981,11 @@ int nodeConfigurator::getPB(){
     return ret;
 }
 bool nodeConfigurator::setPB(int val){
-    return saveConfig(TAG_BP,val);
+    if (config.find(TAG_BP) == config.end()) return false;
+    stringstream ss;
+    ss << val;
+    config[TAG_BP] = ss.str();
+    return true;
 }
 
 int nodeConfigurator::getGreenLed(){
@@ -1091,7 +1013,11 @@ int nodeConfigurator::getGreenLed(){
     return ret;
 }
 bool nodeConfigurator::setGreenLed(int val){
-    return saveConfig(TAG_GL,val);
+    if (config.find(TAG_GL) == config.end()) return false;
+    stringstream ss;
+    ss << val;
+    config[TAG_GL] = ss.str();
+    return true;
 }
 
 int nodeConfigurator::getYellowLed(){
@@ -1119,5 +1045,67 @@ int nodeConfigurator::getYellowLed(){
     return ret;
 }
 bool nodeConfigurator::setYellowLed(int val){
-    return saveConfig(TAG_YL,val);
+    if (config.find(TAG_YL) == config.end()) return false;
+    stringstream ss;
+    ss << val;
+    config[TAG_YL] = ss.str();
+    return true;
 }
+
+string nodeConfigurator::removeChar(string val,char c){
+   int i = val.find(c);
+   string s = val;
+   while (i > 0){
+      s.erase(i,1);
+      i = s.find(c);
+   }
+   return s;
+}
+
+string nodeConfigurator::cleanString(string val){
+   string s;
+   s = removeChar(val, '"');
+   s = removeChar(s,';');
+   s = removeChar(s,' ');
+   return s;
+}
+
+pair <string,string> nodeConfigurator::getpair(string val){
+   pair <string,string> ret;
+   string key;
+   string value;
+   string s;
+
+   s = cleanString(val);
+   int i = val.find("=");
+   if (i > 0){
+      key = s.substr(0,i);
+      value = s.substr(i + 1, s.length());
+      ret = std::make_pair(key, value);
+      return ret;
+   }
+   return std::make_pair("0", "0");
+}
+
+bool nodeConfigurator::loadConfig(){
+    ifstream myfile;
+    string line;
+    pair<string,string> p;
+
+    myfile.open (configFile,ios::in);
+    if (myfile.is_open ()){
+        config.clear();
+        while ( getline (myfile, line) ){
+            p = getpair(line);
+            if ((get<0>(p)) != "0") config.insert(p);
+        }
+        myfile.close();
+        return true;
+    }
+    else{
+       if (logger != nullptr) logger->error( "Failed to open the config file");
+       else cout << "Failed to open the config file" << endl;
+       return false;
+    }
+}
+
