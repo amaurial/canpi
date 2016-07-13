@@ -66,7 +66,7 @@ bool tcpServer::start(){
     if( bind(socket_desc,(struct sockaddr *)&server_addr , sizeof(server_addr)) < 0)
     {
         //print the error message
-        logger->error("Tcp server bind failed");
+        logger->error("Tcp server bind failed for port %d", port);
         return false;
     }
     logger->debug("Start tcp listener");

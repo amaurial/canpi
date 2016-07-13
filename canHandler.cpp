@@ -539,6 +539,8 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
 
         if (status == 2 || status == 3){
             //all parameters saved, we can restart or reconfigure the module
+            logger->debug("Restart after new configuration %d", status);
+            logger->debug("Stoping all servers");
             vector<tcpServer*>::iterator server;
             if (servers.size() > 0){
                 for (server = servers.begin();server != servers.end(); server++){
@@ -547,6 +549,7 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
             }
             usleep(5000);
             restart_module(status);
+
         }
 
     break;
@@ -663,7 +666,7 @@ void canHandler::restart_module(int status){
     }
 
     if(fork() == 0){
-        logger->info("Restarting the module.");
+        logger->info("Restarting the module. [%s]", command.c_str());
         //stop all threads
         //
         ret = system(command.c_str());

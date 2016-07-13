@@ -167,7 +167,7 @@ class nodeConfigurator
     protected:
     private:
         string nvToMomentary();
-        log4cpp::Category *logger;
+        log4cpp::Category *logger = nullptr;
         string configFile;
         Config cfg;
         char NV[PARAMS_SIZE];
