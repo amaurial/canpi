@@ -7,13 +7,33 @@ import time
 import shlex
 from subprocess import Popen, PIPE
 
-#configpath="/home/amaurial/projetos/canpi/canpi.cfg"
+configpath="/home/amaurial/projetos/canpi/canpi.cfg"
 #configpath="/home/user/amauriala/Projects/canpi/canpi.cfg"
-configpath="/home/pi/canpi/canpi.cfg"
+#configpath="/home/pi/canpi/canpi.cfg"
+messageFile="/home/amaurial/projetos/canpi/webserver/msg"
+portlimit = 65535
+invalid_ports = [21,22,80]
+
 
 render = web.template.render('templates/')
 urls = ('/', 'index')
 app = web.application(urls, globals(),autoreload=True)
+
+def readMessage():
+    msg=""
+    if os.path.isfile(messageFile) and os.access(messageFile, os.R_OK):
+        f = open(messageFile)
+        msg=f.read()
+        f.close()
+    return msg
+
+def writeMessage(msg):
+    try:
+        f = open(messageFile, 'w+')
+        f.write(msg)
+        f.close()
+    except:
+        return
 
 class configManager:
     config={}
@@ -129,7 +149,7 @@ class index:
         self.myform = form()
         # make sure you create a copy of the form by calling it (line above)
         # Otherwise changes will appear globally
-        return render.index(form,"Canpi Configuration","")
+        return render.index(form,"Canpi Configuration",readMessage())
 
     def POST(self):
         userData = web.input()
@@ -138,12 +158,15 @@ class index:
         form = self.reloadMyForm()
         form.fill()
 
-        #if not form.validates():
-        #    return render.index(form,"Canpi Configuration","Invalid information")
-        #    return render.index(form,"Canpi Configuration")
-
         if id_btn_save in userData:
             #get all the values and update
+            r = True
+            msg = ""
+            r,msg = self.validate_form(form)
+            if not r:
+                writeMessage(msg)
+                raise web.seeother('/')
+
             cm.setValue("ap_mode",str(form[id_apmode].checked))
             cm.setValue("ap_no_password",str(form[id_apmode_no_passwd].checked))
             cm.setValue("ap_ssid",str(form[id_ssid].value))
@@ -155,25 +178,26 @@ class index:
             cm.setValue("cangrid_port",str(form[id_grid_port].value))
             cm.setValue("service_name",str(form[id_bonjour_name].value))
             cm.setValue("tcpport",str(form[id_ed_tcpport].value))
-            #cm.setValue("logfile",str(form[id_logfile].value))
             cm.setValue("loglevel",str(form[id_loglevel].value))
             cm.setValue(id_create_logfile,str(form[id_create_logfile].checked))
             cm.setValue("canid",str(form[id_canid].value))
             cm.setValue("fn_momentary",str(form[id_fns_momentary].value))
             cm.setValue("turnout_file",str(form[id_turnout_file].value))
             cm.saveFile()
+            writeMessage("")
             raise web.seeother('/')
-            #return render.index(form,"Canpi Configuration","Saved")
         if id_btn_apply in userData:
             print("Apply button pressed")
+            writeMessage("")
             #subprocess.call(['sudo /etc/init.d/start_canpi.sh', 'configure'])
-            cpid=os.fork()
-            if cpid==0:
+            cpid = os.fork()
+            if cpid == 0:
                 restartPi()
             #os.system("/etc/init.d/start_canpi.sh configure")
             return render.reboot("Restarting",myuri)
         if id_btn_restart in userData:
             print("Restart button pressed")
+            writeMessage("")
             #render.restart("Restarting",myuri)
             os.system("/etc/init.d/start_canpi.sh restartcanpi")
             #subprocess.call( [ 'sudo /bin/bash /etc/init.d/start_canpi.sh', 'restartcanpi'])
@@ -188,6 +212,57 @@ class index:
             return render.index(form,"Canpi Configuration",msg)
 
         return render.index(form,"Canpi Configuration","")
+    def validate_form(self,form):
+        global desc_ed_tcpport
+        global desc_grid_port
+
+        if form[id_apmode].checked == True:
+            if len(form[id_ssid].value) > 8 or len(form[id_ssid].value) == 0 :
+                return False, "SSID length should be between 1 and 8 characters"
+            if len(form[id_password].value) != 8 :
+                return False, "Password length should be 8 characters"
+        else:
+            if len(form[id_router_ssid].value) > 12 or len(form[id_router_ssid].value) == 0 :
+                return False, "Router SSID length should be between 1 and 12 characters"
+            if len(form[id_router_password].value) == 0 or len(form[id_router_password].value) > 12 :
+                return False, "Router password length should be less then 12 characters"
+
+        if self.isint(form[id_canid].value):
+            v = int(form[id_canid].value)
+            if v == 0 or v > 110:
+                return False, "The CANID should be between 1 and 110"
+        else:
+            return False, "The CANID should be between 1 and 110"
+
+        if self.isint(form[id_ed_tcpport].value):
+            v = int(form[id_ed_tcpport].value)
+            if v == 0 or v > portlimit or v in invalid_ports:
+                return False, desc_ed_tcpport + "[" + str(v) + "] should be between 1 and " + str(portlimit) + " and not be " + str(invalid_ports)
+        else:
+            return False, desc_ed_tcpport + "[" + str(v) + "] should be between 1 and " + str(portlimit) + " and not be " + str(invalid_ports)
+
+        if self.isint(form[id_grid_port].value):
+            v1 = int(form[id_grid_port].value)
+            if v1 == 0 or v1 > portlimit or v1 in invalid_ports:
+                return False, desc_grid_port + " should be between 1 and " + str(portlimit) + " and not be " + str(invalid_ports)
+        else:
+            return False, desc_grid_port + " should be between 1 and " + str(portlimit) + " and not be " + str(invalid_ports)
+
+        if v == v1:
+            return False, desc_ed_tcpport + " and " + desc_grid_port + " should be different"
+
+        if len(form[id_turnout_file].value) == 0 or len(form[id_turnout_file].value) > 11 :
+            return False, "Turnout file name length should be between 1 and 11"
+
+        return True,"Saved success"
+
+    def isint(self, value):
+        try:
+            int(value)
+            return True
+        except:
+            return False
+
     def get_exitcode_stdout_stderr(self,cmd):
         """
         Execute the external command and get its exitcode, stdout and stderr.
