@@ -269,22 +269,37 @@ void canHandler::run_queue_reader(void* param){
                     finishSelfEnum(frame.can_id);
                 }
             }
-            //Handle cbus
-            opc = frame.data[0];
-            if (opc == OPC_QNN ||
-                opc == OPC_RQMN ||
-                opc == OPC_RQNP ||
-                opc == OPC_SNN ||
-                opc == OPC_ENUM ||
-                opc == OPC_HLT ||
-                opc == OPC_BON ||
-                opc == OPC_BOOT ||
-                opc == OPC_ARST ||
-                opc == OPC_CANID ||
-                opc == OPC_NVSET ||
-                opc == OPC_RQNPN ||
-                opc == OPC_NVRD){
-                handleCBUSEvents(frame);
+            /*
+            * Check if some other node is doing auto enum
+            * and answer with out canid
+            */
+            if (frame.can_id == CAN_RTR_FLAG){                
+                struct can_frame frame_resp;
+                memset(frame_resp.data , 0 , sizeof(frame_resp.data));                
+                frame_resp.can_id = canId & 0x7f;
+                frame_resp.can_dlc = 0;
+                frame_resp.data[0] = canId;
+                put_to_out_queue(frame_resp.can_id,frame_resp.data,0,ClientType::ED);
+                
+            }
+            else{
+                //Handle cbus
+                opc = frame.data[0];
+                if (opc == OPC_QNN ||
+                    opc == OPC_RQMN ||
+                    opc == OPC_RQNP ||
+                    opc == OPC_SNN ||
+                    opc == OPC_ENUM ||
+                    opc == OPC_HLT ||
+                    opc == OPC_BON ||
+                    opc == OPC_BOOT ||
+                    opc == OPC_ARST ||
+                    opc == OPC_CANID ||
+                    opc == OPC_NVSET ||
+                    opc == OPC_RQNPN ||
+                    opc == OPC_NVRD){
+                    handleCBUSEvents(frame);
+                }            
             }
 
             if (servers.size() > 0){
@@ -466,7 +481,7 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         }
         p = config->getNodeParameter(frame.data[3]);
         if (frame.data[3] == 0){
-            p = config->getNumberOfNVs();
+            p = NODE_PARAMS_SIZE;
         }
         sendframe[0] = OPC_PARAN;
         sendframe[1] = Hb;

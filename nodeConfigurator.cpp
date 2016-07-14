@@ -18,7 +18,7 @@ nodeConfigurator::~nodeConfigurator()
 void nodeConfigurator::printMemoryNVs(){
     int i;
     cout << "NVs: ";
-    for (i=0;i<PARAMS_SIZE;i++){
+    for (i=0;i<NVS_SIZE;i++){
         cout << int(NV[i]) << " ";
     }
     cout << endl;
@@ -69,7 +69,7 @@ byte nodeConfigurator::setNV(int idx,byte val){
     NV[i] = val;
     nvs_set++;
 
-    if (nvs_set >= PARAMS_SIZE){
+    if (nvs_set >= NVS_SIZE){
         nvs_set = 0;
         loadConfig();
 

@@ -36,7 +36,7 @@ class tcpServer
         int port;
         int socket_desc, client_sock ,read_size;
         struct sockaddr_in server_addr;
-        int counter;
+        int counter;        
         ClientType clientType;
         log4cpp::Category *logger;
         std::map<int,Client*> clients;

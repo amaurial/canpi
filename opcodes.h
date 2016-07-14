@@ -1,7 +1,7 @@
 #ifndef __OPCODES_H
 #define __OPCODES_H
 /* CANBUS OPCodes
-Extracted from the Developer’s Guide for CBUS (Version 5g)
+Extracted from the DeveloperÂ’s Guide for CBUS (Version 5g)
 */
 // NOTE: To display this file with everything correctly lined up set your editor or IDE tab stop to 4
 // This program is free software: you can redistribute it and/or modify
@@ -39,10 +39,11 @@ Extracted from the Developer’s Guide for CBUS (Version 5g)
 //Software version
 #define MSOFT_VERSION '1'
 #define MSOFT_MIN_VERSION 'a'
-#define MFLAGS 0b11100000
+#define MFLAGS 0b00000111
 #define NODE_NAME "CANPiWi"
 #define DEFAULT_CANID 100
 #define DEFAULT_NN 4321
+#define NODE_PARAMS_SIZE 8 //node parameters
 
 
 // CBUS opcodes list

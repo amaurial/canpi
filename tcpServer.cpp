@@ -124,6 +124,9 @@ void tcpServer::run(void* param){
             else{
                 tcpClient *client;
                 client = new tcpClient(logger,this,can,client_sock, client_addr,counter,config);
+                if (clients.size() == 0){                    
+                    turnouts->reload();
+                }
                 client->setTurnout(turnouts);
                 cl = client;
             }

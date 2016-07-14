@@ -56,7 +56,7 @@ turnout file name
 #define P10_SIZE 11  //turnout file name
 #define P11_SIZE 4   //momentary FNs
 
-#define PARAMS_SIZE         P1_SIZE + P2_SIZE + P3_SIZE + P4_SIZE + P5_SIZE + P6_SIZE + P7_SIZE + P8_SIZE + P9_SIZE + P10_SIZE + P11_SIZE
+#define NVS_SIZE         P1_SIZE + P2_SIZE + P3_SIZE + P4_SIZE + P5_SIZE + P6_SIZE + P7_SIZE + P8_SIZE + P9_SIZE + P10_SIZE + P11_SIZE
 //parameter index in the buffer
 #define PARAM1 0 //apmode bit 1, enable can grid bit 2, log level bit 3,4
 #define P_TCP_PORT           PARAM1 + P1_SIZE
@@ -159,7 +159,7 @@ class nodeConfigurator
         int getIntConfig(string key);
 
         void printMemoryNVs();
-        byte getNumberOfNVs(){return PARAMS_SIZE;};
+        byte getNumberOfNVs(){return NVS_SIZE;};
         byte getNV(int idx);
         byte setNV(int idx,byte val);
         void setNodeParams(byte p1,byte p2, byte p3,byte p4,byte p5, byte p6, byte p7, byte p8);
@@ -171,8 +171,8 @@ class nodeConfigurator
         string nvToMomentary();
         log4cpp::Category *logger = nullptr;
         string configFile;
-        char NV[PARAMS_SIZE];
-        char NODEPARAMS[8];
+        char NV[NVS_SIZE];
+        char NODEPARAMS[NODE_PARAMS_SIZE];
         int nvs_set; //used to count how many nvs were written before saving the data do the file
 
         bool saveConfig();

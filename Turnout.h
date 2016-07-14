@@ -28,6 +28,7 @@ class Turnout
         void addTurnout(string tname,int code);
         bool exists(int tcode);
         string getTurnoutMsg(int tcode);
+        int reload();
     protected:
     private:
         std::map<int,TurnoutState> turnouts;
@@ -35,6 +36,7 @@ class Turnout
         int closed_code;
         int throw_code;
         log4cpp::Category *logger;
+        string turnoutFile;
 };
 
 #endif // TURNOUT_H

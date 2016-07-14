@@ -6,6 +6,7 @@ Turnout::Turnout(log4cpp::Category *logger)
     closed_code = 2;
     throw_code = 4;
     this->logger = logger;
+    turnoutFile = "";
 }
 
 Turnout::~Turnout()
@@ -14,18 +15,34 @@ Turnout::~Turnout()
 }
 
 int Turnout::load(string fileName){
-    ifstream infile(fileName);
+    turnoutFile = fileName;    
+    
     string key;
     int value;
 
     logger->debug("Turnout opening file %s",fileName.c_str());
-
-    while (infile >> key >> value){
-        logger->debug("Adding turnout %s %d",key.c_str(),value);
-        addTurnout(key,value);
+    try{
+        ifstream infile(fileName);
+        while (infile >> key >> value){
+            logger->debug("Adding turnout %s %d",key.c_str(),value);
+            addTurnout(key,value);
+        }
+        infile.close();
     }
-    infile.close();
-    return this->size();
+    catch(...){
+        return 0;
+    }    
+    //return number of turnouts entries
+    return turnouts_code.size();
+}
+
+int Turnout::reload(){
+    if (turnoutFile.size() > 0){
+        turnouts_code.clear();
+        turnouts.clear();
+        return load(turnoutFile);
+    }
+    return 0;
 }
 
 string Turnout::getStartInfo(){
