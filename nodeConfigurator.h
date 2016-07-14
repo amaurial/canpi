@@ -55,8 +55,9 @@ turnout file name
 #define P9_SIZE 8    //service name
 #define P10_SIZE 11  //turnout file name
 #define P11_SIZE 4   //momentary FNs
+#define P12_SIZE 2   //start event id
 
-#define NVS_SIZE         P1_SIZE + P2_SIZE + P3_SIZE + P4_SIZE + P5_SIZE + P6_SIZE + P7_SIZE + P8_SIZE + P9_SIZE + P10_SIZE + P11_SIZE
+#define NVS_SIZE         P1_SIZE + P2_SIZE + P3_SIZE + P4_SIZE + P5_SIZE + P6_SIZE + P7_SIZE + P8_SIZE + P9_SIZE + P10_SIZE + P11_SIZE + P12_SIZE
 //parameter index in the buffer
 #define PARAM1 0 //apmode bit 1, enable can grid bit 2, log level bit 3,4
 #define P_TCP_PORT           PARAM1 + P1_SIZE
@@ -69,6 +70,7 @@ turnout file name
 #define P_SERVICE_NAME       P_ROUTER_PASSWD + P8_SIZE
 #define P_TURNOUT_FILE       P_SERVICE_NAME + P9_SIZE
 #define P_MOMENTARY_FNS      P_TURNOUT_FILE + P10_SIZE
+#define P_START_EVENT        P_MOMENTARY_FNS + P11_SIZE
 
 #define FN_SIZE 29
 
@@ -157,6 +159,9 @@ class nodeConfigurator
 
         string getStringConfig(string key);
         int getIntConfig(string key);
+
+        int getStartEventID();
+        bool setStartEventID(int val);
 
         void printMemoryNVs();
         byte getNumberOfNVs(){return NVS_SIZE;};

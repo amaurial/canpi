@@ -197,7 +197,46 @@ int canHandler::start(const char* interface){
 }
 
 void canHandler::stop(){
+    send_end_event();
+    usleep(100000); //wait for the message to be sent
     running = 0;
+}
+
+void canHandler::send_start_event(){
+    char sendframe[CAN_MSG_SIZE];
+    int startid = config->getStartEventID();
+
+    memset(sendframe,0,CAN_MSG_SIZE);
+    byte Hb, Lb, Hi, Li;
+    Lb = node_number & 0xff;
+    Hb = (node_number >> 8) & 0xff;
+    Li = startid & 0xff;
+    Hi = (startid >> 8) & 0xff;
+    logger->debug("Sending start event");
+    sendframe[0] = OPC_ACON;
+    sendframe[1] = Hb;
+    sendframe[2] = Lb;
+    sendframe[3] = Hi;
+    sendframe[4] = Li;
+    put_to_out_queue(sendframe,5,ClientType::ED);
+}
+void canHandler::send_end_event(){
+    char sendframe[CAN_MSG_SIZE];
+    int startid = config->getStartEventID();
+
+    memset(sendframe,0,CAN_MSG_SIZE);
+    byte Hb, Lb, Hi, Li;
+    Lb = node_number & 0xff;
+    Hb = (node_number >> 8) & 0xff;
+    Li = startid & 0xff;
+    Hi = (startid >> 8) & 0xff;
+    logger->debug("Sending start event");
+    sendframe[0] = OPC_ACOF;
+    sendframe[1] = Hb;
+    sendframe[2] = Lb;
+    sendframe[3] = Hi;
+    sendframe[4] = Li;
+    put_to_out_queue(sendframe,5,ClientType::ED);
 }
 
 void canHandler::run_in(void* param){
@@ -211,6 +250,8 @@ void canHandler::run_in(void* param){
         logger->error("Can socket not initialized");
         return;
     }
+
+    send_start_event();
 
     iov.iov_base = &frame;
     msg.msg_name = &addr;
@@ -273,14 +314,14 @@ void canHandler::run_queue_reader(void* param){
             * Check if some other node is doing auto enum
             * and answer with out canid
             */
-            if (frame.can_id == CAN_RTR_FLAG){                
+            if (frame.can_id == CAN_RTR_FLAG){
                 struct can_frame frame_resp;
-                memset(frame_resp.data , 0 , sizeof(frame_resp.data));                
+                memset(frame_resp.data , 0 , sizeof(frame_resp.data));
                 frame_resp.can_id = canId & 0x7f;
                 frame_resp.can_dlc = 0;
                 frame_resp.data[0] = canId;
                 put_to_out_queue(frame_resp.can_id,frame_resp.data,0,ClientType::ED);
-                
+
             }
             else{
                 //Handle cbus
@@ -299,7 +340,7 @@ void canHandler::run_queue_reader(void* param){
                     opc == OPC_RQNPN ||
                     opc == OPC_NVRD){
                     handleCBUSEvents(frame);
-                }            
+                }
             }
 
             if (servers.size() > 0){

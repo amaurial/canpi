@@ -7,10 +7,10 @@ import time
 import shlex
 from subprocess import Popen, PIPE
 
-configpath="/home/amaurial/projetos/canpi/canpi.cfg"
+#configpath="/home/amaurial/projetos/canpi/canpi.cfg"
 #configpath="/home/user/amauriala/Projects/canpi/canpi.cfg"
-#configpath="/home/pi/canpi/canpi.cfg"
-messageFile="/home/amaurial/projetos/canpi/webserver/msg"
+configpath="/home/pi/canpi/canpi.cfg"
+messageFile="/home/pi/canpi/webserver/msg"
 portlimit = 65535
 invalid_ports = [21,22,80]
 
@@ -33,6 +33,7 @@ def writeMessage(msg):
         f.write(msg)
         f.close()
     except:
+        print("Failed to open the message file\n");
         return
 
 class configManager:
@@ -104,6 +105,7 @@ id_btn_save="btnSave"
 id_btn_apply="btnApply"
 id_btn_restart="btnRestart"
 id_create_logfile="create_log_file"
+id_start_event_id="start_event_id"
 
 desc_apmode="AP mode"
 desc_apmode_no_passwd="No password in AP mode"
@@ -125,7 +127,7 @@ desc_btn_save="btnSave"
 desc_btn_apply="btnApply"
 desc_btn_restart="btnRestart"
 desc_create_logfile="Creates log file"
-
+desc_start_event="Start event id"
 #validators
 ssid_length = form.Validator("SSID length should be between 1 and 8 characters", lambda p: p is None or len(p)>8)
 passwd_length = form.Validator("Password length should be 8 characters", lambda p: len(p)!= 8)
@@ -182,7 +184,8 @@ class index:
             cm.setValue(id_create_logfile,str(form[id_create_logfile].checked))
             cm.setValue("canid",str(form[id_canid].value))
             cm.setValue("fn_momentary",str(form[id_fns_momentary].value))
-            cm.setValue("turnout_file",str(form[id_turnout_file].value))
+            cm.setValue("turnout_file", str(form[id_turnout_file].value))
+            cm.setValue(id_start_event_id, str(form[id_start_event_id].value))
             cm.saveFile()
             writeMessage("")
             raise web.seeother('/')
@@ -251,6 +254,15 @@ class index:
         if v == v1:
             return False, desc_ed_tcpport + " and " + desc_grid_port + " should be different"
 
+        if self.isint(form[id_start_event_id].value):
+            v = int(form[id_start_event_id].value)
+            if v == 0 or v > portlimit:
+                print("Run validation\n")
+                return False, desc_start_event + "[" + str(v) + "] should be between 1 and " + str(portlimit)
+        else:
+            return False, desc_start_event + "[" + str(v) + "] should be between 1 and " + str(portlimit)
+
+
         if len(form[id_turnout_file].value) == 0 or len(form[id_turnout_file].value) > 11 :
             return False, "Turnout file name length should be between 1 and 11"
 
@@ -304,6 +316,7 @@ class index:
             form.Checkbox(id_grid_enable,description=desc_grid_enable,checked=gridenable,value="gridenable",id="cangrid"),
             form.Textbox(id_grid_port,description=desc_grid_port,value=cm.getValue("cangrid_port"),id="cangripport"),
             form.Textbox(id_canid,description=desc_canid,value=cm.getValue("canid")),
+            form.Textbox(id_start_event_id,description=desc_start_event,value=cm.getValue(id_start_event_id)),
             form.Textbox(id_fns_momentary,description=desc_fns_momentary,value=cm.getValue("fn_momentary")),
             form.Textbox(id_turnout_file,turnout_length,description=desc_turnout_file,value=cm.getValue("turnout_file")),
             form.Dropdown(id_loglevel,  ['INFO', 'WARN', 'DEBUG'],value=cm.getValue("loglevel")),

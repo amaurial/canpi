@@ -86,6 +86,8 @@ class canHandler
         pthread_cond_t  m_condv_in;
         nodeConfigurator *config;
 
+        void send_start_event();
+        void send_end_event();
         void run_in(void* param);
         void run_out(void* param);
         void run_queue_reader(void* param);

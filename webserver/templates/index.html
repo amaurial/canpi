@@ -21,6 +21,7 @@ $code:
 	id_btn_apply="btnApply"
 	id_btn_restart="btnRestart"
         id_create_logfile="create_log_file"
+        id_start_event_id="start_event_id"
 
 <!DOCTYPE html>
 <html lang="en">
@@ -34,16 +35,11 @@ $code:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-<div class="container-fluid">
-  <div class="row-fluid">
-    <div class="span4">
-      
-    </div>
-    <div class="content">
-       <div class="span8">
            <img src="/static/merg_logo.png" />      
+<div class="container-fluid">
            <header><h3>CANPiWi Configuration<br/></h3></header>
            <header><h4>$msg<br/></h4></header>
+  <div class="row-fluid">
            <form class="form" method="post"> 
               $:form[id_apmode].description : 
 	      $:form[id_apmode].render()
@@ -81,6 +77,9 @@ $code:
               $:form[id_canid].description : 
               $:form[id_canid].render()
 	      <br>
+              $:form[id_start_event_id].description : 
+              $:form[id_start_event_id].render()
+	      <br>
               $:form[id_turnout_file].description : 
               $:form[id_turnout_file].render()
 	      <br>
@@ -100,8 +99,6 @@ $code:
 	      $:form[id_btn_restart].render()              
               <hr>
            </form>
-       </div>
-    </div>
   </div>
 </div>
 

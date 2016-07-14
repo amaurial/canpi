@@ -163,6 +163,20 @@ byte nodeConfigurator::setNV(int idx,byte val){
             status = 1;
         }
 
+        //start event id
+        itosave = nvToInt(P_START_EVENT,P12_SIZE);
+        ioriginal = getStartEventID();
+        if (itosave != ioriginal){
+            //changed
+            logger->debug("########### Event ID changed from [%d] to [%d]", ioriginal, itosave);
+            if (status == 0) status = 3;
+        }
+        r = setStartEventID(itosave);
+        if (!r) {
+            logger->error ("Failed to save NVs start event id");
+            status = 1;
+        }
+
         //turnout
         tosave = nvToString(P_TURNOUT_FILE,P10_SIZE);
         original = getTurnoutFile();
@@ -260,6 +274,7 @@ void nodeConfigurator::loadParamsToMemory(){
     loadParam1();
     loadParamsInt2Bytes(getTcpPort(), P_TCP_PORT);
     loadParamsInt2Bytes(getcanGridPort(), P_GRID_TCP_PORT);
+    loadParamsInt2Bytes(getStartEventID(), P_START_EVENT);
     NV[P_WIFI_CHANNEL] = getApChannel() & 0xff;
     loadParamsString(getSSID(), P_SSID, P5_SIZE);
     loadParamsString(getPassword(), P_PASSWD, P6_SIZE);
@@ -584,7 +599,7 @@ int nodeConfigurator::getTcpPort(){
             if (logger != nullptr) logger->error("Failed to get tcp port. Default is 30");
             else cout << "Failed to get tcp port. Default is 30" << endl;
         }
-        ret = 30;
+        ret = 5555;
     }
     return ret;
 }
@@ -608,7 +623,7 @@ int nodeConfigurator::getcanGridPort(){
             if (logger != nullptr) logger->error("Failed to get the grid tcp port. Default is 31");
             else cout << "Failed to get the grid tcp port. Default is 31" << endl;
         }
-        ret = 31;
+        ret = 4444;
     }
     return ret;
 }
@@ -945,6 +960,38 @@ bool nodeConfigurator::setApChannel(int val){
     stringstream ss;
     ss << val;
     config[TAG_APCHANNEL] = ss.str();
+    return true;
+}
+
+int nodeConfigurator::getStartEventID(){
+    int ret;
+    ret = getIntConfig(TAG_START_EVENT);
+    if (ret == INTERROR){
+        string r = getStringConfig(TAG_START_EVENT);
+        if (r.size() > 0){
+            //try to convert
+            try{
+                ret = atoi(r.c_str());
+            }
+            catch(...){
+                if (logger != nullptr) logger->error("Failed to convert %s to int",  r.c_str());
+                else  cout << "Failed to convert " << r << " to int" << endl;
+            }
+        }
+        else{
+            if (logger != nullptr) logger->error("Failed to get the start event id. Default is 1");
+            else cout << "Failed to get the start event id. Default is 1" << endl;
+        }
+        ret = 1;
+    }
+    return ret;
+}
+
+bool nodeConfigurator::setStartEventID(int val){
+    if (config.find(TAG_START_EVENT) == config.end()) return false;
+    stringstream ss;
+    ss << val;
+    config[TAG_START_EVENT] = ss.str();
     return true;
 }
 
