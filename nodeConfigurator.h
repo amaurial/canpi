@@ -167,7 +167,7 @@ class nodeConfigurator
         byte getNumberOfNVs(){return NVS_SIZE;};
         byte getNV(int idx);
         byte setNV(int idx,byte val);
-        void setNodeParams(byte p1,byte p2, byte p3,byte p4,byte p5, byte p6, byte p7, byte p8);
+        void setNodeParams(byte p1,byte p2, byte p3,byte p4,byte p5, byte p6, byte p7, byte p8, byte p9, byte p10);
         byte getNodeParameter(byte idx);
 
         void restart_module();

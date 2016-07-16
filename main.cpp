@@ -70,7 +70,6 @@ int main()
     string candevice = "can0";
     bool append = false;
     bool start_grid_server = false;
-    bool empty_debug_level = true;
     int gridport = 31;
     int canid = 110;
     int pb_pin=4;
@@ -84,7 +83,6 @@ int main()
     string debugLevel = config->getLogLevel();
 
     if (!debugLevel.empty()){
-        empty_debug_level = false;
         if (debugLevel.compare(TAG_INFO)== 0){
            loglevel = log4cpp::Priority::INFO;
         }

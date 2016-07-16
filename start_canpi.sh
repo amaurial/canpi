@@ -29,10 +29,13 @@ web_pid_file="/var/run/$webname.pid"
 web_stdout_log="/var/log/$webname.log"
 web_stderr_log="/var/log/$webname.err"
 
-#clean spaces and ';'
+#clean spaces and ';' from config file
 sed -i 's/ = /=/g' $config
 sed -i 's/;//g' $config
 source $config
+
+#set the permission for pi user
+chown -R pi.pi $dir
 
 #Bonjour files
 bonjour_file="/etc/avahi/services/multiple.service"
@@ -87,6 +90,16 @@ is_dhcp_running(){
 is_hostapd_running(){
     r=`/etc/init.d/hostapd status`
     echo $r | grep "active (running)"
+}
+
+kill_all_processes(){
+    p="$1"
+    list=`ps -A -o pid,cmd |grep "$p" | grep -v color | grep -v start_canpi | cut -d " " -f 2`
+    for pid in $list;
+    do
+        echo "Killing process $pid"
+        kill -9 $pid
+    done
 }
 
 setup_bonjour() {
@@ -373,6 +386,8 @@ case "$1" in
     else
         echo "Not running"
     fi
+    #kill the rest
+    kill_all_processes "canpi"
     ;;
     startcanpi)
 

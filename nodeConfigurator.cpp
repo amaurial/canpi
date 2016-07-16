@@ -7,7 +7,7 @@ nodeConfigurator::nodeConfigurator(string file,log4cpp::Category *logger)
     loadConfig();
     loadParamsToMemory();
     nvs_set = 0;
-    setNodeParams(MANU_MERG,MSOFT_MIN_VERSION,MID,0,0,getNumberOfNVs(),MSOFT_VERSION,MFLAGS);
+    setNodeParams(MANU_MERG,MSOFT_MIN_VERSION,MID,0,0,getNumberOfNVs(),MSOFT_VERSION,MFLAGS, PROCESSOR_ID, ETHERCAN);
 }
 
 nodeConfigurator::~nodeConfigurator()
@@ -22,11 +22,9 @@ void nodeConfigurator::printMemoryNVs(){
         cout << int(NV[i]) << " ";
     }
     cout << endl;
-
-    //logger->debug("Memory NVs:[%s]",NV);
 }
 
-void nodeConfigurator::setNodeParams(byte p1,byte p2, byte p3,byte p4,byte p5, byte p6, byte p7, byte p8){
+void nodeConfigurator::setNodeParams(byte p1,byte p2, byte p3,byte p4,byte p5, byte p6, byte p7, byte p8, byte p9, byte p10){
     NODEPARAMS[0] = p1;
     NODEPARAMS[1] = p2;
     NODEPARAMS[2] = p3;
@@ -35,10 +33,16 @@ void nodeConfigurator::setNodeParams(byte p1,byte p2, byte p3,byte p4,byte p5, b
     NODEPARAMS[5] = p6;
     NODEPARAMS[6] = p7;
     NODEPARAMS[7] = p8;
+    NODEPARAMS[8] = p9;
+    NODEPARAMS[9] = p10;
+    for (byte i = 10; i < 18; i++) NODEPARAMS[i]=0;
+    NODEPARAMS[18] = p1 ;
+    NODEPARAMS[19] = 1;
+
 }
 byte nodeConfigurator::getNodeParameter(byte idx){
     //idx starts at 1
-    if (idx < 8){
+    if (idx < NODE_PARAMS_SIZE){
         return NODEPARAMS[idx-1];
     }
     return 0;

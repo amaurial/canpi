@@ -45,7 +45,7 @@ class tcpClient : public Client
         pthread_cond_t  m_condv_in_cli;
 
         void run(void * param);
-        void handleCBUS(char* msg);
+        void handleCBUS(unsigned char* msg);
         void handleLearnEvents(const char* msg);
         void sendKeepAlive(void *param);
         void processCbusQueue(void *param);

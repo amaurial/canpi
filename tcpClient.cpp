@@ -343,7 +343,7 @@ void tcpClient::processCbusQueue(void *param){
     }
 }
 
-void tcpClient::handleCBUS(char *msg){
+void tcpClient::handleCBUS(unsigned char *msg){
 
     unsigned char opc = msg[0];
     int loco,tcode;

@@ -320,7 +320,7 @@ void canHandler::run_queue_reader(void* param){
                 frame_resp.can_id = canId & 0x7f;
                 frame_resp.can_dlc = 0;
                 frame_resp.data[0] = canId;
-                put_to_out_queue(frame_resp.can_id,frame_resp.data,0,ClientType::ED);
+                put_to_out_queue(frame_resp.can_id,(char*)frame_resp.data,0,ClientType::ED);
 
             }
             else{
@@ -409,7 +409,7 @@ void canHandler::doSelfEnum(){
     frame.can_dlc = 0;
     frame.data[0] = canId;
     sysTimeMS_start = time(0)*1000;
-    put_to_out_queue(frame.can_id,frame.data,0,ClientType::ED);
+    put_to_out_queue(frame.can_id,(char*)frame.data,0,ClientType::ED);
     //write(canInterface,&frame,CAN_MTU);
 }
 
@@ -628,6 +628,8 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
             put_to_out_queue(sendframe,4,ClientType::ED);
         }
         setup_mode = false;
+        blinking = false;
+        gl.setval_gpio("0");
         logger->info("Finished setup. New node number is %d" , node_number);
 
     break;
@@ -696,7 +698,6 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
 }
 
 void canHandler::restart_module(int status){
-    int ret;
     string command;
     //MTA*<;>*
 
@@ -721,7 +722,7 @@ void canHandler::restart_module(int status){
     usleep(1000000);
     if(fork() == 0){
         logger->info("Restarting the module. [%s]", command.c_str());
-        ret = system(command.c_str());
+        system(command.c_str());
         exit(0);
     }else{
         logger->info("Main module stopping the services");
@@ -731,6 +732,21 @@ void canHandler::restart_module(int status){
 
 void canHandler::doPbLogic(){
     string pbstate;
+    string ledstate;
+
+    if (blinking){
+        if (((time(0)*1000) - ledtime) > BLINK_INTERVAL){
+            yl.getval_gpio(ledstate);
+            if (ledstate == "0"){
+                yl.setval_gpio("1");
+            }
+            else{
+                yl.setval_gpio("0");
+            }
+            ledtime = time(0) * 1000;
+        }
+    }
+
     pb.getval_gpio(pbstate);
     if (pbstate == "0"){
         //button pressed
@@ -741,8 +757,16 @@ void canHandler::doPbLogic(){
             pb_pressed = true;
             logger->debug("Button pressed. Timer start %le",nnPressTime );
         }
+        else{
+            ledtime = time(0)*1000;
+            if (((ledtime - nnPressTime) >= NN_PB_TIME) && !blinking){
+                blinking = true;
+                yl.setval_gpio("1");
+            }
+        }
         return;
     }
+
     //button was pressed and now released
     if (pb_pressed){
         nnReleaseTime = time(0)*1000;
@@ -753,6 +777,7 @@ void canHandler::doPbLogic(){
         if ((nnReleaseTime - nnPressTime) >= NN_PB_TIME){
             //send RQNN
             logger->info("Doing request node number. Entering in setup mode");
+
             char sendframe[CAN_MSG_SIZE];
             memset(sendframe,0,CAN_MSG_SIZE);
 
@@ -775,7 +800,8 @@ void canHandler::doPbLogic(){
         if (setup_mode){
             logger->debug("Leaving setup modeCAN");
             setup_mode = false;
+            blinking = false;
+            yl.setval_gpio("0");
         }
     }
 }
-

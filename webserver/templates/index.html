@@ -17,11 +17,13 @@ $code:
 	id_canid="canid"
 	id_turnout_file="turnout_file"
 	id_fns_momentary="fn_momentary"
+        id_create_logfile="create_log_file"
+        id_start_event_id="start_event_id"
 	id_btn_save="btnSave"
 	id_btn_apply="btnApply"
 	id_btn_restart="btnRestart"
-        id_create_logfile="create_log_file"
-        id_start_event_id="start_event_id"
+        id_btn_stop="btnStop"
+        id_btn_restart_all="btnRestartAll"
 
 <!DOCTYPE html>
 <html lang="en">
@@ -94,9 +96,13 @@ $code:
 	      <hr>
               $:form[id_btn_save].render()
               <br><br>
-	      $:form[id_btn_apply].render()
-              <br><br>
 	      $:form[id_btn_restart].render()              
+              <br><br>
+	      $:form[id_btn_stop].render()              
+              <br><br>
+	      $:form[id_btn_restart_all].render()              
+              <br><br>
+	      $:form[id_btn_apply].render()
               <hr>
            </form>
   </div>

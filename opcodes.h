@@ -39,11 +39,13 @@ Extracted from the Developers Guide for CBUS (Version 5g)
 //Software version
 #define MSOFT_VERSION '1'
 #define MSOFT_MIN_VERSION 'a'
-#define MFLAGS 0b00000111
+#define MFLAGS 0b00000110
 #define NODE_NAME "CANPiWi"
 #define DEFAULT_CANID 100
 #define DEFAULT_NN 4321
-#define NODE_PARAMS_SIZE 8 //node parameters
+#define PROCESSOR_ID 0
+#define ETHERCAN 1
+#define NODE_PARAMS_SIZE 20 //node parameters
 
 
 // CBUS opcodes list

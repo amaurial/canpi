@@ -101,11 +101,13 @@ id_loglevel="loglevel"
 id_canid="canid"
 id_turnout_file="turnout_file"
 id_fns_momentary="fn_momentary"
+id_create_logfile="create_log_file"
+id_start_event_id="start_event_id"
 id_btn_save="btnSave"
 id_btn_apply="btnApply"
 id_btn_restart="btnRestart"
-id_create_logfile="create_log_file"
-id_start_event_id="start_event_id"
+id_btn_stop="btnStop"
+id_btn_restart_all="btnRestartAll"
 
 desc_apmode="AP mode"
 desc_apmode_no_passwd="No password in AP mode"
@@ -123,11 +125,14 @@ desc_loglevel="Log Level"
 desc_canid="Can ID"
 desc_turnout_file="Turnouts"
 desc_fns_momentary="Fns momentary"
+desc_create_logfile="Creates log file"
+desc_start_event="Start event id"
 desc_btn_save="btnSave"
 desc_btn_apply="btnApply"
 desc_btn_restart="btnRestart"
-desc_create_logfile="Creates log file"
-desc_start_event="Start event id"
+desc_btn_stop="btnStop"
+desc_btn_restart_all="btnRestartAll"
+
 #validators
 ssid_length = form.Validator("SSID length should be between 1 and 8 characters", lambda p: p is None or len(p)>8)
 passwd_length = form.Validator("Password length should be 8 characters", lambda p: len(p)!= 8)
@@ -140,6 +145,10 @@ service_name_length = form.Validator("Service name length should less than 8 cha
 def restartPi():
     #time.sleep(3)
     os.system("/etc/init.d/start_canpi.sh configure")
+
+def restartAll():
+    #time.sleep(3)
+    os.system("/etc/init.d/start_canpi.sh restart")
 
 class index:
 
@@ -197,7 +206,7 @@ class index:
             if cpid == 0:
                 restartPi()
             #os.system("/etc/init.d/start_canpi.sh configure")
-            return render.reboot("Restarting",myuri)
+            return render.reboot("Applying changes and rebooting",myuri)
         if id_btn_restart in userData:
             print("Restart button pressed")
             writeMessage("")
@@ -214,15 +223,41 @@ class index:
             #subprocess.call( [ 'sudo /bin/bash /etc/init.d/start_canpi.sh', 'restart'])
             return render.index(form,"Canpi Configuration",msg)
 
+        if id_btn_stop in userData:
+            print("Stop button pressed")
+            writeMessage("")
+            #render.restart("Restarting",myuri)
+            os.system("/etc/init.d/start_canpi.sh stopcanpi")
+            #subprocess.call( [ 'sudo /bin/bash /etc/init.d/start_canpi.sh', 'restartcanpi'])
+            exitcode,out,err = self.get_exitcode_stdout_stderr("ps -ef")
+            msg=""
+            if "/home/pi/canpi/canpi" in out:
+                msg="Stop failed"
+            else:
+                msg="Stop successfull"
+            #render.index(form,"Restarting PI ...")
+            #subprocess.call( [ 'sudo /bin/bash /etc/init.d/start_canpi.sh', 'restart'])
+            return render.index(form,"Canpi Configuration",msg)
+
+        if id_btn_restart_all in userData:
+            print("Restart all button pressed")
+            writeMessage("")
+            #subprocess.call(['sudo /etc/init.d/start_canpi.sh', 'configure'])
+            cpid = os.fork()
+            if cpid == 0:
+                restartAll()
+            return render.reboot("Restarting the webpage and canpi",myuri)
+
         return render.index(form,"Canpi Configuration","")
     def validate_form(self,form):
         global desc_ed_tcpport
         global desc_grid_port
 
-        if form[id_apmode].checked == True:
+        if form[id_apmode].checked == True :
             if len(form[id_ssid].value) > 8 or len(form[id_ssid].value) == 0 :
                 return False, "SSID length should be between 1 and 8 characters"
-            if len(form[id_password].value) != 8 :
+
+            if len(form[id_password].value) != 8 and form[id_apmode_no_passwd].checked == False:
                 return False, "Password length should be 8 characters"
         else:
             if len(form[id_router_ssid].value) > 12 or len(form[id_router_ssid].value) == 0 :
@@ -324,7 +359,9 @@ class index:
             #form.Textbox(id_logfile,description=,value=cm.getValue("logfile"),id="logfile"),
             form.Button(desc_btn_save, id=id_btn_save, value="save", html="Save changes"),
             form.Button(desc_btn_apply, id=id_btn_apply, value="apply", html="Apply changes and reboot"),
-            form.Button(desc_btn_restart, id=id_btn_restart, value="restart", html="Restart Throttle service"))
+            form.Button(desc_btn_stop, id=id_btn_stop, value="stop", html="Stop throttle service"),
+            form.Button(desc_btn_restart_all, id=id_btn_restart_all, value="stop", html="Restart throttle and configuration page"),
+            form.Button(desc_btn_restart, id=id_btn_restart, value="restart", html="Restart throttle service"))
 
         return myform()
 

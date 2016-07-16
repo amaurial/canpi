@@ -26,6 +26,7 @@
 #define WAIT_ENUM 200 //ms
 #define NN_PB_TIME 7000 //time the button for request node number is pressed is 8 seconds
 #define AENUM_PB_TIME 3000 //time the button for auto enum is pressed is 4 seconds
+#define BLINK_INTERVAL 300 //time in milliseconds seconds
 
 using namespace std;
 class tcpServer;
@@ -67,6 +68,7 @@ class canHandler
         bool setup_mode = false;
         bool cbus_stopped = false;
         bool pb_pressed = false;
+        bool blinking = false;
         int pbpin;
         int glpin;
         int ylpin;
@@ -80,6 +82,7 @@ class canHandler
         //node number request timer
         long double nnPressTime;
         long double nnReleaseTime;
+        long double ledtime;
         pthread_mutex_t m_mutex;
         pthread_cond_t  m_condv;
         pthread_mutex_t m_mutex_in;
