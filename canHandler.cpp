@@ -198,7 +198,7 @@ int canHandler::start(const char* interface){
 
 void canHandler::stop(){
     send_end_event();
-    usleep(100000); //wait for the message to be sent
+    usleep(100*1000); //wait for the message to be sent
     running = 0;
 }
 
@@ -719,7 +719,7 @@ void canHandler::restart_module(int status){
             (*server)->stop();
         }
     }
-    usleep(1000000);
+    usleep(1000*1000);
     if(fork() == 0){
         logger->info("Restarting the module. [%s]", command.c_str());
         system(command.c_str());

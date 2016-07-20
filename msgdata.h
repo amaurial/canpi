@@ -25,7 +25,7 @@
 //regex to identify a create session message
 #define RE_SESSION  "M[STA]+\\+[SL][0-9]+<;>.*"
 //regex to identify a release session message
-#define RE_REL_SESSION "M[STA]+\\-[SL\\*]([0-9]+)?<;>.*"
+#define RE_REL_SESSION "M[STGA]+\\-[SL\\*]([0-9]+)?<;>.*"
 //regex to identify a create session message
 #define RE_DIR "M[STA]+[SL\\*]([0-9]+)?<;>R[0-1]"
 //regex to identify a query speed

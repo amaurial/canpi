@@ -59,6 +59,11 @@ class edSession
         void configChanged();
         void getMomentaryFNs();
 
+        void setSessionType(SessionType stype);
+        SessionType getSessionType();
+
+        char getCharSessionType();
+
     protected:
     private:
         int loco;
@@ -76,6 +81,7 @@ class edSession
         string loconame;
         log4cpp::Category *logger;
         nodeConfigurator *config;
+        SessionType sessionType;
 
         byte setBit(byte val, int pos);
         byte clearBit(byte val, int pos);

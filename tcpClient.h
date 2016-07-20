@@ -19,7 +19,7 @@
 
 #define BUFFER_SIZE 1024
 #define CBUS_KEEP_ALIVE  4000 //ms
-#define ED_KEEP_ALIVE  10000 //ms
+#define ED_KEEP_ALIVE  9000 //ms
 #define BS  128
 #define ST  30 //ms
 
@@ -50,9 +50,9 @@ class tcpClient : public Client
         void sendKeepAlive(void *param);
         void processCbusQueue(void *param);
         void sendToEd(string msg);
-        string generateFunctionsLabel(int loco);
+        string generateFunctionsLabel(int loco,char stype,char adtype);
         void handleEDMessages(char* msgptr);
-        void handleCreateSession(string message);
+        int handleCreateSession(string message);
         void handleReleaseSession(string message);
         void handleDirection(string message);
         void handleSpeed(string message);

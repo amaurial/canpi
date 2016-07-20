@@ -35,6 +35,7 @@ tcpClient::tcpClient(log4cpp::Category *logger, tcpServer *server, canHandler* c
 tcpClient::~tcpClient()
 {
     //dtor
+    this->sessions.clear();
     delete(edsession);
     pthread_mutex_destroy(&m_mutex_in_cli);
     pthread_cond_destroy(&m_condv_in_cli);
@@ -73,6 +74,7 @@ void tcpClient::start(void *param){
 
 void tcpClient::stop(){
     running = 0;
+    usleep(1000*1000);
     close(client_sock);
 }
 
@@ -129,11 +131,17 @@ void tcpClient::run(void *param){
         }
     }
     logger->info("[%d] Quiting client connection ip:%s id:%d.",id, ip.c_str(),id);
-    usleep(1000*1000); //1sec give some time for any pending thread to finish
 
-    pthread_cancel(kalive);
-    pthread_cancel(cbusin);
-    server->removeClient(this);
+    usleep(2000*1000); //1sec give some time for any pending thread to finish
+    try{
+        pthread_cancel(kalive);
+        pthread_cancel(cbusin);
+        server->removeClient(this);
+    }
+    catch(...){
+        logger->error("Failed to stop the tcp client.");
+    }
+
 }
 
 void tcpClient::sendKeepAlive(void *param){
@@ -155,10 +163,10 @@ void tcpClient::sendKeepAlive(void *param){
                 t = edsession->getEDTime();
                 millis = spec.tv_sec*1000 + spec.tv_nsec/1.0e6 - t.tv_sec*1000 - t.tv_nsec/1.0e6;
                 if (millis > ED_KEEP_ALIVE ){
-                    edsession->setEDTime(spec);
                     //send to ED
                     logger->debug("[%d] Send ED keep alive",id);
-                    sendToEd("\n");
+                    sendToEd("*10\n");
+                    edsession->setEDTime(spec);
                 }
             }
             else{
@@ -174,7 +182,7 @@ void tcpClient::sendKeepAlive(void *param){
                         it->second->setEDTime(spec);
                         //send to ED
                         logger->debug("[%d] Send ED keep alive",id);
-                        sendToEd("\n");
+                        sendToEd("*10\n");
                     }
                     if (it->second->getLoco()>-1){
                         t = it->second->getCbusTime();
@@ -248,16 +256,22 @@ void tcpClient::handleEDMessages(char* msgptr){
             //create session
             if (regex_match(msg,re_session)){
                 logger->debug("[%d] Create session %s" ,id, msg.c_str());
-                handleCreateSession(msg);
+                int loco = handleCreateSession(msg);
                 // wait until session is created
-                logger->debug("[%d] Waiting 2 secs for session to be created.",id);
-                usleep(2*1000000);//2 seconds
-                logger->debug("[%d] Awake from 2 secs",id);
-                if (sessions.size()>0){
-                    logger->debug("[%d] Session created after 2 secs.",id);
+                logger->debug("[%d] Waiting for session to be created.",id);
+                int loop = 0;
+                while (loop < 4 && loco > 0){
+                    usleep(500*1000);
+                    if (sessions.size()>0){
+                        if (sessions.find(loco) != sessions.end()){
+                            logger->debug("[%d] Session created for loco %d.", id, loco);
+                            loop = 10;
+                        }
+                    }
+                    loop++;
                 }
-                else{
-                    logger->debug("[%d] No session created.",id);
+                if (sessions.find(loco) == sessions.end()){
+                    logger->debug("[%d] No session created for loco %d.",id, loco);
                 }
                 continue;
             }
@@ -306,10 +320,13 @@ void tcpClient::handleEDMessages(char* msgptr){
         }
     }
     catch(const runtime_error &ex){
-        throw_line(ex.what());
+        //throw_line(ex.what());
+        logger->debug("Not runtime error cought. %s",ex.what() );
+        cout << "Not runtime error cought" << ex.what() << endl;
     }
     catch(...){
-        throw_line("Not runtime error cought");
+        logger->debug("Not runtime error cought");
+        cout << "Not runtime error cought" << endl;
     }
 }
 
@@ -352,6 +369,7 @@ void tcpClient::handleCBUS(unsigned char *msg){
     unsigned char speed;
     unsigned char direction ;
     unsigned char session;
+    char stype;
     //cout << "$$$$$$$$$$$$$$$$$$$$$$$$$" << endl;
     logger->info("[%d] Processing CBUS message %02x",id,opc);
     switch (opc){
@@ -365,6 +383,7 @@ void tcpClient::handleCBUS(unsigned char *msg){
                 logger->debug("[%d] PLOC %d not for this session %d. Discarding." , id,loco, edsession->getLoco());
                 return;
             }
+            logger->info("[%d] Loco %d acquired",id,loco);
             edsession->setSession(session);
             //decode the DCC format
             speed = msg[4] & 0x7F; //#0111 1111
@@ -375,7 +394,13 @@ void tcpClient::handleCBUS(unsigned char *msg){
             edsession->setDirection(direction);
             edsession->setSpeed(speed);
 
-            ss << "MT+";
+            logger->debug("[%d] Ack client session created %d for loco %d :%s" ,id,session, loco, message.c_str());
+            logger->debug("[%d] Adding loco %d to sessions", id, loco);
+            sessions.insert(pair<int,edSession*>(loco,edsession));
+
+            stype = edsession->getCharSessionType();
+
+            ss << "M"; ss << stype; ss << "+";
             ss << edsession->getAddressType();
             ss << loco;
             ss << DELIM_BTLT;
@@ -383,14 +408,8 @@ void tcpClient::handleCBUS(unsigned char *msg){
             ss << '\n';
 
             message = ss.str();
-            logger->debug("[%d] Ack client session created %d for loco %d :%s" ,id,session, loco, message.c_str());
-            sendToEd(message);
 
-            logger->debug("[%d] Adding loco %d to sessions", id, loco);
-            logger->info("[%d] Loco %d acquired",id,loco);
-            sessions.insert(pair<int,edSession*>(loco,edsession));
-            edsession = new edSession(logger);
-            setStartSessionTime();
+            sendToEd(message);
 
             //set speed mode 128 to can
             logger->debug("[%d] Sending speed mode 128 to CBUS",id);
@@ -398,11 +417,11 @@ void tcpClient::handleCBUS(unsigned char *msg){
 
             //send the labels to client
             ss.clear();ss.str();
-            ss << "MTLS";
+            ss << "M"; ss << stype ; ss <<"L" ; ss << edsession->getAddressType();
             ss << loco;
             ss << EMPTY_LABELS;
-            ss << "S";
-            ss << generateFunctionsLabel(loco);
+            //ss << "S";
+            ss << generateFunctionsLabel(loco, stype, edsession->getAddressType());
             ss << '\n';
 
             logger->debug("[%d] Sending labels",id);
@@ -411,13 +430,16 @@ void tcpClient::handleCBUS(unsigned char *msg){
 
             logger->debug("[%d] Sending speed mode 128 to ED",id);
             ss.clear();ss.str();
-            ss << "MT";
+            ss << "M";
+            ss << stype;
             ss << edsession->getAddressType();
             ss << loco;
             ss << DELIM_BTLT;
             ss << "s0\n";
-
             sendToEd(ss.str());
+            //create new edsession object
+            edsession = new edSession(logger);
+            setStartSessionTime();
         break;
 
         case OPC_ERR:
@@ -470,12 +492,16 @@ void tcpClient::handleCBUS(unsigned char *msg){
     }
 }
 
-string tcpClient::generateFunctionsLabel(int loco){
+string tcpClient::generateFunctionsLabel(int loco,char stype, char adtype){
     stringstream ss;
-    ss << "MTA";
+    ss << "M" ;
+    ss << stype; // session type T or S
+    ss << "A";
+    ss << adtype; // S or L
     ss << loco;
     ss << DELIM_BTLT;
     string s = ss.str();
+    ss.clear();ss.str("");
     for (int f=0;f<FN_SIZE;f++){
         ss << s;
         ss << "F0";
@@ -500,14 +526,25 @@ void tcpClient::sendToEd(string msg){
         logger->error("Fail to send message %s to ED",id, msg.c_str());
     }
 }
-
-void tcpClient::handleCreateSession(string message){
+//return the loco
+int tcpClient::handleCreateSession(string message){
     const char *msg = message.c_str();
     logger->debug("[%d] Handle create session: %s",id, msg);
     unsigned char Hb,Lb;
     int loco,i;
     //create session
     if ( (msg[3] == 'S') | (msg[3] == 's') | (msg[3] == 'L') | (msg[3] == 'l') ){
+
+        switch (msg[1]){
+            case 'T':
+                edsession->setSessionType(SessionType::MULTI_THROTTLE);
+            break;
+            case 'S':
+                edsession->setSessionType(SessionType::MULTI_SESSION);
+            break;
+            default:
+               edsession->setSessionType(SessionType::MULTI_THROTTLE);
+        }
 
         logger->debug("[%d] Address type %c",id,msg[3]);
         edsession->setAddressType(msg[3]);
@@ -531,7 +568,9 @@ void tcpClient::handleCreateSession(string message){
         else Lb = loco & 0xFF;
 
         sendCbusMessage(OPC_RLOC,Hb,Lb);
+        return loco;
     }
+    return -1;
 }
 
 void tcpClient::handleReleaseSession(string message){
@@ -540,29 +579,31 @@ void tcpClient::handleReleaseSession(string message){
     //release session
     int i = message.find("*");
     byte sesid;
-
+    char stype = message.c_str()[1];
     //all sessions
     if (i>0){
-        logger->debug("[%d] Releasing all %d sessions",id,sessions.size());
+        logger->debug("[%d] Releasing all %c sessions",id,stype);
         std::map<int,edSession*>::iterator it = this->sessions.begin();
         while(it != this->sessions.end())
         {
-            logger->info("[%d] Releasing session for loco %d" ,id, it->second->getLoco());
-            //usleep(50000);//50ms
-            sesid = it->second->getSession();
-            sendCbusMessage(OPC_KLOC, sesid);
-            //usleep(100000);//10ms
+            if (stype == it->second->getCharSessionType()){
+                logger->info("[%d] Releasing session for loco %d" ,id, it->second->getLoco());
+                sesid = it->second->getSession();
+                sendCbusMessage(OPC_KLOC, sesid);
+            }
             it++;
         }
         //clear sessions
-        usleep(1000*700);//700ms
+        usleep(1000*200);//300ms
         it = this->sessions.begin();
         while(it != this->sessions.end())
         {
-            delete(it->second);
+            if (stype == it->second->getCharSessionType()){
+                delete(it->second);
+            }
             it++;
         }
-        this->sessions.clear();
+        //this->sessions.clear();
         //inform the ED
         sendToEd("\n");
         return;
@@ -575,7 +616,7 @@ void tcpClient::handleReleaseSession(string message){
     sesid = this->sessions[loco]->getSession();
     //send the can data
     sendCbusMessage(OPC_KLOC,sesid);
-    usleep(1000*700);//700ms
+    usleep(1000*200);//300ms
     delete(this->sessions[loco]);
     this->sessions.erase(loco);
     //inform the ED
@@ -595,15 +636,18 @@ void tcpClient::handleDirection(string message){
     byte d = atoi(message.substr(i+2,1).c_str());
 
     i = message.find("*");
+    char stype = message.c_str()[1];
     //all sessions
     if (i > 0){
         logger->debug("[%d] Set direction for all sessions",id);
         std::map<int,edSession*>::iterator it = sessions.begin();
         while(it != sessions.end())
         {
-            it->second->setDirection(d);
-            logger->debug("[%d] Set direction %d for loco %d" ,id, d ,it->second->getLoco());
-            sendCbusMessage(OPC_DSPD,it->second->getSession(),d*BS+it->second->getSpeed());
+            if (stype == it->second->getCharSessionType()){
+                it->second->setDirection(d);
+                logger->debug("[%d] Set direction %d for loco %d" ,id, d ,it->second->getLoco());
+                sendCbusMessage(OPC_DSPD,it->second->getSession(),d*BS+it->second->getSpeed());
+            }
             it++;
         }
         return;
@@ -658,19 +702,23 @@ void tcpClient::handleSpeed(string message){
     stringstream ss;
 
     i = message.find("*");
+    char stype = message.c_str()[1];
     //all sessions
     if (i > 0){
         logger->debug("[%d] Set speed %d for all sessions",id,edspeed);
         std::map<int,edSession*>::iterator it = sessions.begin();
         while(it != sessions.end())
         {
-            it->second->setSpeed(edspeed);
-            logger->debug("[%d] Set speed %d for loco %d" ,id,edspeed, it->second->getLoco());
-            sendCbusMessage(OPC_DSPD, it->second->getSession(), it->second->getDirection() * BS + speed);
-            usleep(1000*10);//wait 10ms
+            if (stype == it->second->getCharSessionType()){
+                it->second->setSpeed(edspeed);
+                logger->debug("[%d] Set speed %d for loco %d" ,id,edspeed, it->second->getLoco());
+                sendCbusMessage(OPC_DSPD, it->second->getSession(), it->second->getDirection() * BS + speed);
+                usleep(1000*10);//wait 10ms
+            }
             it++;
         }
-        ss.clear();ss.str("MTA*<;>V");
+        ss.clear();
+        ss.str("MTA*<;>V");
         //if (speed == 1) ss << "0";
         //else ss << speed;
         ss << edspeed;
@@ -688,7 +736,9 @@ void tcpClient::handleSpeed(string message){
     sendCbusMessage(OPC_DSPD, session->getSession(), session->getDirection() * BS + speed);
 
     ss.clear();ss.str();
-    ss << "MTA";
+    ss << "M";
+    ss << session->getCharSessionType();
+    ss << "A";
     ss << session->getAddressType();
     ss << session->getLoco();
     ss << DELIM_BTLT;
@@ -707,19 +757,25 @@ void tcpClient::handleQueryDirection(string message){
 
     logger->debug("[%d] Query Direction found %s",id, message.c_str());
     int i = message.find("*");
+    char stype = message.c_str()[1];
     stringstream ss;
+    ss.str("");
     if (i > 0){
         logger->debug("[%d] Query direction for all locos",id);
         std::map<int,edSession*>::iterator it = sessions.begin();
         while(it != sessions.end())
         {
-            ss << "MTA";
-            ss << it->second->getAddressType();
-            ss << it->second->getLoco();
-            ss << DELIM_BTLT;
-            ss << "R";
-            ss << (int)it->second->getDirection();
-            ss << "\n";
+            if (stype == it->second->getCharSessionType()){
+                ss << "M";
+                ss << it->second->getCharSessionType();
+                ss << "A";
+                ss << it->second->getAddressType();
+                ss << it->second->getLoco();
+                ss << DELIM_BTLT;
+                ss << "R";
+                ss << (int)it->second->getDirection();
+                ss << "\n";
+            }
             it++;
         }
         sendToEd(ss.str());
@@ -730,7 +786,9 @@ void tcpClient::handleQueryDirection(string message){
     int loco = getLoco(message);
     edSession *session = sessions[loco];
     ss.clear();ss.str();
-    ss << "MTA";
+    ss << "M";
+    ss << session->getCharSessionType();
+    ss << "A";
     ss << session->getAddressType();
     ss << session->getLoco();
     ss << DELIM_BTLT;
@@ -744,21 +802,27 @@ void tcpClient::handleQuerySpeed(string message){
 
     logger->debug("[%d] Query speed found %s",id,message.c_str());
     int i = message.find("*");
+    char stype = message.c_str()[1];
     stringstream ss;
+    ss.str("");
     if (i > 0){
         logger->debug("[%d] Query speed for all locos",id);
         std::map<int,edSession*>::iterator it = sessions.begin();
         while(it != sessions.end())
         {
-            ss << "MTA";
-            ss << it->second->getAddressType();
-            ss << it->second->getLoco();
-            ss << DELIM_BTLT;
-            ss << "V";
-            //if (it->second->getSpeed() == 1) ss << "0";
-            //else ss << (int)it->second->getSpeed();
-            ss << (int)it->second->getSpeed();
-            ss << "\n";
+            if (stype == it->second->getCharSessionType()){
+                ss << "M";
+                ss << it->second->getCharSessionType();
+                ss << "A";
+                ss << it->second->getAddressType();
+                ss << it->second->getLoco();
+                ss << DELIM_BTLT;
+                ss << "V";
+                //if (it->second->getSpeed() == 1) ss << "0";
+                //else ss << (int)it->second->getSpeed();
+                ss << (int)it->second->getSpeed();
+                ss << "\n";
+            }
             it++;
         }
         sendToEd(ss.str());
@@ -769,7 +833,9 @@ void tcpClient::handleQuerySpeed(string message){
     int loco = getLoco(message);
     edSession *session = sessions[loco];
     ss.clear();ss.str();
-    ss << "MTA";
+    ss << "M";
+    ss << session->getCharSessionType();
+    ss << "A";
     ss << session->getAddressType();
     ss << session->getLoco();
     ss << DELIM_BTLT;
@@ -794,6 +860,7 @@ void tcpClient::handleSetFunction(string message){
     int fn = atoi(message.substr(i+3,message.length()-(i+3)).c_str());
     i = message.find("*");
     edSession *session;
+    char stype = message.c_str()[1];
 
     //all sessions
     if ( i > 0){
@@ -802,13 +869,15 @@ void tcpClient::handleSetFunction(string message){
         while(it != sessions.end())
         {
             session = it->second;
-            if ((session->getFnType(fn) == 1) && (onoff == 0) ){
-                logger->debug("[%d] Fn Message for toggle fn and for a off action. Discarding",id);
-            }
-            else{
-                logger->debug("[%d] Previous FN state %02x" , id,session->getFnState(fn));
-                sendFnMessages(session,fn,message);
-                logger->debug("[%d] Last FN state %02x" ,id, session->getFnState(fn));
+            if (stype == session->getCharSessionType()){
+                if ((session->getFnType(fn) == 1) && (onoff == 0) ){
+                    logger->debug("[%d] Fn Message for toggle fn and for a off action. Discarding",id);
+                }
+                else{
+                    logger->debug("[%d] Previous FN state %02x" , id,session->getFnState(fn));
+                    sendFnMessages(session,fn,message);
+                    logger->debug("[%d] Last FN state %02x" ,id, session->getFnState(fn));
+                }
             }
             it++;
         }

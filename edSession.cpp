@@ -14,6 +14,7 @@ edSession::edSession(log4cpp::Category *logger)
     speed = 0;
     direction = 0;
     ad_type = 'S';
+    sessionType = SessionType::MULTI_SESSION;
     this->logger = logger;
     //set inital time
     struct timespec spec;
@@ -41,7 +42,7 @@ void edSession::getMomentaryFNs(){
         vector <string> vals;
         vals = split(val,',',vals);
         if (!vals.empty()){
-            logger->debug("Reset the momentary Fns");
+            logger->debug("Reset the Fns to toggle");
             for (i=0;i<FN_SIZE;i++){
                 fnstype[i]=1;
             }
@@ -143,6 +144,19 @@ void edSession::setLocoName(string loconame){
 
 string edSession::getLocoName(){
     return loconame;
+}
+
+void edSession::setSessionType(SessionType stype){
+    sessionType = stype;
+}
+SessionType edSession::getSessionType(){
+    return sessionType;
+}
+
+char edSession::getCharSessionType(){
+    if (sessionType == SessionType::MULTI_SESSION) return 'S';
+    if (sessionType == SessionType::MULTI_THROTTLE) return 'T';
+    return 'T';
 }
 
 void edSession::setFnType(int fn ,byte state){

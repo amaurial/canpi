@@ -89,57 +89,62 @@ void tcpServer::run(void* param){
     logger->info("Tcp server running");
 
     while (running){
+        try{
 
-         client_sock = accept(socket_desc, (struct sockaddr *)&client_addr, &len);
+            client_sock = accept(socket_desc, (struct sockaddr *)&client_addr, &len);
 
-        if (client_sock < 0)
-        {
-            logger->debug("Cannot accept connection");
+            if (client_sock < 0)
+            {
+                logger->debug("Cannot accept connection");
+            }
+            else
+            {
+
+                char *s = NULL;
+                switch(client_addr.sin_family) {
+                    case AF_INET: {
+                        //struct sockaddr_in *addr_in = (struct sockaddr_in *)res;
+                        s = (char*)malloc(INET_ADDRSTRLEN);
+                        inet_ntop(AF_INET, &(client_addr.sin_addr), s, INET_ADDRSTRLEN);
+                        break;
+                    }
+                    case AF_INET6: {
+                        struct sockaddr_in6 *addr_in6 = (struct sockaddr_in6 *)&client_addr;
+                        s = (char*)malloc(INET6_ADDRSTRLEN);
+                        inet_ntop(AF_INET6, &(addr_in6->sin6_addr), s, INET6_ADDRSTRLEN);
+                        break;
+                    }
+                    default:
+                        break;
+                }
+                logger->info("Creating client for ip:%s id:%d",s, counter);
+                Client *cl;
+                if (clientType == GRID){
+                    cl = new tcpClientGridConnect(logger,this,can,client_sock, client_addr,counter,config);
+                }
+                else{
+                    tcpClient *client;
+                    client = new tcpClient(logger,this,can,client_sock, client_addr,counter,config);
+                    if (clients.size() == 0){
+                        turnouts->reload();
+                    }
+                    client->setTurnout(turnouts);
+                    cl = client;
+                }
+
+                cl->setIp(s);
+                free(s);
+                tempClient = cl;
+                logger->debug("Creating client thread %d",counter);
+                pthread_t clientThread;
+                pthread_create(&clientThread, nullptr, tcpServer::thread_entry_run_client, this);
+                clients.insert(std::pair<int,Client*>(counter,cl));
+                threads.push_back(clientThread);
+                counter++;
+            }
         }
-        else
-        {
-
-            char *s = NULL;
-            switch(client_addr.sin_family) {
-                case AF_INET: {
-                    //struct sockaddr_in *addr_in = (struct sockaddr_in *)res;
-                    s = (char*)malloc(INET_ADDRSTRLEN);
-                    inet_ntop(AF_INET, &(client_addr.sin_addr), s, INET_ADDRSTRLEN);
-                    break;
-                }
-                case AF_INET6: {
-                    struct sockaddr_in6 *addr_in6 = (struct sockaddr_in6 *)&client_addr;
-                    s = (char*)malloc(INET6_ADDRSTRLEN);
-                    inet_ntop(AF_INET6, &(addr_in6->sin6_addr), s, INET6_ADDRSTRLEN);
-                    break;
-                }
-                default:
-                    break;
-            }
-            logger->info("Creating client for ip:%s id:%d",s, counter);
-            Client *cl;
-            if (clientType == GRID){
-                cl = new tcpClientGridConnect(logger,this,can,client_sock, client_addr,counter,config);
-            }
-            else{
-                tcpClient *client;
-                client = new tcpClient(logger,this,can,client_sock, client_addr,counter,config);
-                if (clients.size() == 0){                    
-                    turnouts->reload();
-                }
-                client->setTurnout(turnouts);
-                cl = client;
-            }
-
-            cl->setIp(s);
-            free(s);
-            tempClient = cl;
-            logger->debug("Creating client thread %d",counter);
-            pthread_t clientThread;
-            pthread_create(&clientThread, nullptr, tcpServer::thread_entry_run_client, this);
-            clients.insert(std::pair<int,Client*>(counter,cl));
-            threads.push_back(clientThread);
-            counter++;
+        catch(...){
+            logger->error("TCP server failed while running.");
         }
     }
 
@@ -156,29 +161,38 @@ void tcpServer::run_client(void* param){
 }
 
 void tcpServer::removeClients(){
+    try{
 
-    logger->info("Stopping client connections");
-    std::map<int,Client*>::iterator it = clients.begin();
-    while(it != clients.end())
-    {
-        logger->info("Stop client %d", it->second->getId());
-        it->second->stop();
-        it++;
+        logger->info("Stopping client connections");
+        std::map<int,Client*>::iterator it = clients.begin();
+        while(it != clients.end())
+        {
+            logger->info("Stop client %d", it->second->getId());
+            it->second->stop();
+            it++;
+        }
+        //check if it dealocattes the pointers
+        clients.clear();
     }
-    //check if it dealocattes the pointers
-    clients.clear();
+    catch(...){
+        logger->error("Failed to remove all clients");
+    }
 }
 
 void tcpServer::removeClient(Client *client){
-
-    if (clients.find(client->getId()) != clients.end()){
+    try {
+        if (clients.find(client->getId()) != clients.end()){
         logger->debug("Removing tcp client with id: %d",client->getId());
         clients.erase(client->getId());
+        }
+        else{
+            logger->debug("Could not remove tcp client with id: %d",client->getId());
+        }
+        delete client;
     }
-    else{
-        logger->debug("Could not remove tcp client with id: %d",client->getId());
+    catch(...){
+        logger->error("Failed to remove a client");
     }
-    delete client;
 }
 
 void tcpServer::setTurnout(Turnout* turnouts){

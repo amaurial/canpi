@@ -43,6 +43,7 @@ using namespace std;
 typedef unsigned char byte;
 enum ClientType {ED,GRID};
 enum TurnoutState {CLOSED,THROWN,UNKNOWN};
+enum SessionType {MULTI_SESSION, MULTI_THROTTLE};
 
 #define INTERROR 323232
 
