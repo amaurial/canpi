@@ -79,7 +79,7 @@ void Client::sendCbusMessage(int nbytes, byte b0, byte b1, byte b2, byte b3, byt
     msg[5] = b5;
     msg[6] = b6;
     msg[7] = b7;
-    logger->debug("[%d] Sending message to CBUS",id);
+    logger->debug("[%d] [Client] Sending message to CBUS",id);
     int n=nbytes;
     if (nbytes>CAN_MSG_SIZE) n = CAN_MSG_SIZE;
     can->put_to_out_queue(msg,n,clientType);

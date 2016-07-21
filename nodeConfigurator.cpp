@@ -429,6 +429,7 @@ string nodeConfigurator::getNodeName(){
 //saves the string to config file
 string nodeConfigurator::getMomentaryFn(){
     string ret;
+    loadConfig();
     ret = getStringConfig(TAG_FNMOM);
     return ret;
 }
@@ -641,6 +642,7 @@ bool nodeConfigurator::setCanGridPort(int val){
 
 int nodeConfigurator::getCanID(){
     int ret;
+    loadConfig();
     ret = getIntConfig(TAG_CANID);
     if (ret == INTERROR){
         string r = getStringConfig(TAG_CANID);
@@ -672,6 +674,7 @@ bool nodeConfigurator::setCanID(int val){
 
 int nodeConfigurator::getNodeNumber(){
     int ret;
+    loadConfig();
     ret = getIntConfig(TAG_NN);
     if (ret == INTERROR){
         string r = getStringConfig(TAG_NN);
@@ -911,6 +914,7 @@ bool nodeConfigurator::setTurnoutFile(string val){
 }
 string nodeConfigurator::getTurnoutFile(){
     string ret;
+    loadConfig();
     ret = getStringConfig(TAG_TURNOUT);
     if (ret.empty()){
         if (logger != nullptr) logger->error("Failed to get turnout file name. Defaul is turnout.txt");

@@ -48,11 +48,11 @@ void tcpServer::addCanMessage(int canid,const char* msg,int dlc){
 
 bool tcpServer::start(){
     //Create socket
-    logger->info("Starting tcp server on port %d",port);
+    logger->info("[tcpServer] Starting tcp server on port %d",port);
     socket_desc = socket(AF_INET , SOCK_STREAM , 0);
     if (socket_desc == -1)
     {
-        logger->error("Could not create socket");
+        logger->error("[tcpServer] Could not create socket");
     }
 
     //Prepare the sockaddr_in structure
@@ -66,14 +66,14 @@ bool tcpServer::start(){
     if( bind(socket_desc,(struct sockaddr *)&server_addr , sizeof(server_addr)) < 0)
     {
         //print the error message
-        logger->error("Tcp server bind failed for port %d", port);
+        logger->error("[tcpServer] Tcp server bind failed for port %d", port);
         return false;
     }
-    logger->debug("Start tcp listener");
+    logger->debug("[tcpServer] Start tcp listener");
     listen(socket_desc, 5);
     running = 1;
 
-    logger->debug("Start tcp thread");
+    logger->debug("[tcpServer] Start tcp thread");
 
     pthread_create(&serverThread, nullptr, tcpServer::thread_entry_run, this);
 
@@ -81,12 +81,12 @@ bool tcpServer::start(){
 }
 
 void tcpServer::run(void* param){
-    logger->info("Waiting for connections on port %d",port);
+    logger->info("[tcpServer] Waiting for connections on port %d",port);
 
     struct sockaddr_in client_addr;
     vector<pthread_t> threads;
     socklen_t len = sizeof(client_addr);
-    logger->info("Tcp server running");
+    logger->info("[tcpServer] Tcp server running");
 
     while (running){
         try{
@@ -95,7 +95,7 @@ void tcpServer::run(void* param){
 
             if (client_sock < 0)
             {
-                logger->debug("Cannot accept connection");
+                logger->debug("[tcpServer] Cannot accept connection");
             }
             else
             {
@@ -117,7 +117,7 @@ void tcpServer::run(void* param){
                     default:
                         break;
                 }
-                logger->info("Creating client for ip:%s id:%d",s, counter);
+                logger->info("[tcpServer] Creating client for ip:%s id:%d",s, counter);
                 Client *cl;
                 if (clientType == GRID){
                     cl = new tcpClientGridConnect(logger,this,can,client_sock, client_addr,counter,config);
@@ -135,7 +135,7 @@ void tcpServer::run(void* param){
                 cl->setIp(s);
                 free(s);
                 tempClient = cl;
-                logger->debug("Creating client thread %d",counter);
+                logger->debug("[tcpServer] Creating client thread %d",counter);
                 pthread_t clientThread;
                 pthread_create(&clientThread, nullptr, tcpServer::thread_entry_run_client, this);
                 clients.insert(std::pair<int,Client*>(counter,cl));
@@ -144,7 +144,7 @@ void tcpServer::run(void* param){
             }
         }
         catch(...){
-            logger->error("TCP server failed while running.");
+            logger->error("[tcpServer] TCP server failed while running.");
         }
     }
 
@@ -156,18 +156,18 @@ void tcpServer::run(void* param){
 }
 
 void tcpServer::run_client(void* param){
-    logger->info("Starting client thread %d",counter);
+    logger->info("[tcpServer] Starting client thread %d",counter);
     tempClient->start(nullptr);
 }
 
 void tcpServer::removeClients(){
     try{
 
-        logger->info("Stopping client connections");
+        logger->info("[tcpServer] Stopping client connections");
         std::map<int,Client*>::iterator it = clients.begin();
         while(it != clients.end())
         {
-            logger->info("Stop client %d", it->second->getId());
+            logger->info("[tcpServer] Stop client %d", it->second->getId());
             it->second->stop();
             it++;
         }
@@ -175,23 +175,23 @@ void tcpServer::removeClients(){
         clients.clear();
     }
     catch(...){
-        logger->error("Failed to remove all clients");
+        logger->error("[tcpServer] Failed to remove all clients");
     }
 }
 
 void tcpServer::removeClient(Client *client){
     try {
         if (clients.find(client->getId()) != clients.end()){
-        logger->debug("Removing tcp client with id: %d",client->getId());
+        logger->debug("[tcpServer] Removing tcp client with id: %d",client->getId());
         clients.erase(client->getId());
         }
         else{
-            logger->debug("Could not remove tcp client with id: %d",client->getId());
+            logger->debug("[tcpServer] Could not remove tcp client with id: %d",client->getId());
         }
         delete client;
     }
     catch(...){
-        logger->error("Failed to remove a client");
+        logger->error("[tcpServer] Failed to remove a client");
     }
 }
 
@@ -201,12 +201,12 @@ void tcpServer::setTurnout(Turnout* turnouts){
 
 void tcpServer::postMessageToAllClients(int clientId,int canid,char *msg,int msize,ClientType ct){
     //transverse the clients and send the message to all except the clientId
-    logger->info("Sending messages to other clients");
+    logger->info("[tcpServer] Sending messages to other clients");
     std::map<int,Client*>::iterator it = clients.begin();
     while(it != clients.end())
     {
         if (it->second->getId() != clientId){
-            logger->info("Sending msg from ED %d to ED %d",clientId, it->second->getId());
+            logger->info("[tcpServer] Sending msg from ED %d to ED %d",clientId, it->second->getId());
             it->second->canMessage(canid,msg,msize);
         }
         it++;
