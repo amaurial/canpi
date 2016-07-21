@@ -600,10 +600,10 @@ void tcpClient::handleReleaseSession(string message){
         {
             if (stype == it->second->getCharSessionType()){
                 delete(it->second);
+                sessions->erase(it);
             }
-            it++;
-        }
-        //this->sessions.clear();
+            else it++;
+        }        
         //inform the ED
         sendToEd("\n");
         return;
