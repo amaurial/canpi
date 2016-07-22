@@ -35,12 +35,22 @@ void tcpServer::stop(){
 }
 
 void tcpServer::addCanMessage(int canid,const char* msg,int dlc){
-
+    bool stdframe = true;
+    
+    if ((canid & CAN_EFF_FLAG) == CAN_EFF_FLAG) stdframe = false;
+    
     if (!clients.empty()){
         std::map<int,Client*>::iterator it = clients.begin();
         while(it != clients.end())
         {
-            it->second->canMessage(canid,msg,dlc);
+            /*
+             * don't send extended frames to the ED clients
+             * for grid clients send all
+            */
+            if (clientType == ClientType::ED){
+                if (stdframe) it->second->canMessage(canid,msg,dlc);
+            }
+            else it->second->canMessage(canid,msg,dlc);
             it++;
         }
     }
@@ -203,11 +213,31 @@ void tcpServer::postMessageToAllClients(int clientId,int canid,char *msg,int msi
     //transverse the clients and send the message to all except the clientId
     logger->info("[tcpServer] Sending messages to other clients");
     std::map<int,Client*>::iterator it = clients.begin();
+    
+    bool isRTR = false;
+    bool stdframe = true;
+    
+    if (((frame.can_id & CAN_RTR_FLAG) == CAN_RTR_FLAG)){
+        isRTR = true;
+    }    
+    if (((frame.can_id & CAN_EFF_FLAG) == CAN_EFF_FLAG)){
+        stdframe = false;
+    }
+    
     while(it != clients.end())
     {
         if (it->second->getId() != clientId){
-            logger->info("[tcpServer] Sending msg from ED %d to ED %d",clientId, it->second->getId());
-            it->second->canMessage(canid,msg,msize);
+            if (clientType == ClientType::ED){
+                //dont send extended frame or RTR frames for ED clients
+                if (!isRTR && stdframe){
+                    logger->info("[tcpServer] Sending msg from ED %d to ED %d",clientId, it->second->getId());
+                    it->second->canMessage(canid,msg,msize);
+                }
+            }
+            else{
+                logger->info("[tcpServer] Sending msg from ED %d to ED %d",clientId, it->second->getId());
+                it->second->canMessage(canid,msg,msize);
+            }            
         }
         it++;
     }

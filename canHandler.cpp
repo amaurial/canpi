@@ -1,17 +1,5 @@
 #include "canHandler.h"
 
-/*
-The GridConnect protocol encodes messages as an ASCII string of up to 24 characters
-of the form: :ShhhhNd0d1d2d3d4d5d6d7; hhhh is the two byte (11 useful bits) header
-The S indicates a standard CAN frame :XhhhhhhhhNd0d1d2d3d4d5d6d7; The X indicates
-an extended CAN frame Strict Gridconnect protocol allows a variable number of header
-characters, e.g., a header value of 0x123 could be encoded as S123, X123, S0123 or X00000123.
-MERG hardware uses a fixed 4 or 8 byte header when sending GridConnectMessages to the computer.
-The 11 bit standard header is left justified in these 4 bytes. The 29 bit standard header is
-sent as <11 bit SID><0><1><0>< 18 bit EID> N or R indicates a normal or remote frame,
-in position 6 or 10 d0 - d7 are the (up to) 8 data bytes
-*/
-
 canHandler::canHandler(log4cpp::Category *logger, int canId)
 {
     //ctor
@@ -33,11 +21,19 @@ canHandler::~canHandler()
     pthread_mutex_destroy(&m_mutex_in);
     pthread_cond_destroy(&m_condv_in);
 }
-
+/**
+ * @brief Return the canid being used
+ * @return 
+ */
 int canHandler::getCanId(){
     return canId;
 }
-
+/**
+ * @brief Set the gpio pins for the push button, the green led and the yelow led
+ * @param pbutton raspberry pi gpio number
+ * @param gledpin raspberry pi gpio number
+ * @param yledpin raspberry pi gpio number
+ */
 void canHandler::setPins(int pbutton,int gledpin,int yledpin){
     pbpin = pbutton;
     glpin = gledpin;
@@ -67,30 +63,57 @@ void canHandler::setPins(int pbutton,int gledpin,int yledpin){
     gl.setdir_gpio("out");
     yl.setdir_gpio("out");
 }
-
+/**
+ * @brief Sets the configurator object to extracte the module properties
+ * @param config
+ */
 void canHandler::setConfigurator(nodeConfigurator *config){
     this->config = config;
     //config->setNodeParams(MANU_MERG,MSOFT_MIN_VERSION,MID,0,0,config->getNumberOfNVs(),MSOFT_VERSION,MFLAGS);
  }
-
+/**
+ * @brief Put an existing tcp server in the queue to receive and send CAN frames
+ * @param tcpserver
+ */
 void canHandler::setTcpServer(tcpServer * tcpserver){
     servers.push_back(tcpserver);
 }
-
+/**
+ * @brief Sets the node number to be used in the CAN messages
+ * @param nn
+ */
 void  canHandler::setNodeNumber(int nn){
     node_number = nn;
 }
+/**
+ * @brief Sets the can id used in the CAN messages
+ * @param canId
+ */
 void canHandler::setCanId(int canId){
     this->canId = canId;
 }
-
+/**
+ * @brief Insert a message in the ougoing queue using the actual specified canid
+ * @param msg The data to be sent limited by 8 bytes 
+ * @param msize The message size limited by 8 bytes
+ * @param ct The client type sending the message: ED(engine driver client) or GRID (can grid server client)
+ * @return 
+ */
 int canHandler::put_to_out_queue(char *msg,int msize,ClientType ct){
     int c = 5; //priority 0101
     c = c << 8;
-    c = c | byte(canId);
+    c = c | canId;
     return put_to_out_queue(c,msg,msize,ct);
 }
-
+/**
+ * @brief Insert a CAN frame in the ougoing queue using a customised canid. 
+ * It multiplexes the message among from the ED clients to the Grid clients
+ * @param canid
+ * @param msg The data to be sent limited by 8 bytes 
+ * @param msize The message size limited by 8 bytes
+ * @param ct The client type sending the message: ED(engine driver client) or GRID (can grid server client)
+ * @return 
+ */
 int canHandler::put_to_out_queue(int canid,char *msg,int msize,ClientType ct){
     int i = 0;
     int j = CAN_MSG_SIZE;
@@ -135,7 +158,14 @@ int canHandler::put_to_out_queue(int canid,char *msg,int msize,ClientType ct){
 
     return j;
 }
-
+/**
+ * @brief Add a message to the incoming can queue
+ * @param canid
+ * @param msg Message received limited by 8 bytes
+ * @param msize Message size limited by 8 bytes
+ * @param ct Client type: ED or GRID
+ * @return 
+ */
 int canHandler::put_to_incoming_queue(int canid,char *msg,int msize,ClientType ct){
     int i = 0;
     int j = CAN_MSG_SIZE;
@@ -162,7 +192,12 @@ int canHandler::put_to_incoming_queue(int canid,char *msg,int msize,ClientType c
 
     return j;
 }
-
+/**
+ * @brief Start the major components: CAN interface reader, Consumer of the incoming CAN messages, Consumer of the outgoing CAN messages
+ * It sends a start service event
+ * @param interface The can interface. Normally can0
+ * @return 
+ */
 int canHandler::start(const char* interface){
     logger->debug("[canHandler] Creating socket can for %s",interface);
 
@@ -195,13 +230,17 @@ int canHandler::start(const char* interface){
 
 	return canInterface;
 }
-
+/**
+ * @brief Stop all threads. It send an end service event.
+ */
 void canHandler::stop(){
     send_end_event();
     usleep(200*1000); //wait for the message to be sent
     running = 0;
 }
-
+/**
+ * @brief Sends the start service event based on the configuration
+ */
 void canHandler::send_start_event(){
     char sendframe[CAN_MSG_SIZE];
     int startid = config->getStartEventID();
@@ -220,6 +259,9 @@ void canHandler::send_start_event(){
     sendframe[4] = Li;
     put_to_out_queue(sendframe,5,ClientType::ED);
 }
+/**
+ * @brief Sends the stop service event based on the configuration
+ */
 void canHandler::send_end_event(){
     char sendframe[CAN_MSG_SIZE];
     int startid = config->getStartEventID();
@@ -238,7 +280,10 @@ void canHandler::send_end_event(){
     sendframe[4] = Li;
     put_to_out_queue(sendframe,5,ClientType::ED);
 }
-
+/**
+ * @brief Reads the CAN interface and put the frame in a threadsafe queue
+ * @param param not used
+ */
 void canHandler::run_in(void* param){
     struct can_frame frame;
     int nbytes;
@@ -286,9 +331,16 @@ void canHandler::run_in(void* param){
     close(canInterface);
 }
 
+/**
+ * @brief Consumes the CAN queue. It checks for the following OPC to handle:
+ * QNN RQMN RQNP SNN ENUM HLT BON BOOT ARST CANID NVSET RQNPN NVRD
+ * It deals with autoenumeration and also distributes the can frame to the tcp servers.
+ * @param param
+ */
 void canHandler::run_queue_reader(void* param){
     struct can_frame frame;
     byte opc;
+    bool stdframe = true;
 
     logger->debug("[canHandler] Running CBUS queue reader");
 
@@ -301,11 +353,18 @@ void canHandler::run_queue_reader(void* param){
             frame = in_msgs.front();
             in_msgs.pop();
             pthread_mutex_unlock(&m_mutex_in);
-
-            print_frame(&frame,"[canHandler] Received");
-
+            
+            if ((frame.can_id & CAN_EFF_FLAG) == CAN_EFF_FLAG){
+                stdframe = false;                
+                print_frame(&frame,"[canHandler] Received extended frame");
+            }
+            else{
+                stdframe = true;
+                print_frame(&frame,"[canHandler] Received standard frame");
+            }                      
+            
             //finish auto enum
-            if (auto_enum_mode){
+            if (auto_enum_mode && stdframe){
                 if (frame.can_dlc == 0){
                     finishSelfEnum(frame.can_id);
                 }
@@ -314,7 +373,7 @@ void canHandler::run_queue_reader(void* param){
             * Check if some other node is doing auto enum
             * and answer with out canid
             */
-            if (frame.can_id == CAN_RTR_FLAG){
+            if (((frame.can_id & CAN_RTR_FLAG) == CAN_RTR_FLAG) && stdframe){
                 struct can_frame frame_resp;
                 memset(frame_resp.data , 0 , sizeof(frame_resp.data));
                 frame_resp.can_id = canId & 0x7f;
@@ -325,21 +384,23 @@ void canHandler::run_queue_reader(void* param){
             }
             else{
                 //Handle cbus
-                opc = frame.data[0];
-                if (opc == OPC_QNN ||
-                    opc == OPC_RQMN ||
-                    opc == OPC_RQNP ||
-                    opc == OPC_SNN ||
-                    opc == OPC_ENUM ||
-                    opc == OPC_HLT ||
-                    opc == OPC_BON ||
-                    opc == OPC_BOOT ||
-                    opc == OPC_ARST ||
-                    opc == OPC_CANID ||
-                    opc == OPC_NVSET ||
-                    opc == OPC_RQNPN ||
-                    opc == OPC_NVRD){
-                    handleCBUSEvents(frame);
+                if (stdframe){
+                    opc = frame.data[0];
+                    if (opc == OPC_QNN ||
+                        opc == OPC_RQMN ||
+                        opc == OPC_RQNP ||
+                        opc == OPC_SNN ||
+                        opc == OPC_ENUM ||
+                        opc == OPC_HLT ||
+                        opc == OPC_BON ||
+                        opc == OPC_BOOT ||
+                        opc == OPC_ARST ||
+                        opc == OPC_CANID ||
+                        opc == OPC_NVSET ||
+                        opc == OPC_RQNPN ||
+                        opc == OPC_NVRD){
+                        handleCBUSEvents(frame);
+                    }
                 }
             }
 
@@ -359,7 +420,11 @@ void canHandler::run_queue_reader(void* param){
     }
     logger->debug("[canHandler] Stopping the queue reader");
 }
-
+/**
+ * @brief Print the can frame in a readable format
+ * @param frame The can frame message
+ * @param message A message to add on the output
+ */
 void canHandler::print_frame(can_frame *frame,string message){
 
     logger->debug("%s Can Data : [%03x] [%d] data: %02x %02x %02x %02x %02x %02x %02x %02x"
@@ -369,6 +434,10 @@ void canHandler::print_frame(can_frame *frame,string message){
                 ,frame->data[4],frame->data[5],frame->data[6],frame->data[7]);
 }
 
+/**
+ * @brief It runs as a thread and it is responsible to consume the outgoing CAN frame queue and send to the CAN interface.
+ * @param param not used
+ */
 void canHandler::run_out(void* param){
     struct can_frame frame;
     int nbytes;
@@ -376,7 +445,6 @@ void canHandler::run_out(void* param){
     logger->debug("[canHandler] Running CBUS queue writer");
 
     while (running){
-
         if (!out_msgs.empty()){
             pthread_mutex_lock(&m_mutex);
             frame = out_msgs.front();
@@ -386,7 +454,7 @@ void canHandler::run_out(void* param){
                 logger->warn("[canHandler] CBUS stopped. Discarding outgoing message");
                 continue;
             }
-            nbytes = write(canInterface,&frame,CAN_MTU);
+            nbytes = write(canInterface, &frame, CAN_MTU);
             print_frame(&frame,"[canHandler] Sent [" + to_string(nbytes) + "]");
             //logger->debug("Sent %d bytes to CBUS",nbytes);
             if (nbytes != CAN_MTU){
@@ -398,6 +466,9 @@ void canHandler::run_out(void* param){
     logger->debug("[canHandler] Stopping the queue writer");
 }
 
+/**
+ * @brief Starts the self enumeration procedure
+ */
 void canHandler::doSelfEnum(){
     //start can enumeration
     logger->debug("[canHandler] Starting can enumeration");
@@ -409,10 +480,13 @@ void canHandler::doSelfEnum(){
     frame.can_dlc = 0;
     frame.data[0] = canId;
     sysTimeMS_start = time(0)*1000;
-    put_to_out_queue(frame.can_id,(char*)frame.data,0,ClientType::ED);
-    //write(canInterface,&frame,CAN_MTU);
+    put_to_out_queue(frame.can_id,(char*)frame.data,0,ClientType::ED);    
 }
 
+/**
+ * @brief Finishes the auto enumeration
+ * @param id is the a CAN id
+ */
 void canHandler::finishSelfEnum(int id){
     sysTimeMS_end = time(0)*1000;
     if (id!=0) {
@@ -452,7 +526,10 @@ void canHandler::finishSelfEnum(int id){
         logger->debug("[canHandler] New canid is %d", canId);
     }
 }
-
+/**
+ * @brief Handle the specific CBUS configuration events
+ * @param frame The CAN frame
+ */
 void canHandler::handleCBUSEvents(struct can_frame frame){
 
     char sendframe[CAN_MSG_SIZE];
@@ -696,7 +773,12 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
     break;
     }
 }
-
+/**CAN_EFF_FLAG
+ * @brief Restarts the module depending on the @status parameter
+ * @param status 0 to 3. 0 and 1 does nothing.
+ * 2 reconfigure the module. It also forces a reboot.
+ * 3 restarts the canpi and webserver services
+ */
 void canHandler::restart_module(int status){
     string command;
     //MTA*<;>*
@@ -729,6 +811,9 @@ void canHandler::restart_module(int status){
     }
 }
 
+/**
+ * @brief Handles the push button behaviour
+ */
 
 void canHandler::doPbLogic(){
     string pbstate;
