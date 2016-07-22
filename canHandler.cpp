@@ -23,7 +23,7 @@ canHandler::~canHandler()
 }
 /**
  * @brief Return the canid being used
- * @return 
+ * @return
  */
 int canHandler::getCanId(){
     return canId;
@@ -94,10 +94,10 @@ void canHandler::setCanId(int canId){
 }
 /**
  * @brief Insert a message in the ougoing queue using the actual specified canid
- * @param msg The data to be sent limited by 8 bytes 
+ * @param msg The data to be sent limited by 8 bytes
  * @param msize The message size limited by 8 bytes
  * @param ct The client type sending the message: ED(engine driver client) or GRID (can grid server client)
- * @return 
+ * @return
  */
 int canHandler::put_to_out_queue(char *msg,int msize,ClientType ct){
     int c = 5; //priority 0101
@@ -106,18 +106,19 @@ int canHandler::put_to_out_queue(char *msg,int msize,ClientType ct){
     return put_to_out_queue(c,msg,msize,ct);
 }
 /**
- * @brief Insert a CAN frame in the ougoing queue using a customised canid. 
+ * @brief Insert a CAN frame in the ougoing queue using a customised canid.
  * It multiplexes the message among from the ED clients to the Grid clients
  * @param canid
- * @param msg The data to be sent limited by 8 bytes 
+ * @param msg The data to be sent limited by 8 bytes
  * @param msize The message size limited by 8 bytes
  * @param ct The client type sending the message: ED(engine driver client) or GRID (can grid server client)
- * @return 
+ * @return
  */
 int canHandler::put_to_out_queue(int canid,char *msg,int msize,ClientType ct){
     int i = 0;
     int j = CAN_MSG_SIZE;
     struct can_frame frame;
+
     /*
     if (msize == 0){
         if (canid != CAN_RTR_FLAG){
@@ -139,9 +140,11 @@ int canHandler::put_to_out_queue(int canid,char *msg,int msize,ClientType ct){
     logger->debug("[canHandler] Add message to cbus queue");
     print_frame(&frame,"[canHandler] Insert");
     //thread safe insert
-    pthread_mutex_lock(&m_mutex);
+    frameCAN canframe = frameCAN(frame,ct);
 
-    out_msgs.push(frame);
+    pthread_mutex_lock(&m_mutex);
+    //out_msgs.push(frame);
+    out_msgs.push(canframe);
 
     pthread_mutex_unlock(&m_mutex);
     pthread_cond_signal(&m_condv);
@@ -155,6 +158,10 @@ int canHandler::put_to_out_queue(int canid,char *msg,int msize,ClientType ct){
             }
         }
     }
+    else{
+        print_frame(&frame,"[canHandler] Servers empty or client type is GRID. Not sendind to GRID.");
+        //logger->debug("[canHandler] Servers empty or client type is GRID. Not sendind to GRID.");
+    }
 
     return j;
 }
@@ -164,7 +171,7 @@ int canHandler::put_to_out_queue(int canid,char *msg,int msize,ClientType ct){
  * @param msg Message received limited by 8 bytes
  * @param msize Message size limited by 8 bytes
  * @param ct Client type: ED or GRID
- * @return 
+ * @return
  */
 int canHandler::put_to_incoming_queue(int canid,char *msg,int msize,ClientType ct){
     int i = 0;
@@ -182,10 +189,14 @@ int canHandler::put_to_incoming_queue(int canid,char *msg,int msize,ClientType c
         frame.data[i]=msg[i];
     }
     logger->debug("[canHandler] Add message to incoming cbus queue");
+
     print_frame(&frame,"[canHandler] Insert");
+    frameCAN canframe = frameCAN(frame,ct);
+
     pthread_mutex_lock(&m_mutex_in);
 
-    in_msgs.push(frame);
+    //in_msgs.push(frame);
+    in_msgs.push(canframe);
 
     pthread_mutex_unlock(&m_mutex_in);
     pthread_cond_signal(&m_condv_in);
@@ -196,7 +207,7 @@ int canHandler::put_to_incoming_queue(int canid,char *msg,int msize,ClientType c
  * @brief Start the major components: CAN interface reader, Consumer of the incoming CAN messages, Consumer of the outgoing CAN messages
  * It sends a start service event
  * @param interface The can interface. Normally can0
- * @return 
+ * @return
  */
 int canHandler::start(const char* interface){
     logger->debug("[canHandler] Creating socket can for %s",interface);
@@ -297,7 +308,6 @@ void canHandler::run_in(void* param){
     }
 
     send_start_event();
-
     iov.iov_base = &frame;
     msg.msg_name = &addr;
     msg.msg_iov = &iov;
@@ -321,8 +331,10 @@ void canHandler::run_in(void* param){
             logger->error("[canHandler] Can not read CBUS");
         }
         else{
+            frameCAN canframe = frameCAN(frame,ClientType::CBUS);
             pthread_mutex_lock(&m_mutex_in);
-            in_msgs.push(frame);
+            //in_msgs.push(frame);
+            in_msgs.push(canframe);
             pthread_mutex_unlock(&m_mutex_in);
             pthread_cond_signal(&m_condv_in);
         }
@@ -341,6 +353,7 @@ void canHandler::run_queue_reader(void* param){
     struct can_frame frame;
     byte opc;
     bool stdframe = true;
+    frameCAN canframe;
 
     logger->debug("[canHandler] Running CBUS queue reader");
 
@@ -350,19 +363,21 @@ void canHandler::run_queue_reader(void* param){
 
         if (!in_msgs.empty()){
             pthread_mutex_lock(&m_mutex_in);
-            frame = in_msgs.front();
+            //frame = in_msgs.front();
+            canframe = in_msgs.front();
             in_msgs.pop();
             pthread_mutex_unlock(&m_mutex_in);
-            
+
+            frame = canframe.getFrame();
             if ((frame.can_id & CAN_EFF_FLAG) == CAN_EFF_FLAG){
-                stdframe = false;                
+                stdframe = false;
                 print_frame(&frame,"[canHandler] Received extended frame");
             }
             else{
                 stdframe = true;
                 print_frame(&frame,"[canHandler] Received standard frame");
-            }                      
-            
+            }
+
             //finish auto enum
             if (auto_enum_mode && stdframe){
                 if (frame.can_dlc == 0){
@@ -399,14 +414,28 @@ void canHandler::run_queue_reader(void* param){
                         opc == OPC_NVSET ||
                         opc == OPC_RQNPN ||
                         opc == OPC_NVRD){
-                        handleCBUSEvents(frame);
+                        //handleCBUSEvents(frame);
+                        handleCBUSEvents(canframe);
                     }
                 }
             }
 
             if (servers.size() > 0){
                 for (server = servers.begin();server != servers.end(); server++){
-                    (*server)->addCanMessage(frame.can_id,(char*)frame.data, frame.can_dlc);
+                    //do not send message from GRID to GRID
+                    if (canframe.getClientType() == ClientType::GRID){
+                        if ((*server)->getClientType() != canframe.getClientType()){
+                            (*server)->addCanMessage(frame.can_id,(char*)frame.data, frame.can_dlc);
+                        }
+                        else{
+                            print_frame(&frame,"[canHandler] Droping message from GRID to GRID");
+                            //logger->debug("[canHandler] Droping message from GRID to GRID");
+                        }
+                    }
+                    else{
+                        (*server)->addCanMessage(frame.can_id,(char*)frame.data, frame.can_dlc);
+                    }
+
                 }
             }
         }
@@ -441,15 +470,19 @@ void canHandler::print_frame(can_frame *frame,string message){
 void canHandler::run_out(void* param){
     struct can_frame frame;
     int nbytes;
+    frameCAN canframe;
 
     logger->debug("[canHandler] Running CBUS queue writer");
 
     while (running){
         if (!out_msgs.empty()){
             pthread_mutex_lock(&m_mutex);
-            frame = out_msgs.front();
+            //frame = out_msgs.front();
+            canframe = out_msgs.front();
             out_msgs.pop();
             pthread_mutex_unlock(&m_mutex);
+            frame = canframe.getFrame();
+
             if (cbus_stopped){
                 logger->warn("[canHandler] CBUS stopped. Discarding outgoing message");
                 continue;
@@ -480,7 +513,7 @@ void canHandler::doSelfEnum(){
     frame.can_dlc = 0;
     frame.data[0] = canId;
     sysTimeMS_start = time(0)*1000;
-    put_to_out_queue(frame.can_id,(char*)frame.data,0,ClientType::ED);    
+    put_to_out_queue(frame.can_id,(char*)frame.data,0,ClientType::ED);
 }
 
 /**
@@ -530,12 +563,14 @@ void canHandler::finishSelfEnum(int id){
  * @brief Handle the specific CBUS configuration events
  * @param frame The CAN frame
  */
-void canHandler::handleCBUSEvents(struct can_frame frame){
+//void canHandler::handleCBUSEvents(struct can_frame frame){
+void canHandler::handleCBUSEvents(frameCAN canframe){
 
     char sendframe[CAN_MSG_SIZE];
     memset(sendframe,0,CAN_MSG_SIZE);
     byte Hb,Lb;
     int tnn, status;
+    struct can_frame frame = canframe.getFrame();
     print_frame(&frame,"[canHandler] Handling CBUS config event");
 
     switch (frame.data[0]){
@@ -550,7 +585,7 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         sendframe[3] = MANU_MERG;
         sendframe[4] = MID;
         sendframe[5] = MFLAGS;
-        put_to_out_queue(sendframe,6,ClientType::ED);
+        put_to_out_queue(sendframe, 6, ClientType::CBUS);
     break;
     case OPC_RQNP:
         if (!setup_mode) return;
@@ -563,7 +598,7 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         sendframe[5] = 0;
         sendframe[6] = config->getNumberOfNVs();//TODO
         sendframe[7] = MSOFT_VERSION;
-        put_to_out_queue(sendframe,8,ClientType::ED);
+        put_to_out_queue(sendframe, 8, ClientType::CBUS);
     break;
     case OPC_RQMN:
         if (!setup_mode) return;
@@ -576,7 +611,7 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         sendframe[5] = ' ';
         sendframe[6] = ' ';
         sendframe[7] = ' ';
-        put_to_out_queue(sendframe,8,ClientType::ED);
+        put_to_out_queue(sendframe, 8, ClientType::CBUS);
     break;
     case OPC_RQNPN:
         Lb = frame.data[2];
@@ -588,13 +623,13 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
             logger->debug("[canHandler] RQNPN is for another node. My nn: %d received nn: %d", node_number,tnn);
             return;
         }
-        if (frame.data[3] > 8) {
+        if (frame.data[3] > NODE_PARAMS_SIZE) {
             //index invalid
             sendframe[0] = OPC_CMDERR;
             sendframe[1] = Hb;
             sendframe[2] = Lb;
             sendframe[3] = 9;
-            put_to_out_queue(sendframe,4,ClientType::ED);
+            put_to_out_queue(sendframe, 4, ClientType::CBUS);
             return;
         }
         p = config->getNodeParameter(frame.data[3]);
@@ -606,7 +641,7 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
         sendframe[2] = Lb;
         sendframe[3] = frame.data[3];
         sendframe[4] = p;
-        put_to_out_queue(sendframe,5,ClientType::ED);
+        put_to_out_queue(sendframe, 5, ClientType::CBUS);
     break;
 
     case OPC_NVRD:
@@ -624,16 +659,17 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
             sendframe[1] = Hb;
             sendframe[2] = Lb;
             sendframe[3] = 9;
-            put_to_out_queue(sendframe,4,ClientType::ED);
+            put_to_out_queue(sendframe, 4, ClientType::CBUS);
+            logger->debug("[canHandler] NVRD Invalid index %d", frame.data[3]);
             return;
         }
-
         sendframe[0] = OPC_NVANS;
         sendframe[1] = Hb;
         sendframe[2] = Lb;
         sendframe[3] = frame.data[3];
         sendframe[4] = config->getNV(frame.data[3]);
-        put_to_out_queue(sendframe,5,ClientType::ED);
+        put_to_out_queue(sendframe, 5, ClientType::CBUS);
+        logger->debug("[canHandler] NVRD processed. Sent NVANS");
     break;
 
     case OPC_NVSET:
@@ -651,9 +687,11 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
             sendframe[1] = Hb;
             sendframe[2] = Lb;
             sendframe[3] = 9;
-            put_to_out_queue(sendframe,4,ClientType::ED);
+            put_to_out_queue(sendframe,4 , ClientType::CBUS);
+            logger->debug("[canHandler] NVSET Invalid index %d", frame.data[3]);
             return;
         }
+
         //1 error, 2 reconfigure , 3 restart the service
         status = config->setNV(frame.data[3],frame.data[4]);
         if (status == 1){
@@ -661,13 +699,15 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
             sendframe[1] = Hb;
             sendframe[2] = Lb;
             sendframe[3] = 9;
-            put_to_out_queue(sendframe,4,ClientType::ED);
+            put_to_out_queue(sendframe, 4, ClientType::CBUS);
+            logger->debug("[canHandler] NVSET failed. Sent Err");
         }
         else{
             sendframe[0] = OPC_WRACK;
             sendframe[1] = Hb;
             sendframe[2] = Lb;
-            put_to_out_queue(sendframe,3,ClientType::ED);
+            put_to_out_queue(sendframe, 3, ClientType::CBUS);
+            logger->debug("[canHandler] NVSET ok. Sent wrack");
         }
 
         if (status == 2 || status == 3){
@@ -692,7 +732,7 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
             sendframe[0] = OPC_NNACK;
             sendframe[1] = Hb;
             sendframe[2] = Lb;
-            put_to_out_queue(sendframe,3,ClientType::ED);
+            put_to_out_queue(sendframe, 3, ClientType::CBUS);
         }
         else{
             logger->error("[canHandler] Save node number failed. Maintaining the old one");
@@ -702,7 +742,7 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
             sendframe[1] = Hb;
             sendframe[2] = Lb;
             sendframe[3] = 5;
-            put_to_out_queue(sendframe,4,ClientType::ED);
+            put_to_out_queue(sendframe, 4, ClientType::CBUS);
         }
         setup_mode = false;
         blinking = false;
@@ -732,7 +772,7 @@ void canHandler::handleCBUSEvents(struct can_frame frame){
             sendframe[1] = Hb;
             sendframe[2] = Lb;
             sendframe[3] = 7;
-            put_to_out_queue(sendframe,4,ClientType::ED);
+            put_to_out_queue(sendframe, 4, ClientType::CBUS);
             return;
         }
         canId = tcanid;

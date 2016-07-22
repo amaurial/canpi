@@ -41,7 +41,7 @@ using namespace std;
 
 //byte definition
 typedef unsigned char byte;
-enum ClientType {ED,GRID};
+enum ClientType {ED,GRID,CBUS};
 enum TurnoutState {CLOSED,THROWN,UNKNOWN};
 enum SessionType {MULTI_SESSION, MULTI_THROTTLE};
 

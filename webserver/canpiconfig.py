@@ -160,7 +160,9 @@ class index:
         self.myform = form()
         # make sure you create a copy of the form by calling it (line above)
         # Otherwise changes will appear globally
-        return render.index(form,"Canpi Configuration",readMessage())
+        msg = readMessage()
+        writeMessage("")
+        return render.index(form,"Canpi Configuration",msg)
 
     def POST(self):
         userData = web.input()
@@ -196,7 +198,7 @@ class index:
             cm.setValue("turnout_file", str(form[id_turnout_file].value))
             cm.setValue(id_start_event_id, str(form[id_start_event_id].value))
             cm.saveFile()
-            writeMessage("")
+            writeMessage("Save successful")
             raise web.seeother('/')
         if id_btn_apply in userData:
             print("Apply button pressed")

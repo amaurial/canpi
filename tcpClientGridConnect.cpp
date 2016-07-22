@@ -76,29 +76,29 @@ void tcpClientGridConnect::canMessage(int canid,const char* msg, int dlc){
         //do the parse based on the extended or std frame
         if ((canid & CAN_EFF_FLAG) == CAN_EFF_FLAG){
             //extended frame
-            tempcanid = canid & CAN_EFF_MASK;       
+            tempcanid = canid & CAN_EFF_MASK;
             ss.clear();ss.str();
             ss << ":X";
-            
+
             //first highest byte of the 4
             h1 = tempcanid >> 24;
             sprintf(t,"%02X",h1);
             ss << t;
-            
+
             //second highest byte of the 4
             h1 = tempcanid >> 16;
             sprintf(t,"%02X",h1);
             ss << t;
-            
-            //third highest byte of the 4            
+
+            //third highest byte of the 4
             h1 = tempcanid >> 8;
             sprintf(t,"%02X",h1);
             ss << t;
-            
-            //fourth highest byte of the 4                        
+
+            //fourth highest byte of the 4
             sprintf(t,"%02X",h1);
             ss << t;
-            
+
             ss << frametype;
             for (int i = 0;i < dlc; i++){
                 sprintf(t, "%02X", msg[i]);
@@ -108,14 +108,13 @@ void tcpClientGridConnect::canMessage(int canid,const char* msg, int dlc){
             s = 28 - (8 - dlc)*2; // max msg + \n - data size offset
         }
         else{
-            //standard frame  
-            if ()
-            tempcanid = canid & CAN_SFF_MASK;          
+            //standard frame
+            tempcanid = canid & CAN_SFF_MASK;
             h2 = tempcanid << 5;
             h1 = tempcanid >> 3;
 
             ss.clear();ss.str();
-            ss << ":S";            
+            ss << ":S";
             sprintf(t,"%02X",h1);
             ss << t;
             sprintf(t,"%02X",h2);
@@ -128,9 +127,7 @@ void tcpClientGridConnect::canMessage(int canid,const char* msg, int dlc){
             ss << ";";
             s = 24 - (8 - dlc)*2; // max msg + \n - data size offset
         }
-        
-        
-        
+
         logger->debug("[%d] Grid server sending grid message to client: %s",id, ss.str().c_str());
         if (running == 0){
             logger->error("Can grid client stoping. Not sending message to clients.");
@@ -209,13 +206,13 @@ void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
             continue;
         }
         //get the header
-        pos = ms.find("S");        
+        pos = ms.find("S");
         if (pos>0){
             canid = ms.substr(pos+1,4);
         }
         else{
             //check extended frame
-            pos = ms.find("X");        
+            pos = ms.find("X");
             if (pos>0){
                 canid = ms.substr(pos+1,8);
                 stdframe = false;
@@ -227,7 +224,7 @@ void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
         }
         //get the data part
         pos = ms.find("N");
-        if (pos < 1){   
+        if (pos < 1){
             //check if RTR
             pos = ms.find("R");
             if (pos > 0){
@@ -237,7 +234,7 @@ void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
                 logger->warn("[%d] Invalid grid string:[%s] no N or R found",id,ms.c_str());
                 continue;
             }
-        }        
+        }
         if (pos>0){
             delim = ms.find(";");
             if (delim <= pos){
@@ -250,7 +247,7 @@ void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
             vcanid = getBytes(canid,&vcanid);
             vdata.clear();
             vdata = getBytes(data,&vdata);
-            
+
             //sanity check
             if (stdframe){
                 if (vcanid.size() != 2){
@@ -264,8 +261,8 @@ void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
                     continue;
                 }
             }
-            
-            //create a can frame            
+
+            //create a can frame
             int icanid = vcanid.at(0);
             icanid = icanid << 8;
             icanid = icanid | vcanid.at(1);
@@ -280,7 +277,7 @@ void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
             }
             //set the RTR flag
             if (isRTR) icanid = icanid | CAN_RTR_FLAG;
-            
+
             //get the data
             int j = vdata.size()>CAN_MSG_SIZE?CAN_MSG_SIZE:vdata.size();
             memset(candata,0,CAN_MSG_SIZE);
@@ -289,10 +286,13 @@ void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
             }
 
             logger->debug("Grid parsed canid:%d data:%s", icanid, candata);
+            //put message to the wire
             can->put_to_out_queue(icanid,candata,j,clientType);
+            //put message to other can clients
             can->put_to_incoming_queue(icanid,candata,j,clientType);
+            //send the message to other grid clients
             server->postMessageToAllClients(id,icanid,candata,j,clientType);
-        }        
+        }
     }
 }
 

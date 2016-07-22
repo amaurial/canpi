@@ -36,21 +36,23 @@ void tcpServer::stop(){
 
 void tcpServer::addCanMessage(int canid,const char* msg,int dlc){
     bool stdframe = true;
-    
+
     if ((canid & CAN_EFF_FLAG) == CAN_EFF_FLAG) stdframe = false;
-    
+
+    /*
+     * don't send extended frames to the ED clients
+     * for grid clients send all
+    */
+    if (clientType == ClientType::ED && !stdframe){
+        logger->debug("[tcpServer] Droping extended frame to ED");
+        return;
+    }
+
     if (!clients.empty()){
         std::map<int,Client*>::iterator it = clients.begin();
         while(it != clients.end())
         {
-            /*
-             * don't send extended frames to the ED clients
-             * for grid clients send all
-            */
-            if (clientType == ClientType::ED){
-                if (stdframe) it->second->canMessage(canid,msg,dlc);
-            }
-            else it->second->canMessage(canid,msg,dlc);
+            it->second->canMessage(canid,msg,dlc);
             it++;
         }
     }
@@ -95,12 +97,12 @@ void tcpServer::run(void* param){
 
     struct sockaddr_in client_addr;
     vector<pthread_t> threads;
+    char *s = NULL;
     socklen_t len = sizeof(client_addr);
     logger->info("[tcpServer] Tcp server running");
 
     while (running){
         try{
-
             client_sock = accept(socket_desc, (struct sockaddr *)&client_addr, &len);
 
             if (client_sock < 0)
@@ -109,8 +111,6 @@ void tcpServer::run(void* param){
             }
             else
             {
-
-                char *s = NULL;
                 switch(client_addr.sin_family) {
                     case AF_INET: {
                         //struct sockaddr_in *addr_in = (struct sockaddr_in *)res;
@@ -162,7 +162,6 @@ void tcpServer::run(void* param){
         pthread_cancel(*itt);
     }
     threads.clear();
-
 }
 
 void tcpServer::run_client(void* param){
@@ -211,33 +210,29 @@ void tcpServer::setTurnout(Turnout* turnouts){
 
 void tcpServer::postMessageToAllClients(int clientId,int canid,char *msg,int msize,ClientType ct){
     //transverse the clients and send the message to all except the clientId
-    logger->info("[tcpServer] Sending messages to other clients");
+    //logger->info("[tcpServer] Sending messages to other clients");
     std::map<int,Client*>::iterator it = clients.begin();
-    
+
     bool isRTR = false;
     bool stdframe = true;
-    
-    if (((frame.can_id & CAN_RTR_FLAG) == CAN_RTR_FLAG)){
+
+    if (((canid & CAN_RTR_FLAG) == CAN_RTR_FLAG)){
         isRTR = true;
-    }    
-    if (((frame.can_id & CAN_EFF_FLAG) == CAN_EFF_FLAG)){
+    }
+    if (((canid & CAN_EFF_FLAG) == CAN_EFF_FLAG)){
         stdframe = false;
     }
-    
+
+    if (clientType == ClientType::ED && (isRTR || stdframe)){
+        logger->debug("[tcpServer] RTR or extended frame is not sent to ED");
+        return;
+    }
+
     while(it != clients.end())
     {
         if (it->second->getId() != clientId){
-            if (clientType == ClientType::ED){
-                //dont send extended frame or RTR frames for ED clients
-                if (!isRTR && stdframe){
-                    logger->info("[tcpServer] Sending msg from ED %d to ED %d",clientId, it->second->getId());
-                    it->second->canMessage(canid,msg,msize);
-                }
-            }
-            else{
-                logger->info("[tcpServer] Sending msg from ED %d to ED %d",clientId, it->second->getId());
-                it->second->canMessage(canid,msg,msize);
-            }            
+            logger->info("[tcpServer] Sending msg from Client %d to Client %d",clientId, it->second->getId());
+            it->second->canMessage(canid,msg,msize);
         }
         it++;
     }

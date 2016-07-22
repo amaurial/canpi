@@ -21,6 +21,7 @@
 #include "opcodes.h"
 #include "gpio.h"
 #include "nodeConfigurator.h"
+#include "frameCAN.h"
 
 #define CAN_MSG_SIZE 8
 #define WAIT_ENUM 200 //ms
@@ -62,8 +63,10 @@ class canHandler
         pthread_t queueWriter;
         tcpServer *tcpserver;
         vector<tcpServer*> servers;
-        std::queue<can_frame> in_msgs;
-        std::queue<can_frame> out_msgs;
+        //std::queue<can_frame> in_msgs;
+        //std::queue<can_frame> out_msgs;
+        std::queue<frameCAN> in_msgs;
+        std::queue<frameCAN> out_msgs;
         bool auto_enum_mode = false;
         bool setup_mode = false;
         bool cbus_stopped = false;
@@ -96,7 +99,8 @@ class canHandler
         void run_queue_reader(void* param);
         void doSelfEnum();
         void finishSelfEnum(int id);
-        void handleCBUSEvents(struct can_frame frame);
+        //void handleCBUSEvents(struct can_frame frame);
+        void handleCBUSEvents(frameCAN frame);
         void doPbLogic();
         void restart_module(int status);
 
