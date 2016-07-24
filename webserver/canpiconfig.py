@@ -70,7 +70,7 @@ class configManager:
             for k,v in self.config.iteritems():
                 line = ""
                 #dont put quotes on numbers
-                if k in ["tcpport","cangrid_port","ap_channel","node_number","canid","button_pin","green_led_pin","yellow_led_pin"]:
+                if k in ["tcpport","cangrid_port","ap_channel","node_number","canid","button_pin","green_led_pin","yellow_led_pin","start_event_id"]:
                      line = k + "=" + v + "\n"
                 else:
                      line = k + "=\"" + v + "\"\n"

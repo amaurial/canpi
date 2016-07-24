@@ -39,4 +39,6 @@
 //PTATMT8 PTACMT8
 //regex to identify turnout messages
 #define RE_TURNOUT_GENERIC "PTA[TC24]MT[0-9]+"
+//regex to identify idle
+#define RE_IDLE "M[STA]+[SL\\*]([0-9]+)?<;>I"
 

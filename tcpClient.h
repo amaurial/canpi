@@ -56,6 +56,7 @@ class tcpClient : public Client
         void handleReleaseSession(string message);
         void handleDirection(string message);
         void handleSpeed(string message);
+        void handleIdle(string message);
         void handleQueryDirection(string message);
         void handleQuerySpeed(string message);
         void handleSetFunction(string message);
@@ -75,6 +76,7 @@ class tcpClient : public Client
         regex re_func;
         regex re_turnout;
         regex re_turnout_generic;
+        regex re_idle;
 
         static void* thread_keepalive(void *classPtr){
             ((tcpClient*)classPtr)->sendKeepAlive(classPtr);

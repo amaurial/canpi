@@ -25,6 +25,7 @@ tcpClient::tcpClient(log4cpp::Category *logger, tcpServer *server, canHandler* c
     this->re_func = regex(RE_FUNC);
     this->re_turnout = regex(RE_TURNOUT);
     this->re_turnout_generic = regex(RE_TURNOUT_GENERIC);
+    this->re_idle = regex(RE_IDLE);
     setStartSessionTime();
     this->clientType = ClientType::ED;
 
@@ -67,7 +68,7 @@ void tcpClient::start(void *param){
     //ss << "PRL]\[MAINT}|{Main}|{]\[YARD1}|{Yard1}|{";ss << "\n\n";
     ss << START_INFO_RCC;ss << "\n";
     ss << START_INFO_PW;ss << "\n";
-    logger->debug("[%d] [tcpClient] Sending start info :%s",id, ss.str().c_str());
+    //logger->debug("[%d] [tcpClient] Sending start info :%s",id, ss.str().c_str());
     sendToEd(ss.str());
     run(nullptr);
 }
@@ -279,6 +280,11 @@ void tcpClient::handleEDMessages(char* msgptr){
             //set speed
             if (regex_match(msg,re_speed)){
                 handleSpeed(msg);
+                continue;
+            }
+            //idle. basically sets the speed to 0
+            if (regex_match(msg,re_idle)){
+                handleIdle(msg);
                 continue;
             }
             //set direction
@@ -616,13 +622,15 @@ void tcpClient::handleReleaseSession(string message){
     //one session
     int loco = getLoco(message);
     logger->debug("[%d] [tcpClient] Releasing session for loco KLOC %d" ,id, loco);
-
-    sesid = this->sessions[loco]->getSession();
-    //send the can data
-    sendCbusMessage(OPC_KLOC,sesid);
-    usleep(1000*200);//300ms
-    delete(this->sessions[loco]);
-    this->sessions.erase(loco);
+    //check if exists
+    if (sessions.find(loco) != sessions.end()){
+        sesid = this->sessions[loco]->getSession();
+        //send the can data
+        sendCbusMessage(OPC_KLOC,sesid);
+        usleep(1000*200);//300ms
+        delete(this->sessions[loco]);
+        this->sessions.erase(loco);
+    }
     //inform the ED
     sendToEd("\n");
 }
@@ -659,12 +667,14 @@ void tcpClient::handleDirection(string message){
 
     //one session
     int loco = getLoco(message);
-    int sesid = sessions[loco]->getSession();
-    sessions[loco]->setDirection(d);
-    logger->debug("[%d] [tcpClient] Set direction %d for loco %d" ,id, d ,loco);
-    int speed = sessions[loco]->getSpeed();
-    if (speed == 1) speed++;
-    sendCbusMessage(OPC_DSPD,sesid, d * BS + speed);
+    if (sessions.find(loco) != sessions.end()){
+        int sesid = sessions[loco]->getSession();
+        sessions[loco]->setDirection(d);
+        logger->debug("[%d] [tcpClient] Set direction %d for loco %d" ,id, d ,loco);
+        int speed = sessions[loco]->getSpeed();
+        if (speed == 1) speed++;
+        sendCbusMessage(OPC_DSPD,sesid, d * BS + speed);
+    }
 
 }
 
@@ -721,12 +731,6 @@ void tcpClient::handleSpeed(string message){
             }
             it++;
         }
-        ss.clear();
-        ss.str("MTA*<;>V");
-        //if (speed == 1) ss << "0";
-        //else ss << speed;
-        ss << edspeed;
-        ss << "\n";
         sendToEd(message);
 
         return;
@@ -734,28 +738,68 @@ void tcpClient::handleSpeed(string message){
 
     //one session
     int loco = getLoco(message);
-    edSession* session = sessions[loco];
-    logger->debug("[%d] [tcpClient] Set speed %d for loco %d" ,id,edspeed, loco);
-    session->setSpeed(edspeed);
-    sendCbusMessage(OPC_DSPD, session->getSession(), session->getDirection() * BS + speed);
+    if (sessions.find(loco) != sessions.end()){
+        edSession* session = sessions[loco];
+        logger->debug("[%d] [tcpClient] Set speed %d for loco %d" ,id,edspeed, loco);
+        session->setSpeed(edspeed);
+        sendCbusMessage(OPC_DSPD, session->getSession(), session->getDirection() * BS + speed);
 
-    ss.clear();ss.str();
-    ss << "M";
-    ss << session->getCharSessionType();
-    ss << "A";
-    ss << session->getAddressType();
-    ss << session->getLoco();
-    ss << DELIM_BTLT;
-    ss << "V";
-    //if (session->getSpeed() == 1) ss << "0";
-    //else ss << (int)session->getSpeed();
-    ss << edspeed;
-    ss << "\n";
+        ss.clear();ss.str();
+        ss << "M";
+        ss << session->getCharSessionType();
+        ss << "A";
+        ss << session->getAddressType();
+        ss << session->getLoco();
+        ss << DELIM_BTLT;
+        ss << "V";
+        //if (session->getSpeed() == 1) ss << "0";
+        //else ss << (int)session->getSpeed();
+        ss << edspeed;
+        ss << "\n";
 
-    sendToEd(ss.str());
-    usleep(1000*10);//wait 10ms
+        sendToEd(ss.str());
+        usleep(1000*10);//wait 10ms
+    }
 }
 
+void tcpClient::handleIdle(string message){
+
+    string speedString;
+    int edspeed = 0;
+    stringstream ss;
+
+    logger->debug("[%d] [tcpClient] Handle idle request %s",id, message.c_str());
+    int i = message.find("*");
+    char stype = message.c_str()[1];
+    //all sessions
+    if (i > 0){
+        logger->debug("[%d] [tcpClient] Set speed %d for all sessions",id,edspeed);
+        std::map<int,edSession*>::iterator it = sessions.begin();
+        while(it != sessions.end())
+        {
+            if (stype == it->second->getCharSessionType()){
+                it->second->setSpeed(edspeed);
+                logger->debug("[%d] Set speed %d for loco %d" ,id,edspeed, it->second->getLoco());
+                sendCbusMessage(OPC_DSPD, it->second->getSession(), it->second->getDirection() * BS + edspeed);
+                usleep(1000*10);//wait 10ms
+            }
+            it++;
+        }
+        sendToEd(message);
+        return;
+    }
+
+    //one session
+    int loco = getLoco(message);
+    if (sessions.find(loco) != sessions.end()){
+        edSession* session = sessions[loco];
+        logger->debug("[%d] [tcpClient] Set speed %d for loco %d" ,id,edspeed, loco);
+        session->setSpeed(edspeed);
+        sendCbusMessage(OPC_DSPD, session->getSession(), session->getDirection() * BS + edspeed);
+        sendToEd(message);
+        usleep(1000*10);//wait 10ms
+    }
+}
 
 void tcpClient::handleQueryDirection(string message){
 
@@ -788,18 +832,20 @@ void tcpClient::handleQueryDirection(string message){
 
     //specific loco
     int loco = getLoco(message);
-    edSession *session = sessions[loco];
-    ss.clear();ss.str();
-    ss << "M";
-    ss << session->getCharSessionType();
-    ss << "A";
-    ss << session->getAddressType();
-    ss << session->getLoco();
-    ss << DELIM_BTLT;
-    ss << "R";
-    ss << (int)session->getDirection();
-    ss << "\n";
-    sendToEd(ss.str());
+    if (sessions.find(loco) != sessions.end()){
+        edSession *session = sessions[loco];
+        ss.clear();ss.str();
+        ss << "M";
+        ss << session->getCharSessionType();
+        ss << "A";
+        ss << session->getAddressType();
+        ss << session->getLoco();
+        ss << DELIM_BTLT;
+        ss << "R";
+        ss << (int)session->getDirection();
+        ss << "\n";
+        sendToEd(ss.str());
+    }
 }
 
 void tcpClient::handleQuerySpeed(string message){
@@ -835,20 +881,22 @@ void tcpClient::handleQuerySpeed(string message){
 
     //specific loco
     int loco = getLoco(message);
-    edSession *session = sessions[loco];
-    ss.clear();ss.str();
-    ss << "M";
-    ss << session->getCharSessionType();
-    ss << "A";
-    ss << session->getAddressType();
-    ss << session->getLoco();
-    ss << DELIM_BTLT;
-    ss << "V";
-    //if (session->getSpeed() == 1) ss << "0";
-    //else ss << (int)session->getSpeed();
-    ss << (int)session->getSpeed();
-    ss << "\n";
-    sendToEd(ss.str());
+    if (sessions.find(loco) != sessions.end()){
+        edSession *session = sessions[loco];
+        ss.clear();ss.str();
+        ss << "M";
+        ss << session->getCharSessionType();
+        ss << "A";
+        ss << session->getAddressType();
+        ss << session->getLoco();
+        ss << DELIM_BTLT;
+        ss << "V";
+        //if (session->getSpeed() == 1) ss << "0";
+        //else ss << (int)session->getSpeed();
+        ss << (int)session->getSpeed();
+        ss << "\n";
+        sendToEd(ss.str());
+    }
 }
 
 void tcpClient::handleSetFunction(string message){
@@ -889,13 +937,15 @@ void tcpClient::handleSetFunction(string message){
     }
     //one session
     int loco = getLoco(message);
-    session = sessions[loco];
+    if (sessions.find(loco) != sessions.end()){
+        session = sessions[loco];
 
-    if ((session->getFnType(fn) == 1) && (onoff == 0) ){
-        logger->debug("[%d] [tcpClient] Fn Message for toggle fn and for a off action. Discarding",id);
-    }
-    else{
-        sendFnMessages(session,fn,message);
+        if ((session->getFnType(fn) == 1) && (onoff == 0) ){
+            logger->debug("[%d] [tcpClient] Fn Message for toggle fn and for a off action. Discarding",id);
+        }
+        else{
+            sendFnMessages(session,fn,message);
+        }
     }
 }
 
