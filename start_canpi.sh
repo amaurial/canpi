@@ -36,6 +36,7 @@ source $config
 
 #set the permission for pi user
 chown -R pi.pi $dir
+chmod +x $cmd
 
 #Bonjour files
 bonjour_file="/etc/avahi/services/multiple.service"
