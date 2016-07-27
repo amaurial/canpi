@@ -15,6 +15,7 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin
 dir="/home/pi/canpi"
 cmd="/home/pi/canpi/canpi"
 webdir="$dir/webserver"
+upgradedir="$dir/upgrade"
 webcmd="/usr/bin/python $webdir/canpiconfig.py 80"
 config="${dir}/canpi.cfg"
 user=""
@@ -36,6 +37,7 @@ source $config
 
 #set the permission for pi user
 chown -R pi.pi $dir
+chmod +x $cmd
 
 #Bonjour files
 bonjour_file="/etc/avahi/services/multiple.service"
@@ -277,6 +279,16 @@ stop_led_watchdog(){
 
 bootstrap(){
    echo "bootstrap"
+}
+
+apply_upgrade(){
+    #check if the dir exists
+    if [[ -d "${upgradedir}" && ! -L "${upgradedir}" ]] ; then
+        echo "It's a bona-fide directory"    
+    else
+        echo "'upgrade' directory does not exist. Creating it."
+        mkdir "${upgradedir}"
+    fi
 }
 
 start_webserver(){

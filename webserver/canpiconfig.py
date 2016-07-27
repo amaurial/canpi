@@ -16,7 +16,8 @@ invalid_ports = [21,22,80]
 
 
 render = web.template.render('templates/')
-urls = ('/', 'index')
+urls = ('/', 'index'
+        '/upload' , 'upload')
 app = web.application(urls, globals(),autoreload=True)
 
 def readMessage():
@@ -108,6 +109,7 @@ id_btn_apply="btnApply"
 id_btn_restart="btnRestart"
 id_btn_stop="btnStop"
 id_btn_restart_all="btnRestartAll"
+id_btn_update_file="btnUpdate"
 
 desc_apmode="AP mode"
 desc_apmode_no_passwd="No password in AP mode"
@@ -132,6 +134,7 @@ desc_btn_apply="btnApply"
 desc_btn_restart="btnRestart"
 desc_btn_stop="btnStop"
 desc_btn_restart_all="btnRestartAll"
+desc_btn_update_file="btnUpdate"
 
 #validators
 ssid_length = form.Validator("SSID length should be between 1 and 8 characters", lambda p: p is None or len(p)>8)
@@ -363,9 +366,42 @@ class index:
             form.Button(desc_btn_apply, id=id_btn_apply, value="apply", html="Apply changes and reboot"),
             form.Button(desc_btn_stop, id=id_btn_stop, value="stop", html="Stop throttle service"),
             form.Button(desc_btn_restart_all, id=id_btn_restart_all, value="stop", html="Restart throttle and configuration page"),
-            form.Button(desc_btn_restart, id=id_btn_restart, value="restart", html="Restart throttle service"))
+            form.Button(desc_btn_restart, id=id_btn_restart, value="restart", html="Restart throttle service"),
+            form.Button(desc_btn_update_file, id=id_btn_update_file, value="upgrade", html="Upload upgrade file"))
 
         return myform()
+
+class Upload:
+    def GET(self):
+        web.header("Content-Type","text/html; charset=utf-8")
+        return """<html><head></head><body>
+<form method="POST" enctype="multipart/form-data" action="">
+<input type="file" name="myfile" />
+<br/>
+<input type="submit" />
+</form>
+</body></html>"""
+
+    def POST(self):
+        x = web.input(myfile={})
+        filedir = '/home/user/amauriala/temp/' # change this to the directory you want to store the file in.
+        if 'myfile' in x: # to check if the file-object is created
+            filepath=x.myfile.filename.replace('\\','/') # replaces the windows-style slashes with linux ones.
+            filename=filepath.split('/')[-1] # splits the and chooses the last part (the filename with extension)
+            filepattern=re.compile(r"canwipi-upgrade-\d+\.zip")
+
+	    if (filepattern.match(filename)):
+		fout = open(filedir +'/'+ filename,'w') # creates the file where the uploaded file should be stored
+		fout.write(x.myfile.file.read()) # writes the uploaded file to the newly created file.
+		fout.close() # closes the file, upload complete.
+		writeMessage("Upgrade file copied. The new version will be applied after reboot.");
+		#subprocess.call(['chmod', '+x', filedir +'/'+ filename])
+	    else:
+                writeMessage("Upgrade not correct");
+		raise web.seeother('/upload')
+		return
+
+        raise web.seeother('/')
 
 if __name__=="__main__":
     web.internalerror = web.debugerror
