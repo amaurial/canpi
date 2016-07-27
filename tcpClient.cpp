@@ -631,6 +631,7 @@ void tcpClient::handleReleaseSession(string message){
         delete(this->sessions[loco]);
         this->sessions.erase(loco);
     }
+    else logger->debug("[%d] [tcpClient] Loco %d not allocated" ,id,loco);
     //inform the ED
     sendToEd("\n");
 }
@@ -675,7 +676,7 @@ void tcpClient::handleDirection(string message){
         if (speed == 1) speed++;
         sendCbusMessage(OPC_DSPD,sesid, d * BS + speed);
     }
-
+    else logger->debug("[%d] [tcpClient] Loco %d not allocated" ,id,loco);
 }
 
 void tcpClient::handleSpeed(string message){
@@ -760,6 +761,7 @@ void tcpClient::handleSpeed(string message){
         sendToEd(ss.str());
         usleep(1000*10);//wait 10ms
     }
+    else logger->debug("[%d] [tcpClient] Loco %d not allocated" ,id,loco);
 }
 
 void tcpClient::handleIdle(string message){
@@ -796,9 +798,25 @@ void tcpClient::handleIdle(string message){
         logger->debug("[%d] [tcpClient] Set speed %d for loco %d" ,id,edspeed, loco);
         session->setSpeed(edspeed);
         sendCbusMessage(OPC_DSPD, session->getSession(), session->getDirection() * BS + edspeed);
-        sendToEd(message);
+        ss.clear();ss.str();
+        ss << "M";
+        ss << session->getCharSessionType();
+        ss << "A";
+        ss << session->getAddressType();
+        ss << session->getLoco();
+        ss << DELIM_BTLT;
+        ss << "V";
+        //if (session->getSpeed() == 1) ss << "0";
+        //else ss << (int)session->getSpeed();
+        ss << edspeed;
+        ss << "\n";
+
+        sendToEd(ss.str());
         usleep(1000*10);//wait 10ms
     }
+    else logger->debug("[%d] [tcpClient] Loco %d not allocated" ,id,loco);
+
+    sendToEd(message);
 }
 
 void tcpClient::handleQueryDirection(string message){
@@ -947,6 +965,7 @@ void tcpClient::handleSetFunction(string message){
             sendFnMessages(session,fn,message);
         }
     }
+    else logger->debug("[%d] [tcpClient] Loco %d not allocated" ,id,loco);
 }
 
 void tcpClient::handleTurnout(string message){
