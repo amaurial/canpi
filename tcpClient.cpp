@@ -588,7 +588,7 @@ void tcpClient::handleReleaseSession(string message){
     char stype = message.c_str()[1];
     bool special_release = false; //defined for the whithrottle when received MT-*<;>r should send back the command without the 'r'
     string spmsg;
-    
+
     if (i > 0) special_release = true;
     i = message.find("*");
     //all sessions
@@ -620,7 +620,7 @@ void tcpClient::handleReleaseSession(string message){
         }
         //inform the ED
         logger->info("[%d] [tcpClient] Finished dealocatting sessions" ,id);
-        if (special_release){            
+        if (special_release){
             i = message.find("<;>");
             spmsg = message.substr(0,i + 3);
             sendToEd(spmsg);
@@ -643,7 +643,7 @@ void tcpClient::handleReleaseSession(string message){
     }
     else logger->debug("[%d] [tcpClient] Loco %d not allocated" ,id,loco);
     //inform the ED
-    if (special_release){        
+    if (special_release){
         i = message.find("<;>");
         spmsg = message.substr(0,i + 3);
         sendToEd(spmsg);
@@ -802,7 +802,7 @@ void tcpClient::handleIdle(string message){
             }
             it++;
         }
-        sendToEd(message);
+        sendToEd("\n");
         return;
     }
 
@@ -826,12 +826,12 @@ void tcpClient::handleIdle(string message){
         ss << edspeed;
         ss << "\n";
 
-        sendToEd(ss.str());
+        //sendToEd(ss.str());
         usleep(1000*10);//wait 10ms
     }
     else logger->debug("[%d] [tcpClient] Loco %d not allocated" ,id,loco);
 
-    sendToEd(message);
+    sendToEd("\n");
 }
 
 void tcpClient::handleQueryDirection(string message){

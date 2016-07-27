@@ -281,14 +281,132 @@ bootstrap(){
    echo "bootstrap"
 }
 
+stop_canpi(){
+    if is_running; then
+        echo -n "Stopping $name.."
+        kill `get_pid`
+        for i in {1..10}
+        do
+            if ! is_running; then
+                break
+            fi
+
+            echo -n "."
+            sleep 1
+        done
+        echo
+
+        if is_running; then
+            echo "Not stopped; may still be shutting down or shutdown may have failed"
+            return 1
+        else
+            echo "Stopped"
+            if [ -f "$pid_file" ]; then
+                rm "$pid_file"
+            fi
+        fi
+    else
+        echo "Not running"
+    fi
+    return 0
+}
+
+start_canpi(){
+
+    if is_running; then
+        echo "Already started"
+    else
+        echo "Starting $name"
+        cd "$dir"
+
+        #restart can interface
+        #sudo /sbin/ip link set can0 down
+        #sudo /sbin/ip link set can0 up type can bitrate 125000 restart-ms 1000
+
+        if [ -z "$user" ]; then
+            sudo $cmd >> "$stdout_log" 2>> "$stderr_log" &
+        else
+            sudo -u "$user" $cmd >> "$stdout_log" 2>> "$stderr_log" &
+        fi
+        echo $! > "$pid_file"
+        if ! is_running; then
+            echo "Unable to start, see $stdout_log and $stderr_log"
+            return 1
+        fi
+    fi
+    return 0
+}
+
+upgrade_canpi(){
+    echo "Checking for file 'canpi'"
+    if [[ -f canpi ]];then
+
+        echo "'canpi' file present. Stopping the service"
+
+        stop_canpi
+        if [[ $? -eq 1 ]]; then
+            exit 1
+        fi
+
+        echo "Service stopped. Backing up the file"
+        cd "${upgradedir}"
+        mv ../canpi ../canpi.bkp
+        cp canpi ../
+        chmod +x ../canpi
+
+        echo "Starting the service after upgrade"
+        start_canpi
+
+        if [[ $? -eq 1 ]]; then
+            echo "Failed to restart the service. Reversing the upgrade"
+            cd "${upgradedir}"
+            mv ../canpi.bkp ../canpi
+            chmod +x ../canpi
+            start_canpi
+            if [[ $? -eq 1 ]]; then
+                echo "Failed to start the service after recover"
+                clean_upgrade_files
+                return 1
+            fi
+            echo "Service restarted after unsuccessesful upgrade"
+            return 1
+        fi
+        echo "Service restarted after upgrade."
+    else
+        echo "No 'canpi' file on upgrade files"
+    fi
+    return 0
+}
+
+upgrade_webserver(){
+
+}
+
 apply_upgrade(){
     #check if the dir exists
     if [[ -d "${upgradedir}" && ! -L "${upgradedir}" ]] ; then
-        echo "It's a bona-fide directory"    
+        echo "'upgrade' directory exists. Checking for upgrade files."
+        cd "${upgradedir}"
+        listfiles=`ls -lt | grep ".zip" | grep canwipi-upgrade`
+        upfile=(${listfiles[@]})
+
+        if [[ -f "${upfile}"]] ; then
+            echo "Unzip the file"
+            unzip "${upfile}"
+            upgrade_canpi
+
+        else
+            echo "No upgrade file. Leaving."
+        fi
+
     else
         echo "'upgrade' directory does not exist. Creating it."
         mkdir "${upgradedir}"
     fi
+}
+
+clean_upgrade_files()
+{
 }
 
 start_webserver(){
@@ -306,9 +424,10 @@ start_webserver(){
         echo $! > "$web_pid_file"
         if ! is_web_running; then
             echo "Unable to start, see $web_stdout_log and $web_stderr_log"
-            exit 1
+            return 1
         fi
     fi
+    return 0
 }
 
 stop_webserver(){
@@ -328,7 +447,7 @@ stop_webserver(){
 
         if is_web_running; then
             echo "$webname not stopped; may still be shutting down or shutdown may have failed"
-            #exit 1
+            return 1
         else
             echo "Stopped"
             if [ -f "$web_pid_file" ]; then
@@ -338,137 +457,60 @@ stop_webserver(){
     else
         echo "$webname not running"
     fi
+    return 0
 }
 
 case "$1" in
     start)
-
-    setup_bonjour
-    start_webserver
-
-    if is_running; then
-        echo "Already started"
-    else
-        echo "Starting $name"
-        cd "$dir"
-
-        #restart can interface
-        #sudo /sbin/ip link set can0 down
-        #sudo /sbin/ip link set can0 up type can bitrate 125000 restart-ms 1000
-
-        if [ -z "$user" ]; then
-            sudo $cmd >> "$stdout_log" 2>> "$stderr_log" &
-        else
-            sudo -u "$user" $cmd >> "$stdout_log" 2>> "$stderr_log" &
-        fi
-        echo $! > "$pid_file"
-        if ! is_running; then
-            echo "Unable to start, see $stdout_log and $stderr_log"
+        setup_bonjour
+        start_webserver
+        start_canpi
+        if [[ $? -eq 1 ]]; then
             exit 1
         fi
-    fi
     ;;
     stop)
-
-    stop_webserver
-    #sudo /sbin/ip link set can0 down
-    if is_running; then
-        echo -n "Stopping $name.."
-        kill `get_pid`
-        for i in {1..10}
-        do
-            if ! is_running; then
-                break
-            fi
-
-            echo -n "."
-            sleep 1
-        done
-        echo
-
-        if is_running; then
-            echo "Not stopped; may still be shutting down or shutdown may have failed"
-            exit 1
-        else
-            echo "Stopped"
-            if [ -f "$pid_file" ]; then
-                rm "$pid_file"
-            fi
-        fi
-    else
-        echo "Not running"
-    fi
-    #kill the rest
-    kill_all_processes "canpi"
+        stop_webserver
+        stop_canpi
+        #kill the rest
+        kill_all_processes "canpi"
     ;;
     startcanpi)
-
-    setup_bonjour
-    if is_running; then
-        echo "Already started"
-    else
-        echo "Starting $name"
-        cd "$dir"
-
-        #restart can interface
-        #sudo /sbin/ip link set can0 down
-        #sudo /sbin/ip link set can0 up type can bitrate 125000 restart-ms 1000
-
-        if [ -z "$user" ]; then
-            sudo $cmd >> "$stdout_log" 2>> "$stderr_log" &
-        else
-            sudo -u "$user" $cmd >> "$stdout_log" 2>> "$stderr_log" &
-        fi
-        echo $! > "$pid_file"
-        if ! is_running; then
-            echo "Unable to start, see $stdout_log and $stderr_log"
+        setup_bonjour
+        start_canpi
+        if [[ $? -eq 1 ]]; then
             exit 1
         fi
-    fi
     ;;
     stopcanpi)
-    if is_running; then
-        echo -n "Stopping $name.."
-        kill `get_pid`
-        for i in {1..10}
-        do
-            if ! is_running; then
-                break
-            fi
-
-            echo -n "."
-            sleep 1
-        done
-        echo
-
-        if is_running; then
-            echo "Not stopped; may still be shutting down or shutdown may have failed"
+        stop_canpi
+        if [[ $? -eq 1 ]]; then
             exit 1
-        else
-            echo "Stopped"
-            if [ -f "$pid_file" ]; then
-                rm "$pid_file"
-            fi
         fi
-    else
-        echo "Not running"
-    fi
     ;;
     restartcanpi)
-    $0 stopcanpi
-    if is_running; then
-        echo "Unable to stop, will not attempt to start"
-        exit 1
-    fi
-    $0 startcanpi
+        #$0 stopcanpi
+        stop_canpi
+        if [[ $? -eq 1 ]]; then
+            exit 1
+        fi
+        if is_running; then
+            echo "Unable to stop, will not attempt to start"
+            exit 1
+        fi
+        #$0 startcanpi
+        start_canpi
+        if [[ $? -eq 1 ]]; then
+            exit 1
+        fi
     ;;
     restart)
-    $0 stop
-    if is_running; then
-        echo "Unable to stop, will not attempt to start"
-        exit 1
-    fi
-    $0 start
+        $0 stop
+        if is_running; then
+            echo "Unable to stop, will not attempt to start"
+            exit 1
+        fi
+        $0 start
     ;;
     configure)
         echo "Configuring the services"
@@ -485,18 +527,18 @@ case "$1" in
         sudo reboot
     ;;
     status)
-    if is_web_running; then
-        echo "Config is Running"
-    else
-        echo "Config Stopped"
-    fi
+        if is_web_running; then
+            echo "Config is Running"
+        else
+            echo "Config Stopped"
+        fi
 
-    if is_running; then
-        echo "Canpi is Running"
-    else
-        echo "Canpi Stopped"
-        exit 1
-    fi
+        if is_running; then
+            echo "Canpi is Running"
+        else
+            echo "Canpi Stopped"
+            exit 1
+        fi
     ;;
     *)
     echo "Usage: $0 {start|stop|restart|status|configure|startcanpi|stopcanpi|restartcanpi}"

@@ -5,6 +5,7 @@ import shutil
 from web import form
 import time
 import shlex
+import re
 from subprocess import Popen, PIPE
 
 #configpath="/home/amaurial/projetos/canpi/canpi.cfg"
@@ -16,8 +17,9 @@ invalid_ports = [21,22,80]
 
 
 render = web.template.render('templates/')
-urls = ('/', 'index'
-        '/upload' , 'upload')
+urls = ('/', 'index',
+        '/upload' , 'upload'
+        )
 app = web.application(urls, globals(),autoreload=True)
 
 def readMessage():
@@ -109,7 +111,7 @@ id_btn_apply="btnApply"
 id_btn_restart="btnRestart"
 id_btn_stop="btnStop"
 id_btn_restart_all="btnRestartAll"
-id_btn_update_file="btnUpdate"
+id_btn_update_file="btnUpdateFile"
 
 desc_apmode="AP mode"
 desc_apmode_no_passwd="No password in AP mode"
@@ -134,7 +136,7 @@ desc_btn_apply="btnApply"
 desc_btn_restart="btnRestart"
 desc_btn_stop="btnStop"
 desc_btn_restart_all="btnRestartAll"
-desc_btn_update_file="btnUpdate"
+desc_btn_update_file="btnUpdateFile"
 
 #validators
 ssid_length = form.Validator("SSID length should be between 1 and 8 characters", lambda p: p is None or len(p)>8)
@@ -212,6 +214,12 @@ class index:
                 restartPi()
             #os.system("/etc/init.d/start_canpi.sh configure")
             return render.reboot("Applying changes and rebooting",myuri)
+
+        if id_btn_update_file in userData:
+            print("Upgrade button pressed")
+            writeMessage("")
+            raise web.seeother('/upload')
+
         if id_btn_restart in userData:
             print("Restart button pressed")
             writeMessage("")
@@ -371,10 +379,12 @@ class index:
 
         return myform()
 
-class Upload:
+class upload:
     def GET(self):
+        msg=readMessage()
         web.header("Content-Type","text/html; charset=utf-8")
         return """<html><head></head><body>
+<header><h4>""" + msg + """</br></h4></header>
 <form method="POST" enctype="multipart/form-data" action="">
 <input type="file" name="myfile" />
 <br/>
@@ -384,7 +394,7 @@ class Upload:
 
     def POST(self):
         x = web.input(myfile={})
-        filedir = '/home/user/amauriala/temp/' # change this to the directory you want to store the file in.
+        filedir = '/home/pi/canpi/upgrade/' # change this to the directory you want to store the file in.
         if 'myfile' in x: # to check if the file-object is created
             filepath=x.myfile.filename.replace('\\','/') # replaces the windows-style slashes with linux ones.
             filename=filepath.split('/')[-1] # splits the and chooses the last part (the filename with extension)
@@ -397,9 +407,8 @@ class Upload:
 		writeMessage("Upgrade file copied. The new version will be applied after reboot.");
 		#subprocess.call(['chmod', '+x', filedir +'/'+ filename])
 	    else:
-                writeMessage("Upgrade not correct");
+                writeMessage("File name incorrect. The expected format is canwipi-upgrade-number.zip<br>Example: canwipi-upgrade-20160720.zip");
 		raise web.seeother('/upload')
-		return
 
         raise web.seeother('/')
 
