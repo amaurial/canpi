@@ -583,9 +583,14 @@ void tcpClient::handleReleaseSession(string message){
 
     logger->debug("[%d] [tcpClient] Handle release session %s",id, message.c_str());
     //release session
-    int i = message.find("*");
+    int i = message.find("<;>r");
     byte sesid;
     char stype = message.c_str()[1];
+    bool special_release = false; //defined for the whithrottle when received MT-*<;>r should send back the command without the 'r'
+    string spmsg;
+    
+    if (i > 0) special_release = true;
+    i = message.find("*");
     //all sessions
     if (i>0){
         logger->debug("[%d] [tcpClient] Releasing all %c sessions",id,stype);
@@ -615,6 +620,11 @@ void tcpClient::handleReleaseSession(string message){
         }
         //inform the ED
         logger->info("[%d] [tcpClient] Finished dealocatting sessions" ,id);
+        if (special_release){            
+            i = message.find("<;>");
+            spmsg = message.substr(0,i + 3);
+            sendToEd(spmsg);
+        }
         sendToEd("\n");
         return;
     }
@@ -632,6 +642,11 @@ void tcpClient::handleReleaseSession(string message){
         this->sessions.erase(loco);
     }
     //inform the ED
+    if (special_release){        
+        i = message.find("<;>");
+        spmsg = message.substr(0,i + 3);
+        sendToEd(spmsg);
+    }
     sendToEd("\n");
 }
 
