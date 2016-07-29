@@ -37,18 +37,18 @@ void edSession::getMomentaryFNs(){
     int i;
 
     val = config->getMomentaryFn();
-    logger->debug("EDSESSION FNs %s",val.c_str());
+    logger->debug("[edSession] EDSESSION FNs %s",val.c_str());
     if (val.size() > 0){
         vector <string> vals;
         vals = split(val,',',vals);
         if (!vals.empty()){
-            logger->debug("Reset the Fns to toggle");
+            logger->debug("[edSession] Reset the Fns to toggle");
             for (i=0;i<FN_SIZE;i++){
                 fnstype[i]=1;
             }
 
             for (auto s:vals){
-                logger->debug("Set Fn %s to momentary", s.c_str());
+                logger->debug("[edSession] Set Fn %s to momentary", s.c_str());
                 i = atoi(s.c_str());
                 if (i < FN_SIZE){
                     setFnType(i, 0);
@@ -56,6 +56,7 @@ void edSession::getMomentaryFNs(){
             }
         }
     }
+    logger->debug("[edSession] No momentary FNs found");
 }
 
 vector<string> & edSession::split(const string &s, char delim, vector<string> &elems)

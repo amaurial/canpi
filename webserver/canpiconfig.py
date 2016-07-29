@@ -66,9 +66,9 @@ class configManager:
         if key in self.config:
             return self.config[key]
         else:
-            setValue(key,value)
+            self.setValue(key,value)
         return value
-        
+
     def setValue(self,key,value):
         self.config[key] = value
 
@@ -361,7 +361,7 @@ class index:
         myform = form.Form(
             form.Checkbox(id_apmode,description=desc_apmode,checked=apmode,value="apmode",id="tapmode"),
             form.Checkbox(id_apmode_no_passwd,description=desc_apmode_no_passwd,checked=apmode_no_passwd,value="apmode_no_passwd",id="tapmode_no_passwd"),
-            form.Textbox(id_ssid,ssid_length,description=desc_ssid,value=cm.getValueInsert("ap_ssid","canwipi"),id="apssid"),
+            form.Textbox(id_ssid,ssid_length,description=desc_ssid,value=cm.getValueInsert("ap_ssid","canpiwi"),id="apssid"),
             form.Textbox(id_password,passwd_length,description=desc_password, value=cm.getValueInsert("ap_password","12345678"),id="appasswd"),
             form.Dropdown(id_channel, ['1', '2', '3','4','5','6','7','8','9','10','11','12','13'],value=cm.getValueInsert("ap_channel",6)),
             form.Textbox(id_router_ssid,router_ssid_length,description=desc_router_ssid,value=cm.getValueInsert("router_ssid",""),id="routerssid"),
@@ -405,17 +405,18 @@ class upload:
         if 'myfile' in x: # to check if the file-object is created
             filepath=x.myfile.filename.replace('\\','/') # replaces the windows-style slashes with linux ones.
             filename=filepath.split('/')[-1] # splits the and chooses the last part (the filename with extension)
-            filepattern=re.compile(r"canwipi-upgrade-\d+\.zip")
+            filepattern=re.compile(r"canpiwi-upgrade-\d+\.zip")
 
 	    if (filepattern.match(filename)):
-		fout = open(filedir +'/'+ filename,'w') # creates the file where the uploaded file should be stored
-		fout.write(x.myfile.file.read()) # writes the uploaded file to the newly created file.
-		fout.close() # closes the file, upload complete.
-		writeMessage("Upgrade file copied. The new version will be applied after reboot.");
-		#subprocess.call(['chmod', '+x', filedir +'/'+ filename])
+                fout = open(filedir +'/'+ filename,'w') # creates the file where the uploaded file should be stored
+                fout.write(x.myfile.file.read()) # writes the uploaded file to the newly created file.
+                fout.close() # closes the file, upload complete.
+                os.system("/etc/init.d/start_canpi.sh upgrade")
+                writeMessage("Upgrade file copied and applied.");
+                #subprocess.call(['chmod', '+x', filedir +'/'+ filename])
 	    else:
-                writeMessage("File name incorrect. The expected format is canwipi-upgrade-number.zip<br>Example: canwipi-upgrade-20160720.zip");
-		raise web.seeother('/upload')
+                writeMessage("File name incorrect. The expected format is canpiwi-upgrade-number.zip<br>Example: canpiwi-upgrade-20160720.zip");
+                raise web.seeother('/upload')
 
         raise web.seeother('/')
 

@@ -365,7 +365,6 @@ upgrade_canpi(){
             start_canpi
             if [[ $? -eq 1 ]]; then
                 echo "Failed to start the service after recover"
-                clean_upgrade_files
                 return 1
             fi
             echo "Service restarted after unsuccessesful upgrade"
@@ -378,59 +377,90 @@ upgrade_canpi(){
     return 0
 }
 
+copy_webserver_file(){
+    wpath=$1
+    wfile=$2
+    echo "checking '${wpath}/${wfile}'"
+    if [[ -f "${wpath}/${wfile}" ]]; then
+        echo "Backing up ${wfile}"
+        cp ../$wpath/$wfile ../$wpath/${wfile}.bak
+        echo "Applying changes to ${wfile}"
+        cp $wpath/$wfile ../$wpath/
+        echo "Changes to ${wfile} applied"
+    fi
+}
+
 upgrade_webserver(){
-    #check the directory    
+    #check the directory
     oldpath=`pwd`
     cd "${upgradedir}"
-    if [[ -d "webserver" && ! -L "webserver" ]] ; then
+    p=`pwd`
+    echo "Actual path ${p}"
+    if [[ ! -d webserver && -L webserver ]] ; then
         echo "No webserver path. Skipping"
         cd $oldpath
         return 0
     fi
-    #canpiconfig.py    
-    echo "checking 'webserver/canpiconfig.py'"
-    if [[ -f "webserver/canpiconfig.py" ]]; then
-        echo "Backing up canpiconfig.py"
-        cp ../webserver/canpiconfig.py ../webserver/canpiconfig.py.bak
-        echo "Applying changes to canpiconfig.py"
-        cp webserver/canpiconfig.py ../webserver/
-        echo "Changes to canpiconfig.py applied"
-    fi
-    
-    #templates path
-    if [[ -d "webserver/templates" && ! -L "webserver/templates" ]] ; then
+
+    copy_webserver_file "webserver" "canpiconfig.py"
+    #webserver/templates path
+    if [[ -d webserver/templates && ! -L webserver/templates ]] ; then
+        copy_webserver_file "webserver/templates" "index.html"
+        copy_webserver_file "webserver/templates" "reboot.html"
+    else
         echo "No webserver/templates path. Skipping"
-        cd $oldpath
-        return 0
     fi
-    
-    #templates/index.html
-    echo "checking 'webserver/templates/index.html'"
-    if [[ -f "webserver/templates/index.html" ]]; then
-        echo "Backing up index.html"
-        cp ../webserver/templates/index.html ../webserver/templates/index.html.bak
-        echo "Applying changes to index.html"
-        cp webserver/templates/index.html ../webserver/templates/
-        echo "Changes to index applied"
+
+    #webserver/static path
+    if [[ -d webserver/static && ! -L webserver/static ]] ; then
+        copy_webserver_file "webserver/static" "bootstrap.css"
+        copy_webserver_file "webserver/static" "main.css"
+        copy_webserver_file "webserver/static" "merg_logo.png"
+        copy_webserver_file "webserver/static" "rpi.jpg"
+    else
+        echo "No webserver/static path. Skipping"
     fi
-    
-    #templates/reboot.html
-    echo "checking 'webserver/templates/reboot.html'"
-    if [[ -f "webserver/templates/reboot.html" ]]; then
-        echo "Backing up reboot.html"
-        cp ../webserver/templates/reboot.html ../webserver/templates/reboot.html.bak
-        echo "Applying changes to reboot.html"
-        cp webserver/templates/reboot.html ../webserver/templates/
-        echo "Changes to reboot applied"
-    fi
-    
+
     cd $oldpath
     return 0
-    
+
+}
+
+copy_config_file(){
+    wfile=$1
+    echo "checking '${wfile}'"
+    if [[ -f $wfile ]]; then
+        echo "Backing up ${wfile}"
+        cp ../$wfile ../$wfile.bak
+        echo "Applying changes to ${wfile}"
+        cp $wfile ../
+        echo "Changes to ${wfile} applied"
+    fi
 }
 
 upgrade_config_files(){
+    cd "${upgradedir}"
+    copy_config_file dhcpd.conf
+    copy_config_file hostapd
+    copy_config_file hostapd.conf
+    copy_config_file hostapd.conf.nopassword
+    copy_config_file interfaces.ap
+    copy_config_file interfaces.wifi
+    copy_config_file isc-dhcp-server
+    copy_config_file multiple.service
+    copy_config_file start_canpi.sh
+    copy_config_file wpa_supplicant.conf
+}
 
+clean_upgrade_files()
+{
+    #do some backup
+    cd $dir
+    echo "Cleaning"
+    if [[ -d "${upgradedir}" && ! -L "${upgradedir}" ]] ; then
+        echo "Deleting ${upgradedir}/*"
+        rm -rf ${upgradedir}/*
+    fi
 }
 
 apply_upgrade(){
@@ -438,14 +468,15 @@ apply_upgrade(){
     if [[ -d "${upgradedir}" && ! -L "${upgradedir}" ]] ; then
         echo "'upgrade' directory exists. Checking for upgrade files."
         cd "${upgradedir}"
-        listfiles=`ls -lt | grep ".zip" | grep canwipi-upgrade`
+        listfiles=`ls -t | grep ".zip" | grep canpiwi-upgrade`
         upfile=(${listfiles[@]})
-
+        echo "Upgrade zip files: ${upfile}"
         if [[ -f "${upfile}" ]] ; then
             echo "Unzip the file"
             unzip "${upfile}"
             upgrade_canpi
             upgrade_webserver
+            upgrade_config_files
             clean_upgrade_files
         else
             echo "No upgrade file. Leaving."
@@ -455,13 +486,6 @@ apply_upgrade(){
         echo "'upgrade' directory does not exist. Creating it."
         mkdir "${upgradedir}"
     fi
-}
-
-clean_upgrade_files()
-{
-    #do some backup
-    cd ${upgradedir}
-    rm -rf "${upgradedir}/*"
 }
 
 start_webserver(){
@@ -580,6 +604,10 @@ case "$1" in
         sleep 1
         echo "Rebooting"
         sudo reboot
+    ;;
+    upgrade)
+        echo "Check for upgrade"
+        apply_upgrade
     ;;
     status)
         if is_web_running; then
