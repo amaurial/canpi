@@ -379,6 +379,57 @@ upgrade_canpi(){
 }
 
 upgrade_webserver(){
+    #check the directory    
+    oldpath=`pwd`
+    cd "${upgradedir}"
+    if [[ -d "webserver" && ! -L "webserver" ]] ; then
+        echo "No webserver path. Skipping"
+        cd $oldpath
+        return 0
+    fi
+    #canpiconfig.py    
+    echo "checking 'webserver/canpiconfig.py'"
+    if [[ -f "webserver/canpiconfig.py" ]]; then
+        echo "Backing up canpiconfig.py"
+        cp ../webserver/canpiconfig.py ../webserver/canpiconfig.py.bak
+        echo "Applying changes to canpiconfig.py"
+        cp webserver/canpiconfig.py ../webserver/
+        echo "Changes to canpiconfig.py applied"
+    fi
+    
+    #templates path
+    if [[ -d "webserver/templates" && ! -L "webserver/templates" ]] ; then
+        echo "No webserver/templates path. Skipping"
+        cd $oldpath
+        return 0
+    fi
+    
+    #templates/index.html
+    echo "checking 'webserver/templates/index.html'"
+    if [[ -f "webserver/templates/index.html" ]]; then
+        echo "Backing up index.html"
+        cp ../webserver/templates/index.html ../webserver/templates/index.html.bak
+        echo "Applying changes to index.html"
+        cp webserver/templates/index.html ../webserver/templates/
+        echo "Changes to index applied"
+    fi
+    
+    #templates/reboot.html
+    echo "checking 'webserver/templates/reboot.html'"
+    if [[ -f "webserver/templates/reboot.html" ]]; then
+        echo "Backing up reboot.html"
+        cp ../webserver/templates/reboot.html ../webserver/templates/reboot.html.bak
+        echo "Applying changes to reboot.html"
+        cp webserver/templates/reboot.html ../webserver/templates/
+        echo "Changes to reboot applied"
+    fi
+    
+    cd $oldpath
+    return 0
+    
+}
+
+upgrade_config_files(){
 
 }
 
@@ -390,11 +441,12 @@ apply_upgrade(){
         listfiles=`ls -lt | grep ".zip" | grep canwipi-upgrade`
         upfile=(${listfiles[@]})
 
-        if [[ -f "${upfile}"]] ; then
+        if [[ -f "${upfile}" ]] ; then
             echo "Unzip the file"
             unzip "${upfile}"
             upgrade_canpi
-
+            upgrade_webserver
+            clean_upgrade_files
         else
             echo "No upgrade file. Leaving."
         fi
@@ -407,6 +459,9 @@ apply_upgrade(){
 
 clean_upgrade_files()
 {
+    #do some backup
+    cd ${upgradedir}
+    rm -rf "${upgradedir}/*"
 }
 
 start_webserver(){
