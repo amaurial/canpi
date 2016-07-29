@@ -61,7 +61,14 @@ class configManager:
         if key in self.config:
             return self.config[key]
         return ""
-
+    #insert a default value if does not exist
+    def getValueInsert(self,key,value):
+        if key in self.config:
+            return self.config[key]
+        else:
+            setValue(key,value)
+        return value
+        
     def setValue(self,key,value):
         self.config[key] = value
 
@@ -342,32 +349,32 @@ class index:
         apmode_no_passwd=True
         create_logfile=True
 
-        if cm.getValue("ap_mode").lower()!="true":
+        if cm.getValueInsert("ap_mode","True").lower()!="true":
             apmode=False
-        if cm.getValue("can_grid").lower()!="true":
+        if cm.getValueInsert("can_grid","True").lower()!="true":
             gridenable=False
-        if cm.getValue(id_apmode_no_passwd).lower()!="true":
+        if cm.getValueInsert(id_apmode_no_passwd,"True").lower()!="true":
             apmode_no_passwd=False
-        if cm.getValue(id_create_logfile).lower()!="true":
+        if cm.getValueInsert(id_create_logfile,"True").lower()!="true":
             create_logfile=False
 
         myform = form.Form(
             form.Checkbox(id_apmode,description=desc_apmode,checked=apmode,value="apmode",id="tapmode"),
             form.Checkbox(id_apmode_no_passwd,description=desc_apmode_no_passwd,checked=apmode_no_passwd,value="apmode_no_passwd",id="tapmode_no_passwd"),
-            form.Textbox(id_ssid,ssid_length,description=desc_ssid,value=cm.getValue("ap_ssid"),id="apssid"),
-            form.Textbox(id_password,passwd_length,description=desc_password, value=cm.getValue("ap_password"),id="appasswd"),
-            form.Dropdown(id_channel, ['1', '2', '3','4','5','6','7','8','9','10','11','12','13'],value=cm.getValue("ap_channel")),
-            form.Textbox(id_router_ssid,router_ssid_length,description=desc_router_ssid,value=cm.getValue("router_ssid"),id="routerssid"),
-            form.Textbox(id_router_password,router_passwd_length, description=desc_router_password,value=cm.getValue("router_password"),id="routerpasswd"),
-            form.Textbox(id_bonjour_name,service_name_length,description=desc_bonjour_name,value=cm.getValue("service_name"),id="servicename"),
-            form.Textbox(id_ed_tcpport,description=desc_ed_tcpport,value=cm.getValue("tcpport"),id="tcpport"),
+            form.Textbox(id_ssid,ssid_length,description=desc_ssid,value=cm.getValueInsert("ap_ssid","canwipi"),id="apssid"),
+            form.Textbox(id_password,passwd_length,description=desc_password, value=cm.getValueInsert("ap_password","12345678"),id="appasswd"),
+            form.Dropdown(id_channel, ['1', '2', '3','4','5','6','7','8','9','10','11','12','13'],value=cm.getValueInsert("ap_channel",6)),
+            form.Textbox(id_router_ssid,router_ssid_length,description=desc_router_ssid,value=cm.getValueInsert("router_ssid",""),id="routerssid"),
+            form.Textbox(id_router_password,router_passwd_length, description=desc_router_password,value=cm.getValueInsert("router_password",""),id="routerpasswd"),
+            form.Textbox(id_bonjour_name,service_name_length,description=desc_bonjour_name,value=cm.getValueInsert("service_name","MyLayout"),id="servicename"),
+            form.Textbox(id_ed_tcpport,description=desc_ed_tcpport,value=cm.getValueInsert("tcpport",5555),id="tcpport"),
             form.Checkbox(id_grid_enable,description=desc_grid_enable,checked=gridenable,value="gridenable",id="cangrid"),
-            form.Textbox(id_grid_port,description=desc_grid_port,value=cm.getValue("cangrid_port"),id="cangripport"),
-            form.Textbox(id_canid,description=desc_canid,value=cm.getValue("canid")),
-            form.Textbox(id_start_event_id,description=desc_start_event,value=cm.getValue(id_start_event_id)),
-            form.Textbox(id_fns_momentary,description=desc_fns_momentary,value=cm.getValue("fn_momentary")),
-            form.Textbox(id_turnout_file,turnout_length,description=desc_turnout_file,value=cm.getValue("turnout_file")),
-            form.Dropdown(id_loglevel,  ['INFO', 'WARN', 'DEBUG'],value=cm.getValue("loglevel")),
+            form.Textbox(id_grid_port,description=desc_grid_port,value=cm.getValueInsert("cangrid_port",4444),id="cangripport"),
+            form.Textbox(id_canid,description=desc_canid,value=cm.getValueInsert("canid",100)),
+            form.Textbox(id_start_event_id,description=desc_start_event,value=cm.getValueInsert(id_start_event_id,1)),
+            form.Textbox(id_fns_momentary,description=desc_fns_momentary,value=cm.getValueInsert("fn_momentary","2")),
+            form.Textbox(id_turnout_file,turnout_length,description=desc_turnout_file,value=cm.getValueInsert("turnout_file","turnout.txt")),
+            form.Dropdown(id_loglevel,  ['INFO', 'WARN', 'DEBUG'],value=cm.getValueInsert("loglevel","INFO")),
             form.Checkbox(id_create_logfile,description=desc_create_logfile,checked=create_logfile,value=id_create_logfile,id="tcreate_logfile"),
             #form.Textbox(id_logfile,description=,value=cm.getValue("logfile"),id="logfile"),
             form.Button(desc_btn_save, id=id_btn_save, value="save", html="Save changes"),
