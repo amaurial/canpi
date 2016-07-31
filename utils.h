@@ -44,6 +44,8 @@ typedef unsigned char byte;
 enum ClientType {ED,GRID,CBUS};
 enum TurnoutState {CLOSED,THROWN,UNKNOWN};
 enum SessionType {MULTI_SESSION, MULTI_THROTTLE};
+enum FNState {OFF=0,ON};
+enum FNType {MOMENTARY=0,SWITCH};
 
 #define INTERROR 323232
 

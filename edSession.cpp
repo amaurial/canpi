@@ -7,10 +7,10 @@ edSession::edSession(log4cpp::Category *logger)
     loco = -1;
     sessionid = 0;
     for (int i=0;i<FN_SIZE;i++){
-        fns[i]=0;
-        fnstype[i]=1;
+        fns[i]=FNState::OFF;
+        fnstype[i]=FNType::SWITCH;
     }
-    fnstype[2] = 0;// #horn is momentary
+    fnstype[2] = FNType::MOMENTARY;// #horn is momentary
     speed = 0;
     direction = 0;
     ad_type = 'S';
@@ -30,33 +30,72 @@ edSession::~edSession()
 
 void edSession::configChanged(){
     getMomentaryFNs();
+    getMomentaryFNs(this->getLoco());
 }
-
+//generic configuration
 void edSession::getMomentaryFNs(){
     string val;
+    val = config->getMomentaryFn();
+    setMomentaryFNs(val);
+}
+//specific for each loco
+void edSession::getMomentaryFNs(int loco){
+    stringstream ss;
+    string s;
+    ss << "R";
+    ss << loco;
+    s = ss.str();
+    logger->debug("[edSession] Get fn config for loco %s", s.c_str());
+    if (!config->existConfigEntry(s)){
+        logger->debug("[edSession] No momentary FNs found");
+        return;
+    }
+    logger->debug("[edSession] Fn config exists");
+    string val = config->getPairValue(s);
+    logger->debug("[edSession] Fn config is %s", val.c_str());
+    setMomentaryFNs(val);
+}
+
+void edSession::setMomentaryFNs(string val){
     int i;
 
-    val = config->getMomentaryFn();
-    logger->debug("[edSession] EDSESSION FNs %s",val.c_str());
+    logger->debug("[edSession] FNs %s", val.c_str());
     if (val.size() > 0){
         vector <string> vals;
         vals = split(val,',',vals);
         if (!vals.empty()){
             logger->debug("[edSession] Reset the Fns to toggle");
             for (i=0;i<FN_SIZE;i++){
-                fnstype[i]=1;
+                fnstype[i]=FNType::SWITCH;
             }
-
             for (auto s:vals){
                 logger->debug("[edSession] Set Fn %s to momentary", s.c_str());
                 i = atoi(s.c_str());
                 if (i < FN_SIZE){
-                    setFnType(i, 0);
+                    setFnType(i, FNType::MOMENTARY);
                 }
             }
         }
     }
-    logger->debug("[edSession] No momentary FNs found");
+    else logger->debug("[edSession] No momentary FNs found");
+}
+
+string edSession::getMomentary(){
+    int i;
+    stringstream ss;
+    string s;
+
+    for (i=0;i<FN_SIZE;i++){
+        if (fnstype[i] == FNType::MOMENTARY){
+            ss << i;
+            ss << ",";
+        }
+    }
+    s = ss.str();
+    if (s.size() > 0){
+        s = s.substr(0, s.size() - 1);
+    }
+    return s;
 }
 
 vector<string> & edSession::split(const string &s, char delim, vector<string> &elems)
@@ -160,29 +199,19 @@ char edSession::getCharSessionType(){
     return 'T';
 }
 
-void edSession::setFnType(int fn ,byte state){
-    if ((state != 0) & (state != 1)) {
-        //logger->debug("Invalid type %d",state);
-        return;
-    }
-    //logger->debug("Set type to %d",state);
+void edSession::setFnType(int fn ,FNType state){
     fnstype[fn] = state;
 }
 
-byte edSession::getFnType(int fn){
+FNType edSession::getFnType(int fn){
     return fnstype[fn];
 }
 
-void edSession::setFnState(int fn ,byte state){
-    if ((state != 0) & (state != 1)) {
-        //logger->debug("Invalid state %d",state);
-        return;
-    }
-    //logger->debug("Set state to %d",state);
+void edSession::setFnState(int fn ,FNState state){
     fns[fn] = state;
 }
 
-byte edSession::getFnState(int fn){
+FNState edSession::getFnState(int fn){
     return fns[fn];
 }
 

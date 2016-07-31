@@ -399,6 +399,7 @@ void tcpClient::handleCBUS(unsigned char *msg){
             //put session in array
             edsession->setDirection(direction);
             edsession->setSpeed(speed);
+            edsession->getMomentaryFNs(loco);
 
             logger->debug("[%d] [tcpClient] Ack client session created %d for loco %d :%s" ,id,session, loco, message.c_str());
             logger->debug("[%d] [tcpClient] Adding loco %d to sessions", id, loco);
@@ -445,6 +446,9 @@ void tcpClient::handleCBUS(unsigned char *msg){
             sendToEd(ss.str());
             //create new edsession object
             edsession = new edSession(logger);
+            edsession->setNodeConfigurator(config);
+            edsession->getMomentaryFNs();
+
             setStartSessionTime();
         break;
 
@@ -960,7 +964,9 @@ void tcpClient::handleSetFunction(string message){
                 }
                 else{
                     logger->debug("[%d] [tcpClient] Previous FN state %02x" , id,session->getFnState(fn));
-                    sendFnMessages(session,fn,message);
+                    if (!programmingFn(fn, session->getLoco(), onoff)){
+                        sendFnMessages(session, fn, message);
+                    }
                     logger->debug("[%d] [tcpClient] Last FN state %02x" ,id, session->getFnState(fn));
                 }
             }
@@ -973,14 +979,60 @@ void tcpClient::handleSetFunction(string message){
     if (sessions.find(loco) != sessions.end()){
         session = sessions[loco];
 
-        if ((session->getFnType(fn) == 1) && (onoff == 0) ){
+        if ((session->getFnType(fn) == FNType::SWITCH) && (onoff == 0) ){
             logger->debug("[%d] [tcpClient] Fn Message for toggle fn and for a off action. Discarding",id);
         }
         else{
-            sendFnMessages(session,fn,message);
+            if (!programmingFn(fn, loco, onoff)){
+                sendFnMessages(session, fn, message);
+            }
         }
     }
-    else logger->debug("[%d] [tcpClient] Loco %d not allocated" ,id,loco);
+    else logger->debug("[%d] [tcpClient] Loco %d not allocated" , id, loco);
+}
+
+bool tcpClient::programmingFn(int fn, int loco, int onoff){
+    /*
+    * the programming works by having the Fn28 set
+    */
+    if (sessions.find(loco) != sessions.end()){
+        edSession* session = sessions[loco];
+        if (fn == 28){
+            //check if fn 28 is released and save the config
+            if (session->getFnState(fn) == FNState::OFF){
+                // let fn28 go to the wire. it will be set before sent
+                logger->debug("[%d] [tcpClient] Fn 28 selected." ,id);
+                return false;
+            }
+            //fn released
+            else{
+                logger->debug("[%d] [tcpClient] Fn 28 released. Saving programming for loco %d" ,id,loco);
+                string fns = session->getMomentary();
+                stringstream ss;
+                ss << "R";
+                ss << loco;
+                config->setNewPair(ss.str(),fns,true);
+                return false; //let fn28 go to the wire
+            }
+        }
+        if (session->getFnState(28) == FNState::ON){
+            if (onoff == 0){
+                logger->debug("[%d] [tcpClient] Fn 28 is pressed and onoff is 0. Discarding" ,id);
+                return true;
+            }
+            logger->debug("[%d] [tcpClient] Fn 28 is pressed. Changing Fn config for fn %d loco %d" ,id,fn,loco);
+            if (session->getFnType(fn) == FNType::MOMENTARY){
+                session->setFnType(fn, FNType::SWITCH);
+                logger->debug("[%d] [tcpClient] Set Fn %d for loco %d to SWITCH" ,id,fn,loco);
+            }
+            else {
+                session->setFnType(fn, FNType::MOMENTARY);
+                logger->debug("[%d] [tcpClient] Set Fn %d for loco %d to MOMENTARY" ,id,fn,loco);
+            }
+            return true;
+        }
+    }
+    return false;
 }
 
 void tcpClient::handleTurnout(string message){
@@ -1123,8 +1175,8 @@ void tcpClient::sendFnMessages(edSession* session, int fn, string message){
     if ((12 < fn) && (fn < 20))  fnbyte = 4;
     if ((19 < fn) && (fn < 29))  fnbyte = 5;
 
-    if (session->getFnState(fn) == 1) session->setFnState(fn,0);
-    else session->setFnState(fn,1);
+    if (session->getFnState(fn) == FNState::ON) session->setFnState(fn,FNState::OFF);
+    else session->setFnState(fn,FNState::ON);
 
     //send status to ED
     int i = message.find(">F");

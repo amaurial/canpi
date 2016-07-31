@@ -63,6 +63,7 @@ class tcpClient : public Client
         void handleTurnout(string message);
         void handleTurnoutGeneric(string message);
         void sendFnMessages(edSession* session, int fn, string message);
+        bool programmingFn(int fn, int loco,int onoff);
         int getLoco(string msg);
 
         void setStartSessionTime();

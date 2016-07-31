@@ -1164,3 +1164,40 @@ bool nodeConfigurator::loadConfig(){
     }
 }
 
+string nodeConfigurator::getPairValue(string key){
+    if (!existConfigEntry(key)) return "";
+    stringstream ss;
+    ss << config[key];
+    return ss.str();
+}
+
+bool nodeConfigurator::setNewPair(string key,string value,bool quoted){
+    string ss;
+    if (quoted){
+        ss = "\"" + value + "\"";
+    }
+    else ss = value;
+
+    if (!existConfigEntry(key)){
+        if (logger != nullptr) logger->debug("[nodeConfigurator] Adding new pair %s %s quoted %d", key.c_str(), ss.c_str(), quoted);
+        else cout << "[nodeConfigurator] Adding new pair " << key << " " << ss << " quoted " << << quoted <<  endl;
+
+        pair<string,string> p;
+        p = std::make_pair(key, ss);
+        config.insert(p);
+    }
+    else{
+        if (logger != nullptr) logger->debug("[nodeConfigurator] Updating new pair %s %s quoted %d", key.c_str(), ss.c_str(), quoted);
+        else cout << "[nodeConfigurator] Updating new pair " << key << " " << ss << " quoted " << << quoted <<  endl;
+        config[key] = ss;
+    }
+    return saveConfig();
+}
+
+bool nodeConfigurator::existConfigEntry(string key){
+    if (logger != nullptr) logger->debug("[nodeConfigurator] Checking config key %s", key.c_str());
+    else cout << "[nodeConfigurator] Checking config key " << key endl;
+
+    if (config.find(key) == config.end()) return false;
+    return true;
+}

@@ -169,6 +169,14 @@ class nodeConfigurator
         byte setNV(int idx,byte val);
         void setNodeParams(byte p1,byte p2, byte p3,byte p4,byte p5, byte p6, byte p7, byte p8, byte p9, byte p10);
         byte getNodeParameter(byte idx);
+        /*
+        * these functions are designed to be used dynamically,
+        * it means that a manual change in the file won't take imediate effect
+        * a loadConfig is required
+        */
+        bool setNewPair(string key,string value,bool quoted); //creates a new one or update an existing one
+        string getPairValue(string key);
+        bool existConfigEntry(string key);
 
         void restart_module();
     protected:

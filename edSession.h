@@ -37,11 +37,11 @@ class edSession
         void setEDTime(struct timespec val);
         struct timespec getEDTime();
 
-        void setFnType(int fn ,byte state);
-        byte getFnType(int fn);
+        void setFnType(int fn ,FNType state);
+        FNType getFnType(int fn);
 
-        void setFnState(int fn ,byte state);
-        byte getFnState(int fn);
+        void setFnState(int fn ,FNState state);
+        FNState getFnState(int fn);
 
         void setEdName(string edname);
         string getEdName();
@@ -58,6 +58,8 @@ class edSession
 
         void configChanged();
         void getMomentaryFNs();
+        void getMomentaryFNs(int loco);
+        string getMomentary();
 
         void setSessionType(SessionType stype);
         SessionType getSessionType();
@@ -73,8 +75,8 @@ class edSession
         byte ad_type;
         struct timespec cbus_time;
         struct timespec ed_time;
-        byte fns[FN_SIZE];
-        byte fnstype[FN_SIZE];
+        FNState fns[FN_SIZE];
+        FNType fnstype[FN_SIZE];
         byte speed;
         string session_name;
         string hname;
@@ -85,6 +87,7 @@ class edSession
 
         byte setBit(byte val, int pos);
         byte clearBit(byte val, int pos);
+        void setMomentaryFNs(string val);
 
         vector<string> & split(const string &s, char delim, vector<string> &elems);
 };
