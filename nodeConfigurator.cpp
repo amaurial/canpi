@@ -8,11 +8,24 @@ nodeConfigurator::nodeConfigurator(string file,log4cpp::Category *logger)
     loadParamsToMemory();
     nvs_set = 0;
     setNodeParams(MANU_MERG,MSOFT_MIN_VERSION,MID,0,0,getNumberOfNVs(),MSOFT_VERSION,MFLAGS, PROCESSOR_ID, ETHERCAN);
+    setNotQuotedConfigKeys();
 }
 
 nodeConfigurator::~nodeConfigurator()
 {
     //dtor
+}
+
+void nodeConfigurator::setNotQuotedConfigKeys(){
+    not_quoted_config.push_back(TAG_APCHANNEL);
+    not_quoted_config.push_back(TAG_NN);
+    not_quoted_config.push_back(TAG_CANID);
+    not_quoted_config.push_back(TAG_GRID_PORT);
+    not_quoted_config.push_back(TAG_TCP_PORT);
+    not_quoted_config.push_back(TAG_START_EVENT);
+    not_quoted_config.push_back(TAG_BP);
+    not_quoted_config.push_back(TAG_GL);
+    not_quoted_config.push_back(TAG_YL);
 }
 
 void nodeConfigurator::printMemoryNVs(){
@@ -374,8 +387,16 @@ bool nodeConfigurator::saveConfig(){
         return false;
     }
 
+    std::vector<string>::iterator sit;
+
     for (it = config.begin(); it != config.end(); it++){
-        f << it->first << "=" << it->second << endl;
+        //check if quoted config
+        sit = find (not_quoted_config.begin(), not_quoted_config.end(), it->first);
+        if (sit == not_quoted_config.end()){
+            //quoted data
+            f << it->first << "=" << "\"" << it->second <<  "\"" << endl;
+        }
+        else f << it->first << "=" << it->second << endl;
     }
     f.close();
     loadConfig();
@@ -1180,7 +1201,7 @@ bool nodeConfigurator::setNewPair(string key,string value,bool quoted){
 
     if (!existConfigEntry(key)){
         if (logger != nullptr) logger->debug("[nodeConfigurator] Adding new pair %s %s quoted %d", key.c_str(), ss.c_str(), quoted);
-        else cout << "[nodeConfigurator] Adding new pair " << key << " " << ss << " quoted " << << quoted <<  endl;
+        else cout << "[nodeConfigurator] Adding new pair " << key << " " << ss << " quoted " << quoted <<  endl;
 
         pair<string,string> p;
         p = std::make_pair(key, ss);
@@ -1188,7 +1209,7 @@ bool nodeConfigurator::setNewPair(string key,string value,bool quoted){
     }
     else{
         if (logger != nullptr) logger->debug("[nodeConfigurator] Updating new pair %s %s quoted %d", key.c_str(), ss.c_str(), quoted);
-        else cout << "[nodeConfigurator] Updating new pair " << key << " " << ss << " quoted " << << quoted <<  endl;
+        else cout << "[nodeConfigurator] Updating new pair " << key << " " << ss << " quoted " << quoted <<  endl;
         config[key] = ss;
     }
     return saveConfig();
@@ -1196,7 +1217,7 @@ bool nodeConfigurator::setNewPair(string key,string value,bool quoted){
 
 bool nodeConfigurator::existConfigEntry(string key){
     if (logger != nullptr) logger->debug("[nodeConfigurator] Checking config key %s", key.c_str());
-    else cout << "[nodeConfigurator] Checking config key " << key endl;
+    else cout << "[nodeConfigurator] Checking config key " << key << endl;
 
     if (config.find(key) == config.end()) return false;
     return true;

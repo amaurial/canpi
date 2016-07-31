@@ -9,6 +9,7 @@
 #include <log4cpp/Category.hh>
 #include <map>
 #include <fstream>
+#include <algorithm>
 #include "utils.h"
 #include "opcodes.h"
 
@@ -187,7 +188,9 @@ class nodeConfigurator
         char NV[NVS_SIZE];
         char NODEPARAMS[NODE_PARAMS_SIZE];
         int nvs_set; //used to count how many nvs were written before saving the data do the file
+        vector<string> not_quoted_config;
 
+        void setNotQuotedConfigKeys();
         bool saveConfig();
         void loadParamsToMemory();
         void loadParam1();
@@ -206,6 +209,7 @@ class nodeConfigurator
         string removeChar(string val,char c);
         string cleanString(string val);
         pair <string,string> getpair(string val);
+
 
 };
 

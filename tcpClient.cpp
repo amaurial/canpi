@@ -1011,7 +1011,7 @@ bool tcpClient::programmingFn(int fn, int loco, int onoff){
                 stringstream ss;
                 ss << "R";
                 ss << loco;
-                config->setNewPair(ss.str(),fns,true);
+                config->setNewPair(ss.str(),fns,false);
                 return false; //let fn28 go to the wire
             }
         }
