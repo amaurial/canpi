@@ -7,14 +7,14 @@ edSession::edSession(log4cpp::Category *logger)
     loco = -1;
     sessionid = 0;
     for (int i=0;i<FN_SIZE;i++){
-        fns[i]=FNState::OFF;
-        fnstype[i]=FNType::SWITCH;
+        fns[i]=FN_STATE::OFF;
+        fnstype[i]=FN_TYPE::SWITCH;
     }
-    fnstype[2] = FNType::MOMENTARY;// #horn is momentary
+    fnstype[2] = FN_TYPE::MOMENTARY;// #horn is momentary
     speed = 0;
     direction = 0;
     ad_type = 'S';
-    sessionType = SessionType::MULTI_SESSION;
+    sessionType = SESSION_TYPE::MULTI_SESSION;
     this->logger = logger;
     //set inital time
     struct timespec spec;
@@ -66,13 +66,13 @@ void edSession::setMomentaryFNs(string val){
         if (!vals.empty()){
             logger->debug("[edSession] Reset the Fns to toggle");
             for (i=0;i<FN_SIZE;i++){
-                fnstype[i]=FNType::SWITCH;
+                fnstype[i]=FN_TYPE::SWITCH;
             }
             for (auto s:vals){
                 logger->debug("[edSession] Set Fn %s to momentary", s.c_str());
                 i = atoi(s.c_str());
                 if (i < FN_SIZE){
-                    setFnType(i, FNType::MOMENTARY);
+                    setFnType(i, FN_TYPE::MOMENTARY);
                 }
             }
         }
@@ -86,7 +86,7 @@ string edSession::getMomentary(){
     string s;
 
     for (i=0;i<FN_SIZE;i++){
-        if (fnstype[i] == FNType::MOMENTARY){
+        if (fnstype[i] == FN_TYPE::MOMENTARY){
             ss << i;
             ss << ",";
         }
@@ -186,32 +186,32 @@ string edSession::getLocoName(){
     return loconame;
 }
 
-void edSession::setSessionType(SessionType stype){
+void edSession::setSessionType(SESSION_TYPE stype){
     sessionType = stype;
 }
-SessionType edSession::getSessionType(){
+SESSION_TYPE edSession::getSessionType(){
     return sessionType;
 }
 
 char edSession::getCharSessionType(){
-    if (sessionType == SessionType::MULTI_SESSION) return 'S';
-    if (sessionType == SessionType::MULTI_THROTTLE) return 'T';
+    if (sessionType == SESSION_TYPE::MULTI_SESSION) return 'S';
+    if (sessionType == SESSION_TYPE::MULTI_THROTTLE) return 'T';
     return 'T';
 }
 
-void edSession::setFnType(int fn ,FNType state){
+void edSession::setFnType(int fn ,FN_TYPE state){
     fnstype[fn] = state;
 }
 
-FNType edSession::getFnType(int fn){
+FN_TYPE edSession::getFnType(int fn){
     return fnstype[fn];
 }
 
-void edSession::setFnState(int fn ,FNState state){
+void edSession::setFnState(int fn ,FN_STATE state){
     fns[fn] = state;
 }
 
-FNState edSession::getFnState(int fn){
+FN_STATE edSession::getFnState(int fn){
     return fns[fn];
 }
 

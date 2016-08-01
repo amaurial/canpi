@@ -27,7 +27,7 @@ tcpClient::tcpClient(log4cpp::Category *logger, tcpServer *server, canHandler* c
     this->re_turnout_generic = regex(RE_TURNOUT_GENERIC);
     this->re_idle = regex(RE_IDLE);
     setStartSessionTime();
-    this->clientType = ClientType::ED;
+    this->clientType = CLIENT_TYPE::ED;
 
     pthread_mutex_init(&m_mutex_in_cli, NULL);
     pthread_cond_init(&m_condv_in_cli, NULL);
@@ -547,13 +547,13 @@ int tcpClient::handleCreateSession(string message){
 
         switch (msg[1]){
             case 'T':
-                edsession->setSessionType(SessionType::MULTI_THROTTLE);
+                edsession->setSessionType(SESSION_TYPE::MULTI_THROTTLE);
             break;
             case 'S':
-                edsession->setSessionType(SessionType::MULTI_SESSION);
+                edsession->setSessionType(SESSION_TYPE::MULTI_SESSION);
             break;
             default:
-               edsession->setSessionType(SessionType::MULTI_THROTTLE);
+               edsession->setSessionType(SESSION_TYPE::MULTI_THROTTLE);
         }
 
         logger->debug("[%d] [tcpClient] Address type %c",id,msg[3]);
@@ -979,7 +979,7 @@ void tcpClient::handleSetFunction(string message){
     if (sessions.find(loco) != sessions.end()){
         session = sessions[loco];
 
-        if ((session->getFnType(fn) == FNType::SWITCH) && (onoff == 0) ){
+        if ((session->getFnType(fn) == FN_TYPE::SWITCH) && (onoff == 0) ){
             logger->debug("[%d] [tcpClient] Fn Message for toggle fn and for a off action. Discarding",id);
         }
         else{
@@ -999,7 +999,7 @@ bool tcpClient::programmingFn(int fn, int loco, int onoff){
         edSession* session = sessions[loco];
         if (fn == 28){
             //check if fn 28 is released and save the config
-            if (session->getFnState(fn) == FNState::OFF){
+            if (session->getFnState(fn) == FN_STATE::OFF){
                 // let fn28 go to the wire. it will be set before sent
                 logger->debug("[%d] [tcpClient] Fn 28 selected." ,id);
                 return false;
@@ -1015,18 +1015,18 @@ bool tcpClient::programmingFn(int fn, int loco, int onoff){
                 return false; //let fn28 go to the wire
             }
         }
-        if (session->getFnState(28) == FNState::ON){
+        if (session->getFnState(28) == FN_STATE::ON){
             if (onoff == 0){
                 logger->debug("[%d] [tcpClient] Fn 28 is pressed and onoff is 0. Discarding" ,id);
                 return true;
             }
             logger->debug("[%d] [tcpClient] Fn 28 is pressed. Changing Fn config for fn %d loco %d" ,id,fn,loco);
-            if (session->getFnType(fn) == FNType::MOMENTARY){
-                session->setFnType(fn, FNType::SWITCH);
+            if (session->getFnType(fn) == FN_TYPE::MOMENTARY){
+                session->setFnType(fn, FN_TYPE::SWITCH);
                 logger->debug("[%d] [tcpClient] Set Fn %d for loco %d to SWITCH" ,id,fn,loco);
             }
             else {
-                session->setFnType(fn, FNType::MOMENTARY);
+                session->setFnType(fn, FN_TYPE::MOMENTARY);
                 logger->debug("[%d] [tcpClient] Set Fn %d for loco %d to MOMENTARY" ,id,fn,loco);
             }
             return true;
@@ -1074,7 +1074,7 @@ void tcpClient::handleTurnout(string message){
     Lb = tcode & 0xff;
     Hb = (tcode >> 8) & 0xff;
     // check the turnout state and send the short events
-    if (turnouts->getTurnoutState(tcode) == TurnoutState::THROWN){
+    if (turnouts->getTurnoutState(tcode) == TURNOUT_STATE::THROWN){
         turnouts->CloseTurnout(tcode);
         sendCbusMessage(OPC_ASOF, 0, 0 , Hb, Lb );
         //send to other EDs
@@ -1092,7 +1092,7 @@ void tcpClient::handleTurnout(string message){
     msg[2] = 0;
     msg[3] = Hb;
     msg[4] = Lb;
-    server->postMessageToAllClients(id,can->getCanId(),msg,5,ClientType::ED);
+    server->postMessageToAllClients(id,can->getCanId(),msg,5,CLIENT_TYPE::ED);
 }
 
 void tcpClient::handleTurnoutGeneric(string message){
@@ -1145,7 +1145,7 @@ void tcpClient::handleTurnoutGeneric(string message){
     }
     else {
         //toggle
-        if (turnouts->getTurnoutState(tcode) == TurnoutState::THROWN){
+        if (turnouts->getTurnoutState(tcode) == TURNOUT_STATE::THROWN){
             turnouts->CloseTurnout(tcode);
             sendCbusMessage(OPC_ASOF, 0, 0 , Hb, Lb );
         }
@@ -1175,8 +1175,8 @@ void tcpClient::sendFnMessages(edSession* session, int fn, string message){
     if ((12 < fn) && (fn < 20))  fnbyte = 4;
     if ((19 < fn) && (fn < 29))  fnbyte = 5;
 
-    if (session->getFnState(fn) == FNState::ON) session->setFnState(fn,FNState::OFF);
-    else session->setFnState(fn,FNState::ON);
+    if (session->getFnState(fn) == FN_STATE::ON) session->setFnState(fn,FN_STATE::OFF);
+    else session->setFnState(fn,FN_STATE::ON);
 
     //send status to ED
     int i = message.find(">F");

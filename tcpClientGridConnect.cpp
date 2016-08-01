@@ -24,7 +24,7 @@ tcpClientGridConnect::tcpClientGridConnect(log4cpp::Category *logger, tcpServer 
     this->client_addr = client_addr;
     this->logger = logger;
     this->id = id;
-    this->clientType = ClientType::GRID;
+    this->clientType = CLIENT_TYPE::GRID;
     logger->debug("Grid client %d created", id);
     this->config = config;
 }

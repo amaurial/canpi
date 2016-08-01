@@ -37,11 +37,11 @@ class edSession
         void setEDTime(struct timespec val);
         struct timespec getEDTime();
 
-        void setFnType(int fn ,FNType state);
-        FNType getFnType(int fn);
+        void setFnType(int fn ,FN_TYPE state);
+        FN_TYPE getFnType(int fn);
 
-        void setFnState(int fn ,FNState state);
-        FNState getFnState(int fn);
+        void setFnState(int fn ,FN_STATE state);
+        FN_STATE getFnState(int fn);
 
         void setEdName(string edname);
         string getEdName();
@@ -61,8 +61,8 @@ class edSession
         void getMomentaryFNs(int loco);
         string getMomentary();
 
-        void setSessionType(SessionType stype);
-        SessionType getSessionType();
+        void setSessionType(SESSION_TYPE stype);
+        SESSION_TYPE getSessionType();
 
         char getCharSessionType();
 
@@ -75,15 +75,15 @@ class edSession
         byte ad_type;
         struct timespec cbus_time;
         struct timespec ed_time;
-        FNState fns[FN_SIZE];
-        FNType fnstype[FN_SIZE];
+        FN_STATE fns[FN_SIZE];
+        FN_TYPE fnstype[FN_SIZE];
         byte speed;
         string session_name;
         string hname;
         string loconame;
         log4cpp::Category *logger;
         nodeConfigurator *config;
-        SessionType sessionType;
+        SESSION_TYPE sessionType;
 
         byte setBit(byte val, int pos);
         byte clearBit(byte val, int pos);

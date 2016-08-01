@@ -3,7 +3,7 @@
 #include "tcpClientGridConnect.h"
 
 
-tcpServer::tcpServer(log4cpp::Category *logger, int port, canHandler* can,ClientType clientType)
+tcpServer::tcpServer(log4cpp::Category *logger, int port, canHandler* can,CLIENT_TYPE clientType)
 {
     //ctor
     this->logger = logger;
@@ -43,7 +43,7 @@ void tcpServer::addCanMessage(int canid,const char* msg,int dlc){
      * don't send extended frames to the ED clients
      * for grid clients send all
     */
-    if (clientType == ClientType::ED && !stdframe){
+    if (clientType == CLIENT_TYPE::ED && !stdframe){
         logger->debug("[tcpServer] Droping extended frame to ED");
         return;
     }
@@ -208,7 +208,7 @@ void tcpServer::setTurnout(Turnout* turnouts){
     this->turnouts = turnouts;
 }
 
-void tcpServer::postMessageToAllClients(int clientId,int canid,char *msg,int msize,ClientType ct){
+void tcpServer::postMessageToAllClients(int clientId,int canid,char *msg,int msize,CLIENT_TYPE ct){
     //transverse the clients and send the message to all except the clientId
     //logger->info("[tcpServer] Sending messages to other clients");
     std::map<int,Client*>::iterator it = clients.begin();
@@ -223,7 +223,7 @@ void tcpServer::postMessageToAllClients(int clientId,int canid,char *msg,int msi
         stdframe = false;
     }
 
-    if (clientType == ClientType::ED && (isRTR || stdframe)){
+    if (clientType == CLIENT_TYPE::ED && (isRTR || stdframe)){
         logger->debug("[tcpServer] RTR or extended frame is not sent to ED");
         return;
     }

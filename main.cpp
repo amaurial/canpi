@@ -66,15 +66,15 @@ int main()
     string logfile = "canpi.log";
     string configfile = "canpi.cfg";
     string turnoutfile = "turnout.txt";
-    int port = 30;
+    int port = 4444;
     string candevice = "can0";
     bool append = false;
     bool start_grid_server = false;
-    int gridport = 31;
-    int canid = 110;
+    int gridport = 5555;
+    int canid = 100;
     int pb_pin=4;
-    int gled_pin=5;
-    int yled_pin=6;
+    int gled_pin=18;
+    int yled_pin=27;
     int node_number=4321;
     log4cpp::Category& logger = log4cpp::Category::getRoot();
     nodeConfigurator *config = new nodeConfigurator(configfile,&logger);
@@ -130,7 +130,7 @@ int main()
 
     config->printMemoryNVs();
 
-    //start the components
+    //start the CAN
     canHandler can = canHandler(&logger,canid);
     //set gpio pins
     can.setPins(pb_pin,gled_pin,yled_pin);
@@ -138,38 +138,45 @@ int main()
     can.setConfigurator(config);
     can.setNodeNumber(node_number);
 
-    //start threads
+    //start the CAN threads
     if (can.start(candevice.c_str()) == -1 ){
         logger.error("Failed to start can Handler.");
         return 1;
     };
 
+    //load the turnout file
     Turnout turnouts=Turnout(&logger);
     if (file_exists(turnoutfile)){
         turnouts.load(turnoutfile);
     }
 
-    tcpServer tcpserver = tcpServer(&logger,port,&can,ClientType::ED);
+    //start the tcp server
+    tcpServer tcpserver = tcpServer(&logger,port,&can,CLIENT_TYPE::ED);
     tcpserver.setTurnout(&turnouts);
     tcpserver.setNodeConfigurator(config);
     tcpserver.start();
     can.setTcpServer(&tcpserver);
 
+    //start the grid tcp server
     if (start_grid_server){
-        tcpServer tcpserverGrid = tcpServer(&logger,gridport,&can,ClientType::GRID);
+        tcpServer tcpserverGrid = tcpServer(&logger,gridport,&can,CLIENT_TYPE::GRID);
         tcpserverGrid.setNodeConfigurator(config);
         tcpserverGrid.start();
         can.setTcpServer(&tcpserverGrid);
     }
 
+    //keep looping forever
     while (running == 1){usleep(1000000);};
 
+    //finishes
     logger.info("Stopping the tcp server");
     tcpserver.stop();
-
+    tcpserverGrid.stop();
+    
     logger.info("Stopping CBUS reader");
     can.stop();
-
+    
+    //give some time for the threads to finish
     long t = 2 * 1000000;
     usleep(t);
 

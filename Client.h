@@ -48,7 +48,7 @@ class Client
         canHandler *can;
         int client_sock;
         struct sockaddr_in client_addr;
-        ClientType clientType;
+        CLIENT_TYPE clientType;
         vector<string> & split(const string &s, char delim, vector<string> &elems);
         nodeConfigurator *config;
 

@@ -16,7 +16,7 @@ class Client;
 class tcpServer
 {
     public:
-        tcpServer(log4cpp::Category *logger, int port, canHandler* can,ClientType clientType);
+        tcpServer(log4cpp::Category *logger, int port, canHandler* can,CLIENT_TYPE clientType);
         virtual ~tcpServer();
         bool start();
         void setPort(int port);
@@ -24,9 +24,9 @@ class tcpServer
         void stop();
         void removeClient(Client* client);
         void addCanMessage(int canid,const char* msg,int dlc);
-        ClientType getClientType(){return clientType;};
+        CLIENT_TYPE getClientType(){return clientType;};
         void setTurnout(Turnout* turnouts);
-        void postMessageToAllClients(int clientId,int canid,char *msg,int msize,ClientType ct);
+        void postMessageToAllClients(int clientId,int canid,char *msg,int msize,CLIENT_TYPE ct);
         void setNodeConfigurator(nodeConfigurator *config);
     protected:
     private:
@@ -37,7 +37,7 @@ class tcpServer
         int socket_desc, client_sock ,read_size;
         struct sockaddr_in server_addr;
         int counter;        
-        ClientType clientType;
+        CLIENT_TYPE clientType;
         log4cpp::Category *logger;
         std::map<int,Client*> clients;
         pthread_t serverThread;

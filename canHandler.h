@@ -38,9 +38,9 @@ class canHandler
         canHandler(log4cpp::Category *logger,int canId);
         virtual ~canHandler();
         int start(const char* interface);
-        int put_to_out_queue(char *msg,int size,ClientType ct);
-        int put_to_out_queue(int canid,char *msg,int size,ClientType ct);
-        int put_to_incoming_queue(int canid,char *msg,int size,ClientType ct);
+        int put_to_out_queue(char *msg,int size,CLIENT_TYPE ct);
+        int put_to_out_queue(int canid,char *msg,int size,CLIENT_TYPE ct);
+        int put_to_incoming_queue(int canid,char *msg,int size,CLIENT_TYPE ct);
         void stop();
         void setCanId(int id);
         int getCanId();

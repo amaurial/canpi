@@ -22,7 +22,7 @@ class Turnout
         int getThrownCode();
         void CloseTurnout(int tcode);
         void ThrownTurnout(int tcode);
-        TurnoutState getTurnoutState(int tcode);
+        TURNOUT_STATE getTurnoutState(int tcode);
         int getTurnoutCode(string tname);
         int size();
         void addTurnout(string tname,int code);
@@ -31,7 +31,7 @@ class Turnout
         int reload();
     protected:
     private:
-        std::map<int,TurnoutState> turnouts;
+        std::map<int,TURNOUT_STATE> turnouts;
         std::map<string,int> turnouts_code;
         int closed_code;
         int throw_code;

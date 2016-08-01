@@ -38,6 +38,17 @@ source $config
 #set the permission for pi user
 chown -R pi.pi $dir
 chmod +x $cmd
+if [[ -d "${upgradedir}" && ! -L "${upgradedir}" ]] ; then
+    echo "'upgrade' directory exists"
+else
+    echo "'upgrade' directory does not exists. Creating"
+    mkdir $upgradedir
+    if [[ -d "${upgradedir}" && ! -L "${upgradedir}" ]] ; then
+        echo "'upgrade' directory created successfully"
+    else
+        echo "Failed to create 'upgrade' directory"
+    if
+fi
 
 #Bonjour files
 bonjour_file="/etc/avahi/services/multiple.service"

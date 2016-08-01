@@ -4,9 +4,8 @@
 #include <stdexcept>
 #include <sstream>
 #include <string>
-#include "libconfig.h++"
 
-//################# Config files definitions
+//################# Config files tag definitions
 #define TAG_CANID        "canid"
 #define TAG_GRID_PORT    "cangrid_port"
 #define TAG_TCP_PORT     "tcpport"
@@ -35,17 +34,16 @@
 #define TAG_CREATE_LOGFILE "create_log_file"
 #define TAG_START_EVENT  "start_event_id"
 
-
-using namespace libconfig;
 using namespace std;
 
 //byte definition
 typedef unsigned char byte;
-enum ClientType {ED,GRID,CBUS};
-enum TurnoutState {CLOSED,THROWN,UNKNOWN};
-enum SessionType {MULTI_SESSION, MULTI_THROTTLE};
-enum FNState {OFF=0,ON};
-enum FNType {MOMENTARY=0,SWITCH};
+
+enum CLIENT_TYPE {ED,GRID,CBUS};
+enum TURNOUT_STATE {CLOSED,THROWN,UNKNOWN};
+enum SESSION_TYPE {MULTI_SESSION, MULTI_THROTTLE};
+enum FN_STATE {OFF=0,ON};
+enum FN_TYPE {MOMENTARY=0,SWITCH};
 
 #define INTERROR 323232
 

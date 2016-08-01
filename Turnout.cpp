@@ -89,7 +89,7 @@ string Turnout::getStartInfo(){
 
 string Turnout::getTurnoutMsg(int tcode){
     int v = closed_code;
-    if (getTurnoutState(tcode) == TurnoutState::THROWN){
+    if (getTurnoutState(tcode) == TURNOUT_STATE::THROWN){
         v = throw_code;
     }
     stringstream ss;
@@ -113,21 +113,21 @@ int Turnout::getThrownCode(){
 
 void Turnout::CloseTurnout(int tcode){
     if (turnouts.count(tcode) > 0){
-        turnouts[tcode] = TurnoutState::CLOSED;
+        turnouts[tcode] = TURNOUT_STATE::CLOSED;
     }
 }
 
 void Turnout::ThrownTurnout(int tcode){
     if (turnouts.count(tcode) > 0){
-        turnouts[tcode] = TurnoutState::THROWN;
+        turnouts[tcode] = TURNOUT_STATE::THROWN;
     }
 }
 
-TurnoutState Turnout::getTurnoutState(int tcode){
+TURNOUT_STATE Turnout::getTurnoutState(int tcode){
     if (turnouts.count(tcode) > 0){
         return turnouts[tcode];
     }
-    return TurnoutState::UNKNOWN;
+    return TURNOUT_STATE::UNKNOWN;
 }
 
 int Turnout::getTurnoutCode(string tname){
@@ -144,7 +144,7 @@ int Turnout::size(){
 void Turnout::addTurnout(string tname,int tcode){
     if (turnouts.count(tcode)==0){
         turnouts_code.insert(pair<string,int>(tname,tcode));
-        turnouts.insert(pair<int,TurnoutState>(tcode,TurnoutState::UNKNOWN));
+        turnouts.insert(pair<int,TURNOUT_STATE>(tcode,TURNOUT_STATE::UNKNOWN));
     }
 }
 
