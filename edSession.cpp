@@ -230,34 +230,34 @@ byte edSession::getDccByte(int fn){
     #1 is F0(FL) to F4
     #2 is F5 to F8
     #3 is F9 to F12
-    #4 is F13 to F19
-    #5 is F20 to F28
+    #4 is F13 to F20
+    #5 is F21 to F28
     # see http://www.nmra.org/sites/default/files/s-9.2.1_2012_07.pdf
     */
     byte fnbyte = 0x00;
     int i = 0;
     int j = 0;
 
-    if ((fn >=0) & (fn < 5)){
-        i=0;j=5;
+    if ((fn >=0) & (fn <= 4)){
+        i=0;j=4;
     }
-    if ((4 < fn) & (fn < 9)){
-        i=5;j=9;
+    if ((5 <= fn) & (fn <= 8)){
+        i=5;j=8;
     }
-    if ((8 < fn) & (fn < 13 )){
-        i=9;j=13;
+    if ((9 <= fn) & (fn <= 12 )){
+        i=9;j=12;
     }
-    if ((12 < fn) & (fn < 20 )){
+    if ((13 <= fn) & (fn <= 20 )){
         i=13;j=20;
     }
-    if ((19 < fn) & (fn < 29)){
-        i=20;j=29;
+    if ((21 <= fn) & (fn <= 28)){
+        i=21;j=28;
     }
     if ((i == 0) & (j == 0)) return -1;
 
     int k = 0;
 
-    for (int f = i;f < j; f++){
+    for (int f = i;f <= j; f++){
         if (fns[f]== 1){
             if (f == 0){// #special case: light
                 fnbyte = setBit(fnbyte, 4);

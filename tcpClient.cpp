@@ -1168,12 +1168,12 @@ void tcpClient::sendFnMessages(edSession* session, int fn, string message){
     //1 is F0(FL) to F4
     //2 is F5 to F8
     //3 is F9 to F12
-    //4 is F13 to F19
-    //5 is F20 to F28
-    if ((4 < fn) && (fn < 9))    fnbyte = 2;
-    if ((8 < fn) && (fn < 13))   fnbyte = 3;
-    if ((12 < fn) && (fn < 20))  fnbyte = 4;
-    if ((19 < fn) && (fn < 29))  fnbyte = 5;
+    //4 is F13 to F20
+    //5 is F21 to F28
+    if ((5 <= fn) && (fn <= 8))    fnbyte = 2; //5 to 8
+    if ((9 <= fn) && (fn <= 12))   fnbyte = 3; //9 to 12
+    if ((13 <= fn) && (fn <= 20))  fnbyte = 4; //13 to 20
+    if ((21 <= fn) && (fn <= 28))  fnbyte = 5; //21 to 28
 
     if (session->getFnState(fn) == FN_STATE::ON) session->setFnState(fn,FN_STATE::OFF);
     else session->setFnState(fn,FN_STATE::ON);
