@@ -4,9 +4,9 @@ frameCAN::frameCAN()
     memset(frame.data,0,sizeof(frame.data));
     frame.can_dlc = 0;
     frame.can_id = 0;
-    clientType = ClientType::CBUS;
+    clientType = CLIENT_TYPE::CBUS;
 }
-frameCAN::frameCAN(struct can_frame frame,ClientType clientType)
+frameCAN::frameCAN(struct can_frame frame,CLIENT_TYPE clientType)
 {
     //ctor
     this->frame = frame;
@@ -21,6 +21,6 @@ frameCAN::~frameCAN()
 struct can_frame frameCAN::getFrame(){
     return frame;
 }
-ClientType frameCAN::getClientType(){
+CLIENT_TYPE frameCAN::getClientType(){
     return clientType;
 }

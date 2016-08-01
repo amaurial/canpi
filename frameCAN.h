@@ -9,14 +9,14 @@ class frameCAN
 {
     public:
         frameCAN();
-        frameCAN(struct can_frame frame,ClientType ctype);
+        frameCAN(struct can_frame frame,CLIENT_TYPE ctype);
         struct can_frame getFrame();
-        ClientType getClientType();
+        CLIENT_TYPE getClientType();
         virtual ~frameCAN();
     protected:
     private:
         struct can_frame frame;
-        ClientType clientType;
+        CLIENT_TYPE clientType;
 };
 
 #endif // FRAMECAN_H

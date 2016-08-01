@@ -158,11 +158,13 @@ int main()
     can.setTcpServer(&tcpserver);
 
     //start the grid tcp server
+    tcpServer *gridserver;
     if (start_grid_server){
         tcpServer tcpserverGrid = tcpServer(&logger,gridport,&can,CLIENT_TYPE::GRID);
         tcpserverGrid.setNodeConfigurator(config);
         tcpserverGrid.start();
         can.setTcpServer(&tcpserverGrid);
+        gridserver = &tcpserverGrid;
     }
 
     //keep looping forever
@@ -171,7 +173,7 @@ int main()
     //finishes
     logger.info("Stopping the tcp server");
     tcpserver.stop();
-    tcpserverGrid.stop();
+    gridserver->stop();
     
     logger.info("Stopping CBUS reader");
     can.stop();

@@ -38,6 +38,7 @@ source $config
 #set the permission for pi user
 chown -R pi.pi $dir
 chmod +x $cmd
+
 if [[ -d "${upgradedir}" && ! -L "${upgradedir}" ]] ; then
     echo "'upgrade' directory exists"
 else
@@ -47,7 +48,7 @@ else
         echo "'upgrade' directory created successfully"
     else
         echo "Failed to create 'upgrade' directory"
-    if
+    fi 
 fi
 
 #Bonjour files
