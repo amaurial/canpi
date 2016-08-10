@@ -92,10 +92,10 @@ class nodeConfigurator
         int getcanGridPort();
         bool setCanGridPort(int port);
 
-        int getCanID();
+        int getCanID(bool fresh=true);
         bool setCanID(int canid);
 
-        int getNodeNumber();
+        int getNodeNumber(bool fresh=true);
         bool setNodeNumber(int nn);
 
         bool getAPMode();
@@ -132,7 +132,7 @@ class nodeConfigurator
         bool getLogAppend();
 
         bool setTurnoutFile(string val);
-        string getTurnoutFile();
+        string getTurnoutFile(bool fresh=true);
 
         bool setCanDevice(string val);
         string getCanDevice();
@@ -155,7 +155,7 @@ class nodeConfigurator
         int getYellowLed();
         bool setYellowLed(int val);
 
-        string getMomentaryFn();
+        string getMomentaryFn(bool fresh=true);
         bool setMomentaryFn(string val);
 
         string getStringConfig(string key);

@@ -85,6 +85,7 @@ byte nodeConfigurator::setNV(int idx,byte val){
     }
     NV[i] = val;
     nvs_set++;
+    logger->debug("Set NV [%d] to [%02x] NVs written %d",i,val,nvs_set);
 
     if (nvs_set >= NVS_SIZE){
         nvs_set = 0;
@@ -196,7 +197,7 @@ byte nodeConfigurator::setNV(int idx,byte val){
 
         //turnout
         tosave = nvToString(P_TURNOUT_FILE,P10_SIZE);
-        original = getTurnoutFile();
+        original = getTurnoutFile(false);
         if (tosave.compare(original) != 0){
             //changed
             logger->debug("########### Turnout file changed from [%s] to [%s]", original.c_str(), tosave.c_str());
@@ -323,7 +324,7 @@ void nodeConfigurator::loadParam1(){
         p1 = p1 | 0b00001000;
     }
     else{
-        p1 = p1 | 0b00000011;
+        p1 = p1 | 0b00000000;
     }
 
     if (getAPNoPassword()){
@@ -380,6 +381,7 @@ bool nodeConfigurator::saveConfig(){
 
     map<string, string>::iterator it;
     ofstream f (configFile, ios::trunc);
+    stringstream ss;
 
     if (!f.is_open()){
         if (logger != nullptr) logger->error("Error writing the config file.");
@@ -397,6 +399,18 @@ bool nodeConfigurator::saveConfig(){
             f << it->first << "=" << "\"" << it->second <<  "\"" << endl;
         }
         else f << it->first << "=" << it->second << endl;
+        if (logger != nullptr){
+            if (logger->getPriority() == log4cpp::Priority::DEBUG){
+                ss.clear();ss.str("");
+                ss << "Saving [";
+                ss << it->first;
+                ss << "='";
+                ss << it->second;
+                ss << "']";
+                logger->debug(ss.str().c_str());
+            }
+        }
+
     }
     f.close();
     loadConfig();
@@ -448,16 +462,16 @@ string nodeConfigurator::getNodeName(){
 }
 
 //saves the string to config file
-string nodeConfigurator::getMomentaryFn(){
+string nodeConfigurator::getMomentaryFn(bool fresh=true){
     string ret;
-    loadConfig();
+    if (fresh) loadConfig();
     ret = getStringConfig(TAG_FNMOM);
     return ret;
 }
 //gets the string to config file
 bool nodeConfigurator::setMomentaryFn(string val){
     if (config.find(TAG_FNMOM) == config.end()) return false;
-    config[TAG_FNMOM] = "\"" + val + "\"";
+    config[TAG_FNMOM] = val;
     return true;
 }
 //transform the bits in the array to the momentary string
@@ -661,9 +675,9 @@ bool nodeConfigurator::setCanGridPort(int val){
     return true;
 }
 
-int nodeConfigurator::getCanID(){
+int nodeConfigurator::getCanID(bool fresh=true){
     int ret;
-    loadConfig();
+    if (fresh) loadConfig();
     ret = getIntConfig(TAG_CANID);
     if (ret == INTERROR){
         string r = getStringConfig(TAG_CANID);
@@ -693,9 +707,9 @@ bool nodeConfigurator::setCanID(int val){
     return true;
 }
 
-int nodeConfigurator::getNodeNumber(){
+int nodeConfigurator::getNodeNumber(bool fresh=true){
     int ret;
-    loadConfig();
+    if (fresh) loadConfig();
     ret = getIntConfig(TAG_NN);
     if (ret == INTERROR){
         string r = getStringConfig(TAG_NN);
@@ -722,7 +736,7 @@ bool nodeConfigurator::setNodeNumber(int val){
     stringstream ss;
     ss << val;
     config[TAG_NN] = ss.str();
-    return true;
+    return saveConfig();
 }
 
 bool nodeConfigurator::getAPMode(){
@@ -744,7 +758,7 @@ bool nodeConfigurator::setAPMode(bool apmode){
     else r = "False";
 
     if (config.find(TAG_AP_MODE) == config.end()) return false;
-    config[TAG_AP_MODE] = "\"" + r + "\"";
+    config[TAG_AP_MODE] = r;
     return true;
 }
 
@@ -767,7 +781,7 @@ bool nodeConfigurator::setAPNoPassword(bool mode){
     else r = "False";
 
     if (config.find(TAG_NO_PASSWD) == config.end()) return false;
-    config[TAG_NO_PASSWD] = "\"" + r + "\"";
+    config[TAG_NO_PASSWD] = r;
     return true;
 }
 
@@ -790,7 +804,7 @@ bool nodeConfigurator::setCreateLogfile(bool mode){
     else r = "False";
 
     if (config.find(TAG_CREATE_LOGFILE) == config.end()) return false;
-    config[TAG_CREATE_LOGFILE] = "\"" + r + "\"";
+    config[TAG_CREATE_LOGFILE] = r;
     return true;
 }
 
@@ -813,13 +827,13 @@ bool nodeConfigurator::enableCanGrid(bool grid){
     else r = "False";
 
     if (config.find(TAG_CAN_GRID) == config.end()) return false;
-    config[TAG_CAN_GRID] = "\"" + r + "\"";
+    config[TAG_CAN_GRID] = r;
     return true;
 }
 
 bool nodeConfigurator::setSSID(string val){
     if (config.find(TAG_SSID) == config.end()) return false;
-    config[TAG_SSID] = "\"" + val + "\"";
+    config[TAG_SSID] = val;
     return true;
 }
 string nodeConfigurator::getSSID(){
@@ -830,7 +844,8 @@ string nodeConfigurator::getSSID(){
 
 bool nodeConfigurator::setPassword(string val){
     if (config.find(TAG_PASSWD) == config.end()) return false;
-    config[TAG_PASSWD] = "\"" + val + "\"";
+
+    config[TAG_PASSWD] = val;
     return true;
 }
 string nodeConfigurator::getPassword(){
@@ -841,7 +856,7 @@ string nodeConfigurator::getPassword(){
 
 bool nodeConfigurator::setRouterSSID(string val){
     if (config.find(TAG_ROUTER_SSID) == config.end()) return false;
-    config[TAG_ROUTER_SSID] = "\"" + val + "\"";
+    config[TAG_ROUTER_SSID] = val;
     return true;
 }
 
@@ -853,7 +868,7 @@ string nodeConfigurator::getRouterSSID(){
 
 bool nodeConfigurator::setRouterPassword(string val){
     if (config.find(TAG_ROUTER_PASSWD) == config.end()) return false;
-    config[TAG_ROUTER_PASSWD] = "\"" + val + "\"";
+    config[TAG_ROUTER_PASSWD] = val;
     return true;
 }
 string nodeConfigurator::getRouterPassword(){
@@ -864,7 +879,7 @@ string nodeConfigurator::getRouterPassword(){
 
 bool nodeConfigurator::setLogLevel(string val){
     if (config.find(TAG_LOGLEVEL) == config.end()) return false;
-    config[TAG_LOGLEVEL] = "\"" + val + "\"";
+    config[TAG_LOGLEVEL] = val;
     return true;
 }
 string nodeConfigurator::getLogLevel(){
@@ -880,7 +895,7 @@ string nodeConfigurator::getLogLevel(){
 
 bool nodeConfigurator::setLogFile(string val){
     if (config.find(TAG_LOGFILE) == config.end()) return false;
-    config[TAG_LOGFILE] = "\"" + val + "\"";
+    config[TAG_LOGFILE] = val;
     return true;
 }
 string nodeConfigurator::getLogFile(){
@@ -896,7 +911,7 @@ string nodeConfigurator::getLogFile(){
 
 bool nodeConfigurator::setServiceName(string val){
     if (config.find(TAG_SERV_NAME) == config.end()) return false;
-    config[TAG_SERV_NAME] = "\"" + val + "\"";
+    config[TAG_SERV_NAME] = val;
     return true;
 }
 string nodeConfigurator::getServiceName(){
@@ -911,7 +926,7 @@ bool nodeConfigurator::setLogAppend(bool val){
     else r = "False";
 
     if (config.find(TAG_SERV_NAME) == config.end()) return false;
-    config[TAG_SERV_NAME] = "\"" + r + "\"";
+    config[TAG_SERV_NAME] = r;
     return true;
 }
 bool nodeConfigurator::getLogAppend(){
@@ -930,12 +945,12 @@ bool nodeConfigurator::getLogAppend(){
 
 bool nodeConfigurator::setTurnoutFile(string val){
     if (config.find(TAG_TURNOUT) == config.end()) return false;
-    config[TAG_TURNOUT] = "\"" + val + "\"";
+    config[TAG_TURNOUT] = val;
     return true;
 }
-string nodeConfigurator::getTurnoutFile(){
+string nodeConfigurator::getTurnoutFile(bool fresh=true){
     string ret;
-    loadConfig();
+    if (fresh) loadConfig();
     ret = getStringConfig(TAG_TURNOUT);
     if (ret.empty()){
         if (logger != nullptr) logger->error("Failed to get turnout file name. Defaul is turnout.txt");
@@ -947,7 +962,7 @@ string nodeConfigurator::getTurnoutFile(){
 
 bool nodeConfigurator::setCanDevice(string val){
     if (config.find(TAG_CANDEVICE) == config.end()) return false;
-    config[TAG_CANDEVICE] = "\"" + val + "\"";
+    config[TAG_CANDEVICE] = val;
     return true;
 }
 string nodeConfigurator::getCanDevice(){
