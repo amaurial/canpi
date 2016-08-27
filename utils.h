@@ -47,6 +47,23 @@ enum FN_TYPE {MOMENTARY=0,SWITCH};
 
 #define INTERROR 323232
 
+static inline void set_bit(int32_t *x, int bitNum) {
+    *x |= (1L << bitNum);
+}
+
+static inline void clear_bit(int32_t *x, int bitNum) {
+    *x &= ~ (1L << bitNum);
+}
+
+static inline void togle_bit(int32_t *x, int bitNum) {
+    *x ^= (1L << bitNum);
+}
+
+static inline bool check_bit(int32_t *x, int bitNum) {
+    int8_t bit = (*x >> bitNum) & 1;
+    return (bit == 1);
+}
+
 //custom exception class
 class my_exception : public std::runtime_error {
     std::string msg;

@@ -76,16 +76,47 @@ void tcpClientGridConnect::canMessage(int canid,const char* msg, int dlc){
         //do the parse based on the extended or std frame
         if ((canid & CAN_EFF_FLAG) == CAN_EFF_FLAG){
             //extended frame
-            tempcanid = canid & CAN_EFF_MASK;
+            tempcanid = canid;            
             ss.clear();ss.str();
             ss << ":X";
-
-            //first highest byte of the 4
+            
+            /* 
+             * we have to set some bits to present to the grid
+             * the reason is the CBUS implementation that includes
+             * the RTR and the extended frame in the bytes of cangrid message
+             * not just based on the "X" and "R" indication
+             * The extended frame has the format of
+             * 
+             * Field name and length in bits
+             * 
+             * Identifier A = 11  First part of the (unique) identifier which also represents the message priority
+             * Substitute remote request (SRR) = 1 Must be recessive (1) 
+             * Identifier extension bit (IDE)= 1 Must be recessive (1) for extended frame format with 29-bit identifiers
+             * Identifier B (green) = 18 Second part of the (unique) identifier which also represents the message priority
+             * Remote transmission request (RTR) = 1   Must be dominant (0) for data frames and recessive (1) for remote request frames (see Remote Frame, below)
+             * Total size is 32 bits
+             * Bits
+             * 1 2 3 4    5 6 7 8   9 10 11 12   13  14 15 16   17 18 19 20   21 22 23 24   25 26 27 28   29 30 31 32
+             * A A A A    A A A A   A A  A  1    IDE B  B  B    B  B  B  B    B  B  B  B    B  B  B  B    B  B  B  RTR 
+             * 
+             * We need to set the bits 12 13 and 32 and shift the other bits properly
+             * 
+             * The bits from the linux stack are
+             * Bits
+             * 1 2 3 4    5 6 7 8   9 10 11 12   13 14 15 16   17 18 19 20 21   22 23 24 25   26 27 28   29 30  31  32
+             * A A A A    A A A A   A A  A  B    B  B  B  B    B  B  B  B  B    B  B  B  B    B  B  B    B  ERR RTR IDE 
+             */ 
+            
+            /*
+             * first highest byte of the 4. no need to fix - bits 1 to 8
+             */
             h1 = tempcanid >> 24;
             sprintf(t,"%02X",h1);
             ss << t;
 
-            //second highest byte of the 4
+            /* 
+             * second highest byte of the 4. we need to fix bit 12 and 13
+             */
             h1 = tempcanid >> 16;
             sprintf(t,"%02X",h1);
             ss << t;
