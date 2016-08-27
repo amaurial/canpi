@@ -1059,13 +1059,13 @@ int nodeConfigurator::getPB(){
             catch(...){
                 if (logger != nullptr) logger->error("Failed to convert %s to int",  r.c_str());
                 else cout << "Failed to convert " << r << " to int" << endl;
-                ret = 4;
+                ret = 11;
             }
         }
         else{
             if (logger != nullptr) logger->error("Failed to get the button_pin. Default is 4");
             else cout << "Failed to get the button_pin. Default is 4" << endl;
-            ret = 4;
+            ret = 11;
         }
 
     }
@@ -1124,13 +1124,13 @@ int nodeConfigurator::getYellowLed(){
             catch(...){
                 if (logger != nullptr) logger->error("Failed to convert %s to int",  r.c_str());
                 else cout << "Failed to convert " << r << " to int" << endl;
-                ret = 27;
+                ret = 16;
             }
         }
         else{
-            if (logger != nullptr) logger->error( "Failed to get the yellow_led_pin. Default is 2");
-            else cout << "Failed to get the yellow_led_pin. Default is 2" << endl;
-            ret = 27;
+            if (logger != nullptr) logger->error( "Failed to get the yellow_led_pin. Default is 16");
+            else cout << "Failed to get the yellow_led_pin. Default is 16" << endl;
+            ret = 16;
         }
     }
     return ret;
