@@ -33,7 +33,7 @@ def writeMessage(msg):
         f = open(messageFile, 'w+')
         f.write(msg)
         f.close()
-    except:
+    excet:
         print("Failed to open the message file\n");
         return
 
@@ -210,14 +210,13 @@ class index:
             cm.saveFile()
             writeMessage("Save successful")
             raise web.seeother('/')
+
         if id_btn_apply in userData:
             print("Apply button pressed")
             writeMessage("")
-            #subprocess.call(['sudo /etc/init.d/start_canpi.sh', 'configure'])
             cpid = os.fork()
             if cpid == 0:
                 restartPi()
-            #os.system("/etc/init.d/start_canpi.sh configure")
             return render.reboot("Applying changes and rebooting",myuri)
 
         if id_btn_update_file in userData:
@@ -228,39 +227,30 @@ class index:
         if id_btn_restart in userData:
             print("Restart button pressed")
             writeMessage("")
-            #render.restart("Restarting",myuri)
             os.system("/etc/init.d/start_canpi.sh restartcanpi")
-            #subprocess.call( [ 'sudo /bin/bash /etc/init.d/start_canpi.sh', 'restartcanpi'])
             exitcode,out,err = self.get_exitcode_stdout_stderr("ps -ef")
             msg=""
             if "/home/pi/canpi/canpi" in out:
                 msg="Service restarted"
             else:
                 msg="Restart failed"
-            #render.index(form,"Restarting PI ...")
-            #subprocess.call( [ 'sudo /bin/bash /etc/init.d/start_canpi.sh', 'restart'])
             return render.index(form,"Canpi Configuration",msg)
 
         if id_btn_stop in userData:
             print("Stop button pressed")
             writeMessage("")
-            #render.restart("Restarting",myuri)
             os.system("/etc/init.d/start_canpi.sh stopcanpi")
-            #subprocess.call( [ 'sudo /bin/bash /etc/init.d/start_canpi.sh', 'restartcanpi'])
             exitcode,out,err = self.get_exitcode_stdout_stderr("ps -ef")
             msg=""
             if "/home/pi/canpi/canpi" in out:
                 msg="Stop failed"
             else:
                 msg="Stop successfull"
-            #render.index(form,"Restarting PI ...")
-            #subprocess.call( [ 'sudo /bin/bash /etc/init.d/start_canpi.sh', 'restart'])
             return render.index(form,"Canpi Configuration",msg)
 
         if id_btn_restart_all in userData:
             print("Restart all button pressed")
             writeMessage("")
-            #subprocess.call(['sudo /etc/init.d/start_canpi.sh', 'configure'])
             cpid = os.fork()
             if cpid == 0:
                 restartAll()
@@ -337,7 +327,6 @@ class index:
         proc = Popen(args, stdout=PIPE, stderr=PIPE)
         out, err = proc.communicate()
         exitcode = proc.returncode
-        #
         return exitcode, out, err
 
     def reloadMyForm(self):

@@ -76,7 +76,8 @@ void tcpClientGridConnect::canMessage(int canid,const char* msg, int dlc){
         //do the parse based on the extended or std frame
         if ((canid & CAN_EFF_FLAG) == CAN_EFF_FLAG){
             //extended frame
-            tempcanid = canid;            
+            tempcanid = canid & CAN_SFF_MASK;            
+            tempcanid = tempcanid << 3;
             ss.clear();ss.str();
             ss << ":X";
             
@@ -141,6 +142,10 @@ void tcpClientGridConnect::canMessage(int canid,const char* msg, int dlc){
         else{
             //standard frame
             tempcanid = canid & CAN_SFF_MASK;
+			/*
+			 * cbus message comes right aligned and can grid is left aligned
+			 * cbus: 0581 -> cangrid B020
+			 */
             h2 = tempcanid << 5;
             h1 = tempcanid >> 3;
 
@@ -315,8 +320,9 @@ void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
             for (int i=0;i<j;i++){
                 candata[i] = vdata.at(i);
             }
-
-            logger->debug("Grid parsed canid:%d data:%s", icanid, candata);
+	
+			logger->debug("[%d]  Original grid message [%s]",id , message );
+            logger->debug("[%d] Grid parsed canid:[%d] data:[%s]", id, icanid, candata);
             //put message to the wire
             can->put_to_out_queue(icanid,candata,j,clientType);
             //put message to other can clients
