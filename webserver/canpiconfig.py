@@ -33,7 +33,7 @@ def writeMessage(msg):
         f = open(messageFile, 'w+')
         f.write(msg)
         f.close()
-    excet:
+    except:
         print("Failed to open the message file\n");
         return
 
