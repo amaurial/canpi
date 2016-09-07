@@ -1063,8 +1063,8 @@ int nodeConfigurator::getPB(){
             }
         }
         else{
-            if (logger != nullptr) logger->error("Failed to get the button_pin. Default is 4");
-            else cout << "Failed to get the button_pin. Default is 4" << endl;
+            if (logger != nullptr) logger->error("Failed to get the button_pin. Default is 11");
+            else cout << "Failed to get the button_pin. Default is 11" << endl;
             ret = 11;
         }
 
