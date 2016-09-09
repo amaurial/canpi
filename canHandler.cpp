@@ -62,6 +62,7 @@ void canHandler::setPins(int pbutton,int gledpin,int yledpin){
     pb.setdir_gpio("in");
     gl.setdir_gpio("out");
     yl.setdir_gpio("out");
+    gl.setval_gpio("1");
 }
 /**
  * @brief Sets the configurator object to extracte the module properties
@@ -247,6 +248,7 @@ int canHandler::start(const char* interface){
 void canHandler::stop(){
     send_end_event();
     usleep(200*1000); //wait for the message to be sent
+    gl.setval_gpio("0");
     running = 0;
 }
 /**

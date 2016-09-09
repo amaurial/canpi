@@ -1059,13 +1059,13 @@ int nodeConfigurator::getPB(){
             catch(...){
                 if (logger != nullptr) logger->error("Failed to convert %s to int",  r.c_str());
                 else cout << "Failed to convert " << r << " to int" << endl;
-                ret = 11;
+                ret = 17;
             }
         }
         else{
-            if (logger != nullptr) logger->error("Failed to get the button_pin. Default is 4");
-            else cout << "Failed to get the button_pin. Default is 4" << endl;
-            ret = 11;
+            if (logger != nullptr) logger->error("Failed to get the button_pin. Default is 17");
+            else cout << "Failed to get the button_pin. Default is 17" << endl;
+            ret = 17;
         }
 
     }
@@ -1092,13 +1092,13 @@ int nodeConfigurator::getGreenLed(){
             catch(...){
                 if (logger != nullptr) logger->error("Failed to convert %s to int",  r.c_str());
                 else cout << "Failed to convert " << r << " to int" << endl;
-                ret = 18;
+                ret = 24;
             }
         }
         else{
-            if (logger != nullptr) logger->error("Failed to get the green_led_pin. Default is 18");
-            else cout << "Failed to get the green_led_pin. Default is 18" << endl;
-            ret = 18;
+            if (logger != nullptr) logger->error("Failed to get the green_led_pin. Default is 24");
+            else cout << "Failed to get the green_led_pin. Default is 24" << endl;
+            ret = 24;
         }
     }
     return ret;
@@ -1124,13 +1124,13 @@ int nodeConfigurator::getYellowLed(){
             catch(...){
                 if (logger != nullptr) logger->error("Failed to convert %s to int",  r.c_str());
                 else cout << "Failed to convert " << r << " to int" << endl;
-                ret = 16;
+                ret = 23;
             }
         }
         else{
-            if (logger != nullptr) logger->error( "Failed to get the yellow_led_pin. Default is 16");
-            else cout << "Failed to get the yellow_led_pin. Default is 16" << endl;
-            ret = 16;
+            if (logger != nullptr) logger->error( "Failed to get the yellow_led_pin. Default is 23");
+            else cout << "Failed to get the yellow_led_pin. Default is 23" << endl;
+            ret = 23;
         }
     }
     return ret;

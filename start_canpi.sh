@@ -120,14 +120,14 @@ setup_bonjour() {
     echo "Configuring the bonjour service"
     #back the old file
     #mv $bonjour_file "${bonjour_file}.bak"
-    cp $bonjour_template "${bonjour_template}.tmp"
+    cp -f $bonjour_template "${bonjour_template}.tmp"
 
     #change the service name
     sed -i 's/SERVICENAME/'"$service_name"'/' "${bonjour_template}.tmp"
 
     #change the port
     sed -i 's/PORT/'"$tcpport"'/' "${bonjour_template}.tmp"
-    mv "${bonjour_template}.tmp" $bonjour_file
+    mv -f "${bonjour_template}.tmp" $bonjour_file
 
     #restart the service
     #echo "Restarting the bonjour service"
@@ -146,8 +146,8 @@ setup_bonjour() {
 setup_wpa_supplicant(){
     echo "Configuring the WPA supplicant"
     #back the old file
-    sudo mv $wpa_file "${wpa_file}.bak"
-    sudo cp $wpa_template $wpa_file
+    sudo mv -f $wpa_file "${wpa_file}.bak"
+    sudo cp -f $wpa_template $wpa_file
 
     #change the ssid
     sudo sed -i 's/SSID/'"$router_ssid"'/' $wpa_file
@@ -160,8 +160,8 @@ setup_wpa_supplicant(){
 setup_hostapd(){
     echo "Configuring the hostapd"
     #back the old file
-    sudo mv $hostapd_file "${hostapd_file}.bak"
-    sudo cp $hostapd_template $hostapd_file
+    sudo mv -f $hostapd_file "${hostapd_file}.bak"
+    sudo cp -f $hostapd_template $hostapd_file
 
     #change the ssid
     sudo sed -i 's/SSID/'"$ap_ssid"'/' $hostapd_file
@@ -176,8 +176,8 @@ setup_hostapd(){
 setup_hostapd_no_password(){
     echo "Configuring the hostapd with no password"
     #back the old file
-    sudo mv $hostapd_file "${hostapd_file}.bak"
-    sudo cp "${hostapd_template}.nopassword" $hostapd_file
+    sudo mv -f $hostapd_file "${hostapd_file}.bak"
+    sudo cp -f "${hostapd_template}.nopassword" $hostapd_file
 
     #change the ssid
     sudo sed -i 's/SSID/'"$ap_ssid"'/' $hostapd_file
@@ -190,34 +190,34 @@ setup_hostapd_no_password(){
 
 setup_iface_wifi(){
     #back the old file
-    sudo mv $iface_file "${iface_file}.bak"
-    sudo cp $iface_file_wifi $iface_file
+    sudo mv -f $iface_file "${iface_file}.bak"
+    sudo cp -f $iface_file_wifi $iface_file
 }
 
 setup_iface_ap(){
     #back the old file
-    sudo mv $iface_file "${iface_file}.bak"
-    sudo cp $iface_file_ap $iface_file
+    sudo mv -f $iface_file "${iface_file}.bak"
+    sudo cp -f $iface_file_ap $iface_file
 }
 
 remove_hostapd_default(){
     #back the old file
-    sudo mv $default_hostapd_file "${default_hostapd_file}.bak"
+    sudo mv -f $default_hostapd_file "${default_hostapd_file}.bak"
 }
 
 remove_dhcp_default(){
     #back the old file
-    sudo mv $default_dhcp_file "${default_dhcp_file}.bak"
+    sudo mv -f $default_dhcp_file "${default_dhcp_file}.bak"
 }
 
 restore_hostapd_default(){
     #back the old file
-    sudo cp $safe_hostapd_file $default_hostapd_file
+    sudo cp -f $safe_hostapd_file $default_hostapd_file
 }
 
 restore_dhcp_default(){
     #back the old file
-    sudo cp $safe_dhcp_file $default_dhcp_file
+    sudo cp -f $safe_dhcp_file $default_dhcp_file
 }
 
 setup_ap_mode()
@@ -362,8 +362,8 @@ upgrade_canpi(){
 
         echo "Service stopped. Backing up the file"
         cd "${upgradedir}"
-        mv ../canpi ../canpi.bkp
-        cp canpi ../
+        mv -f ../canpi ../canpi.bkp
+        cp -f canpi ../
         chmod +x ../canpi
 
         echo "Starting the service after upgrade"
@@ -372,7 +372,7 @@ upgrade_canpi(){
         if [[ $? -eq 1 ]]; then
             echo "Failed to restart the service. Reversing the upgrade"
             cd "${upgradedir}"
-            mv ../canpi.bkp ../canpi
+            mv -f ../canpi.bkp ../canpi
             chmod +x ../canpi
             start_canpi
             if [[ $? -eq 1 ]]; then
@@ -395,9 +395,9 @@ copy_webserver_file(){
     echo "checking '${wpath}/${wfile}'"
     if [[ -f "${wpath}/${wfile}" ]]; then
         echo "Backing up ${wfile}"
-        cp ../$wpath/$wfile ../$wpath/${wfile}.bak
+        cp -f ../$wpath/$wfile ../$wpath/${wfile}.bak
         echo "Applying changes to ${wfile}"
-        cp $wpath/$wfile ../$wpath/
+        cp -f $wpath/$wfile ../$wpath/
         echo "Changes to ${wfile} applied"
     fi
 }
@@ -443,9 +443,9 @@ copy_config_file(){
     echo "checking '${wfile}'"
     if [[ -f $wfile ]]; then
         echo "Backing up ${wfile}"
-        cp ../$wfile ../$wfile.bak
+        cp -f ../$wfile ../$wfile.bak
         echo "Applying changes to ${wfile}"
-        cp $wfile ../
+        cp -f $wfile ../
         echo "Changes to ${wfile} applied"
     fi
 }
