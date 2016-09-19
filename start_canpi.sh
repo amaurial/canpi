@@ -74,6 +74,16 @@ iface_file="/etc/network/interfaces"
 iface_file_wifi="$dir/interfaces.wifi"
 iface_file_ap="$dir/interfaces.ap"
 
+set_push_button(){
+
+}
+
+is_pb_pressed(){
+}
+
+reconfigure_if_pb_pressed(){
+}
+
 
 get_pid() {
     cat "$pid_file"
