@@ -97,6 +97,13 @@ get_web_pid() {
     cat "$web_pid_file"
 }
 
+is_wifi_running(){
+   #the wifi is running if we have and ip address
+   ipaddr=`ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}'` 
+   [[ $ipaddr =~ [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\/[0-9]+ ]]
+   echo $?   
+}
+
 is_web_running() {
     [ -f "$web_pid_file" ] && ps `get_web_pid` > /dev/null 2>&1
 }
