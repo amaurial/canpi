@@ -26,6 +26,7 @@ void nodeConfigurator::setNotQuotedConfigKeys(){
     not_quoted_config.push_back(TAG_BP);
     not_quoted_config.push_back(TAG_GL);
     not_quoted_config.push_back(TAG_YL);
+    not_quoted_config.push_back(TAG_RL);
     not_quoted_config.push_back(TAG_NODE_MODE);
 }
 

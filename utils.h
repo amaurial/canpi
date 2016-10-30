@@ -26,6 +26,7 @@
 #define TAG_BP           "button_pin"
 #define TAG_GL           "green_led_pin"
 #define TAG_YL           "yellow_led_pin"
+#define TAG_RL           "red_led_pin"
 #define TAG_FNMOM        "fn_momentary"
 #define TAG_WARN         "WARN"
 #define TAG_INFO         "INFO"
