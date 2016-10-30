@@ -62,7 +62,16 @@ void canHandler::setPins(int pbutton,int gledpin,int yledpin){
     pb.setdir_gpio("in");
     gl.setdir_gpio("out");
     yl.setdir_gpio("out");
-    gl.setval_gpio("1");
+    if (config->getNodeMode() == 0){
+        logger->info("[canHandler] Node is in SLIM mode");
+    	gl.setval_gpio("1");
+	yl.setval_gpio("0");
+    }
+    else{
+        logger->info("[canHandler] Node is in FLIM mode");
+    	gl.setval_gpio("0");
+	yl.setval_gpio("1");
+    }
 }
 /**
  * @brief Sets the configurator object to extracte the module properties
@@ -249,6 +258,7 @@ void canHandler::stop(){
     send_end_event();
     usleep(200*1000); //wait for the message to be sent
     gl.setval_gpio("0");
+    yl.setval_gpio("0");
     running = 0;
 }
 /**
@@ -445,6 +455,25 @@ void canHandler::run_queue_reader(void* param){
         //finish auto enum
         if (auto_enum_mode){
             finishSelfEnum(0);
+
+            if (!auto_enum_mode){
+
+            	//send RQNN
+            	char sendframe[CAN_MSG_SIZE];
+        	memset(sendframe,0,CAN_MSG_SIZE);
+
+        	byte Lb,Hb;
+        	Lb = node_number & 0xff;
+        	Hb = (node_number >> 8) & 0xff;
+		logger->info("[canHandler] Doing request node number afer auto enum. Entering in setup mode");
+
+            	sendframe[0]=OPC_RQNN;
+            	sendframe[1] = Hb;
+            	sendframe[2] = Lb;
+            	setup_mode = true;
+            	put_to_out_queue(sendframe,3,CLIENT_TYPE::ED);
+             }
+
         }
         doPbLogic();
         usleep(3000);
@@ -749,6 +778,9 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
         setup_mode = false;
         blinking = false;
         gl.setval_gpio("0");
+        yl.setval_gpio("1");
+        logger->info("Node was in SLIM. Setting to FLIM");
+        config->setNodeMode(1); //FLIM
         logger->info("[canHandler] Finished setup. New node number is %d" , node_number);
 
     break;
@@ -888,7 +920,7 @@ void canHandler::doPbLogic(){
             ledtime = time(0)*1000;
             if (((ledtime - nnPressTime) >= NN_PB_TIME) && !blinking){
                 blinking = true;
-                yl.setval_gpio("1");
+                gl.setval_gpio("1");
             }
         }
         return;
@@ -899,36 +931,75 @@ void canHandler::doPbLogic(){
         nnReleaseTime = time(0)*1000;
         pb_pressed = false;
         logger->debug("[canHandler] Button released. Timer end [%le] difference [%lf]",nnReleaseTime, nnReleaseTime - nnPressTime );
+        
+        char sendframe[CAN_MSG_SIZE];
+        memset(sendframe,0,CAN_MSG_SIZE);
+
+        byte Lb,Hb;
+        Lb = node_number & 0xff;
+        Hb = (node_number >> 8) & 0xff;
 
         //check if node number request
         if ((nnReleaseTime - nnPressTime) >= NN_PB_TIME){
+            
+            if (config->getNodeMode() == 1){//change from FLIM to SSLIM
+                logger->info("Node was in FLIM. Setting to SLIM");
+            	config->setNodeMode(0); //SLIM
+            	gl.setval_gpio("1");
+            	yl.setval_gpio("0");
+            	
+            	sendframe[0] = OPC_NNREL;
+            	sendframe[1] = Hb;
+            	sendframe[2] = Lb;
+            	setup_mode = false;
+                blinking = false;
+            	put_to_out_queue(sendframe, 3, CLIENT_TYPE::ED);
+            	node_number = DEFAULT_NN;
+            	config->setNodeNumber(DEFAULT_NN);
+            	return;
+
+           }
+
+
             //send RQNN
             logger->info("[canHandler] Doing request node number. Entering in setup mode");
-
-            char sendframe[CAN_MSG_SIZE];
-            memset(sendframe,0,CAN_MSG_SIZE);
-
-            byte Lb,Hb;
-            Lb = node_number & 0xff;
-            Hb = (node_number >> 8) & 0xff;
 
             sendframe[0]=OPC_RQNN;
             sendframe[1] = Hb;
             sendframe[2] = Lb;
             setup_mode = true;
-            put_to_out_queue(sendframe,3,CLIENT_TYPE::ED);
+            put_to_out_queue(sendframe, 3, CLIENT_TYPE::ED);
             return;
         }
         //check if auto enum request
         if ((nnReleaseTime - nnPressTime) >= AENUM_PB_TIME){
             doSelfEnum();
+             //send RQNN
+            /*
+            logger->info("[canHandler] Doing request node number. Entering in setup mode");
+
+            sendframe[0]=OPC_RQNN;
+            sendframe[1] = Hb;
+            sendframe[2] = Lb;
+            setup_mode = true;
+            put_to_out_queue(sendframe, 3, CLIENT_TYPE::ED);
+            */
             return;
         }
-        if (setup_mode){
+        if (setup_mode || blinking){
             logger->debug("[canHandler] Leaving setup modeCAN");
             setup_mode = false;
             blinking = false;
-            yl.setval_gpio("0");
+            if (config->getNodeMode() == 1 ) { //FLIM
+            	gl.setval_gpio("0");
+            	yl.setval_gpio("1");
+            	logger->info("Setting to FLIM");
+	    }
+	    else{
+            	gl.setval_gpio("1");
+            	yl.setval_gpio("0");
+            	logger->info("Setting to SLIM");
+	    }
         }
     }
 }

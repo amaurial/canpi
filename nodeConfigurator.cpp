@@ -26,6 +26,7 @@ void nodeConfigurator::setNotQuotedConfigKeys(){
     not_quoted_config.push_back(TAG_BP);
     not_quoted_config.push_back(TAG_GL);
     not_quoted_config.push_back(TAG_YL);
+    not_quoted_config.push_back(TAG_NODE_MODE);
 }
 
 void nodeConfigurator::printMemoryNVs(){
@@ -1140,6 +1141,41 @@ bool nodeConfigurator::setYellowLed(int val){
     stringstream ss;
     ss << val;
     config[TAG_YL] = ss.str();
+    return true;
+}
+/* 0 is SLIM mode 1 is FLIM
+* default is SLIM
+*/
+
+int nodeConfigurator::getNodeMode(){
+    int ret;
+    ret = getIntConfig(TAG_NODE_MODE);
+    if (ret == INTERROR){
+        string r = getStringConfig(TAG_NODE_MODE);
+        if (r.size() > 0){
+            //try to convert
+            try{
+                ret = atoi(r.c_str());
+            }
+            catch(...){
+                if (logger != nullptr) logger->error("Node Mode. Failed to convert %s to int",  r.c_str());
+                else cout << "Node Mode. Failed to convert " << r << " to int" << endl;
+                ret = 0;
+            }
+        }
+        else{
+            if (logger != nullptr) logger->error( "Node Mode.Failed to get the yellow_led_pin. Default is 0 SLIM");
+            else cout << "Node Mode. Failed to get the node_mode. Default is 0 SLIM" << endl;
+            ret = 0;
+        }
+    }
+    return ret;
+}
+bool nodeConfigurator::setNodeMode(int val){
+    if (config.find(TAG_NODE_MODE) == config.end()) return false;
+    stringstream ss;
+    ss << val;
+    config[TAG_NODE_MODE] = ss.str();
     return true;
 }
 

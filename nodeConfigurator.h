@@ -164,6 +164,9 @@ class nodeConfigurator
         int getStartEventID();
         bool setStartEventID(int val);
 
+        int getNodeMode();
+        bool setNodeMode(int val);
+
         void printMemoryNVs();
         byte getNumberOfNVs(){return NVS_SIZE;};
         byte getNV(int idx);

@@ -33,6 +33,7 @@
 #define TAG_NO_PASSWD    "ap_no_password"
 #define TAG_CREATE_LOGFILE "create_log_file"
 #define TAG_START_EVENT  "start_event_id"
+#define TAG_NODE_MODE    "node_mode"
 
 using namespace std;
 

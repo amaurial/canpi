@@ -74,16 +74,92 @@ iface_file="/etc/network/interfaces"
 iface_file_wifi="$dir/interfaces.wifi"
 iface_file_ap="$dir/interfaces.ap"
 
-set_push_button(){
+get_push_button(){
+   pb=`grep button_pin ${config} |cut -d "=" -f 2`
+   if [[ ${pb} > 1 && ${pb} < 30 ]];then
+      echo $pb
+   else
+      pb=17
+      echo $pb
+   fi
+}
 
+set_push_button(){
+   p=$(get_push_button)
+   echo "pb pin is ${p}"
+   echo ${p} > /sys/class/gpio/export
+   echo "in" > /sys/class/gpio/gpio${p}/direction
 }
 
 is_pb_pressed(){
+   p=$(get_push_button)
+   v=`cat /sys/class/gpio/gpio${p}/value`
+   #the pressed value is 0
+   if [[ $v -eq "0" ]]; then
+      sleep 1
+      v=`cat /sys/class/gpio/gpio${p}/value`
+   fi
+   echo $v 
+}
+
+blink_red_led(){
+   set_red_led
+   sleep 1
+   unset_red_led
+   sleep 1
+   set_red_led
+   sleep 1
+   unset_red_led
+   sleep 1
+   set_red_led
 }
 
 reconfigure_if_pb_pressed(){
+   echo "Checking if the push button is pressed"
+   p=$(is_pb_pressed)
+   if [[ $p -eq "0" ]];then
+      #we reconfigure
+      setup_red_led
+      blink_red_led
+      unset_red_led
+      echo "Push button pressed. Reconfiguring"
+      ap_no_password="true" 
+      sed -i 's/ap_mode="false"/ap_mode="true"/Ig' $config
+      sed -i 's/ap_no_password=false/ap_no_password="true"/Ig' $config
+      setup_ap_mode
+      setup_bonjour
+      sleep 1
+      echo "Rebooting"
+      sudo reboot
+      exit 0
+   fi
 }
 
+get_red_led_pin(){
+   ledpin=`grep red_led_pin ${config} |cut -d "=" -f 2` 
+   if [[ $ledpin > 1 && $ledpin < 30 ]];then
+      echo ${ledpin}
+   else
+      ledpin=22 
+      echo ${ledpin}
+   fi
+}
+
+setup_red_led(){
+   redled=$(get_red_led_pin)
+   echo "${redled}" > /sys/class/gpio/export
+   echo "out" > /sys/class/gpio/gpio${redled}/direction
+}
+
+set_red_led(){
+   redled=$(get_red_led_pin)
+   echo "1" > /sys/class/gpio/gpio${redled}/value
+}
+
+unset_red_led(){
+   redled=$(get_red_led_pin)
+   echo "0" > /sys/class/gpio/gpio${redled}/value
+}
 
 get_pid() {
     cat "$pid_file"
@@ -99,7 +175,7 @@ get_web_pid() {
 
 is_wifi_running(){
    #the wifi is running if we have and ip address
-   ipaddr=`ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}'` 
+   ipaddr=`ip addr | grep -A2 'wlan0:' |grep -A2 'state UP' -A2 | tail -n1 | awk '{print $2}'` 
    [[ $ipaddr =~ [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\/[0-9]+ ]]
    echo $?   
 }
@@ -240,7 +316,6 @@ restore_dhcp_default(){
 setup_ap_mode()
 {
     echo "Configuring to AP mode"
-
 
     sleep 1
     sudo /etc/init.d/hostapd stop
@@ -467,6 +542,18 @@ copy_config_file(){
     fi
 }
 
+copy_start_script_file(){
+    wfile=$1
+    echo "checking '${wfile}'"
+    if [[ -f $wfile ]]; then
+        echo "Backing up ${wfile}"
+        cp -f ../$wfile ../$wfile.bak
+        echo "Applying changes to ${wfile}"
+        cp -f $wfile /etc/init.d/
+        echo "Changes to ${wfile} applied"
+    fi
+}
+
 upgrade_config_files(){
     cd "${upgradedir}"
     copy_config_file dhcpd.conf
@@ -477,8 +564,8 @@ upgrade_config_files(){
     copy_config_file interfaces.wifi
     copy_config_file isc-dhcp-server
     copy_config_file multiple.service
-    copy_config_file start_canpi.sh
     copy_config_file wpa_supplicant.conf
+    copy_start_script_file start_canpi.sh
 }
 
 clean_upgrade_files()
@@ -568,8 +655,20 @@ stop_webserver(){
     return 0
 }
 
+#setup the push button
+echo "Setting push button"
+set_push_button
+
 case "$1" in
     start)
+        #reconfigure if the push button is pressed
+        reconfigure_if_pb_pressed
+        setup_red_led
+        unset_red_led 
+        if [[ is_wifi_running -eq 0 ]] ; then
+           echo "We found a valid ip. Wifi is running"
+           set_red_led 
+        fi
         setup_bonjour
         start_webserver
         start_canpi
@@ -584,6 +683,7 @@ case "$1" in
         kill_all_processes "canpi"
     ;;
     startcanpi)
+        setup_red_led
         setup_bonjour
         start_canpi
         if [[ $? -eq 1 ]]; then
@@ -622,6 +722,7 @@ case "$1" in
     ;;
     configure)
         echo "Configuring the services"
+        blink_red_led
         if [[ $ap_mode == "true" || $ap_mode == "True" || $ap_mode == "TRUE" ]];then
            echo "Starting configuration for AP Mode"
            setup_ap_mode

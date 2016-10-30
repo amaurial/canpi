@@ -25,8 +25,8 @@
 
 #define CAN_MSG_SIZE 8
 #define WAIT_ENUM 200 //ms
-#define NN_PB_TIME 7000 //time the button for request node number is pressed is 8 seconds
-#define AENUM_PB_TIME 3000 //time the button for auto enum is pressed is 4 seconds
+#define NN_PB_TIME 6000 //time the button for request node number is pressed is 8 seconds
+#define AENUM_PB_TIME 2000 //time the button for auto enum is pressed is 2 seconds
 #define BLINK_INTERVAL 300 //time in milliseconds seconds
 
 using namespace std;

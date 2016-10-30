@@ -132,10 +132,10 @@ int main()
 
     //start the CAN
     canHandler can = canHandler(&logger,canid);
-    //set gpio pins
-    can.setPins(pb_pin,gled_pin,yled_pin);
     //set the configurator
     can.setConfigurator(config);
+    //set gpio pins
+    can.setPins(pb_pin,gled_pin,yled_pin);
     can.setNodeNumber(node_number);
 
     //start the CAN threads
