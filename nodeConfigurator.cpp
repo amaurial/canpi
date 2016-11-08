@@ -1173,11 +1173,13 @@ int nodeConfigurator::getNodeMode(){
     return ret;
 }
 bool nodeConfigurator::setNodeMode(int val){
-    if (config.find(TAG_NODE_MODE) == config.end()) return false;
     stringstream ss;
     ss << val;
+    if (config.find(TAG_NODE_MODE) == config.end()){
+       return setNewPair(TAG_NODE_MODE, ss.str(), false);
+    } 
     config[TAG_NODE_MODE] = ss.str();
-    return true;
+    return saveConfig();
 }
 
 string nodeConfigurator::removeChar(string val,char c){

@@ -141,6 +141,7 @@ get_red_led_pin(){
       echo ${ledpin}
    else
       ledpin=22 
+      echo "red_led_pin=${ledpin}" >> ${config}
       echo ${ledpin}
    fi
 }

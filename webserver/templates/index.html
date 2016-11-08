@@ -14,6 +14,7 @@ $code:
 	id_grid_port="cangrid_port"
 	id_logfile="logfile"
 	id_loglevel="loglevel"
+	id_logappend="logappend"
 	id_canid="canid"
 	id_turnout_file="turnout_file"
 	id_fns_momentary="fn_momentary"
@@ -94,6 +95,9 @@ $code:
               <br>
               $:form[id_create_logfile].description : 
 	      $:form[id_create_logfile].render()
+	      <br>
+              $:form[id_logappend].description : 
+	      $:form[id_logappend].render()
 	      <hr>
               $:form[id_btn_save].render()
               <br><br>

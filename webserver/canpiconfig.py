@@ -78,7 +78,7 @@ class configManager:
             for k,v in self.config.iteritems():
                 line = ""
                 #dont put quotes on numbers
-                if k in ["tcpport","cangrid_port","ap_channel","node_number","canid","button_pin","green_led_pin","yellow_led_pin","start_event_id"]:
+                if k in ["tcpport","cangrid_port","ap_channel","node_number","canid","button_pin","green_led_pin","yellow_led_pin","red_led_pin","start_event_id"]:
                      line = k + "=" + v + "\n"
                 else:
                      line = k + "=\"" + v + "\"\n"
@@ -106,6 +106,7 @@ id_grid_enable="gridenable"
 id_grid_port="cangrid_port"
 id_logfile="logfile"
 id_loglevel="loglevel"
+id_logappend="logappend"
 id_canid="canid"
 id_turnout_file="turnout_file"
 id_fns_momentary="fn_momentary"
@@ -130,6 +131,7 @@ desc_ed_tcpport="ED Throttle Service port"
 desc_grid_enable="Cangrid enable"
 desc_grid_port="Grid connect Service port"
 desc_logfile="Logfile"
+desc_logappend="Append log"
 desc_loglevel="Log Level"
 desc_canid="Can ID"
 desc_turnout_file="Turnouts"
@@ -190,21 +192,22 @@ class index:
                 writeMessage(msg)
                 raise web.seeother('/')
 
-            cm.setValue("ap_mode",str(form[id_apmode].checked))
-            cm.setValue("ap_no_password",str(form[id_apmode_no_passwd].checked))
-            cm.setValue("ap_ssid",str(form[id_ssid].value))
-            cm.setValue("ap_password",str(form[id_password].value))
-            cm.setValue("ap_channel",str(form[id_channel].value))
-            cm.setValue("router_ssid",str(form[id_router_ssid].value))
-            cm.setValue("router_password",str(form[id_router_password].value))
-            cm.setValue("can_grid",str(form[id_grid_enable].checked))
-            cm.setValue("cangrid_port",str(form[id_grid_port].value))
-            cm.setValue("service_name",str(form[id_bonjour_name].value))
-            cm.setValue("tcpport",str(form[id_ed_tcpport].value))
-            cm.setValue("loglevel",str(form[id_loglevel].value))
-            cm.setValue(id_create_logfile,str(form[id_create_logfile].checked))
-            cm.setValue("canid",str(form[id_canid].value))
-            cm.setValue("fn_momentary",str(form[id_fns_momentary].value))
+            cm.setValue("ap_mode", str(form[id_apmode].checked))
+            cm.setValue("ap_no_password", str(form[id_apmode_no_passwd].checked))
+            cm.setValue("ap_ssid", str(form[id_ssid].value))
+            cm.setValue("ap_password", str(form[id_password].value))
+            cm.setValue("ap_channel", str(form[id_channel].value))
+            cm.setValue("router_ssid", str(form[id_router_ssid].value))
+            cm.setValue("router_password", str(form[id_router_password].value))
+            cm.setValue("can_grid", str(form[id_grid_enable].checked))
+            cm.setValue("cangrid_port", str(form[id_grid_port].value))
+            cm.setValue("service_name", str(form[id_bonjour_name].value))
+            cm.setValue("tcpport", str(form[id_ed_tcpport].value))
+            cm.setValue("loglevel", str(form[id_loglevel].value))
+            cm.setValue(id_create_logfile, str(form[id_create_logfile].checked))
+            cm.setValue(id_logappend, str(form[id_logappend].checked))
+            cm.setValue("canid", str(form[id_canid].value))
+            cm.setValue("fn_momentary", str(form[id_fns_momentary].value))
             cm.setValue("turnout_file", str(form[id_turnout_file].value))
             cm.setValue(id_start_event_id, str(form[id_start_event_id].value))
             cm.saveFile()
@@ -331,19 +334,22 @@ class index:
 
     def reloadMyForm(self):
 
-        apmode=True
-        gridenable=True
-        apmode_no_passwd=True
-        create_logfile=True
+        apmode = True
+        gridenable = True
+        apmode_no_passwd = True
+        create_logfile = True
+        logappend = True 
 
-        if cm.getValueInsert("ap_mode","True").lower()!="true":
-            apmode=False
-        if cm.getValueInsert("can_grid","True").lower()!="true":
-            gridenable=False
-        if cm.getValueInsert(id_apmode_no_passwd,"True").lower()!="true":
-            apmode_no_passwd=False
-        if cm.getValueInsert(id_create_logfile,"True").lower()!="true":
-            create_logfile=False
+        if cm.getValueInsert("ap_mode", "True").lower() != "true":
+            apmode = False
+        if cm.getValueInsert("can_grid", "True").lower() != "true":
+            gridenable = False
+        if cm.getValueInsert(id_apmode_no_passwd, "True").lower() != "true":
+            apmode_no_passwd = False
+        if cm.getValueInsert(id_create_logfile, "True").lower() != "true":
+            create_logfile = False
+        if cm.getValueInsert(id_logappend, "True").lower() != "true":
+            logappend = False
 
         myform = form.Form(
             form.Checkbox(id_apmode,description=desc_apmode,checked=apmode,value="apmode",id="tapmode"),
@@ -363,6 +369,7 @@ class index:
             form.Textbox(id_turnout_file,turnout_length,description=desc_turnout_file,value=cm.getValueInsert("turnout_file","turnout.txt")),
             form.Dropdown(id_loglevel,  ['INFO', 'WARN', 'DEBUG'],value=cm.getValueInsert("loglevel","INFO")),
             form.Checkbox(id_create_logfile,description=desc_create_logfile,checked=create_logfile,value=id_create_logfile,id="tcreate_logfile"),
+            form.Checkbox(id_logappend,description=desc_logappend,checked=logappend,value= id_logappend,id="tlogappend"),
             #form.Textbox(id_logfile,description=,value=cm.getValue("logfile"),id="logfile"),
             form.Button(desc_btn_save, id=id_btn_save, value="save", html="Save changes"),
             form.Button(desc_btn_apply, id=id_btn_apply, value="apply", html="Apply changes and reboot"),
