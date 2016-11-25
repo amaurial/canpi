@@ -363,9 +363,9 @@ void tcpClientGridConnect::handleClientGridMessage(string msg){
             //put message to the wire
             can->put_to_out_queue(icanid,candata,j,clientType);
             //put message to other can clients
-            //can->put_to_incoming_queue(icanid,candata,j,clientType);
+            can->put_to_incoming_queue(icanid,candata,j,clientType);
             //send the message to other grid clients
-            //server->postMessageToAllClients(id,icanid,candata,j,clientType);
+            server->postMessageToAllClients(id,icanid,candata,j,clientType);
         }
     }
 }
