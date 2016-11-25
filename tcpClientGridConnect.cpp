@@ -27,20 +27,27 @@ tcpClientGridConnect::tcpClientGridConnect(log4cpp::Category *logger, tcpServer 
     this->clientType = CLIENT_TYPE::GRID;
     logger->debug("Grid client %d created", id);
     this->config = config;
+    pthread_mutex_init(&m_mutex_in, NULL);
+    pthread_cond_init(&m_condv_in, NULL);
 }
 
 tcpClientGridConnect::~tcpClientGridConnect()
 {
     //dtor
+    pthread_mutex_destroy(&m_mutex_in);
+    pthread_cond_destroy(&m_condv_in);
 }
 
 void tcpClientGridConnect::start(void *param){
     running = 1;
+    logger->debug("[gridClient] Starting the queue reader thread");
+    pthread_create(&queueReader,nullptr,tcpClientGridConnect::thread_entry_grid_in,this);
     run(nullptr);
 }
 
 void tcpClientGridConnect::stop(){
     running = 0;
+    usleep(5000);
 }
 
 void tcpClientGridConnect::canMessage(int canid,const char* msg, int dlc){
@@ -76,7 +83,7 @@ void tcpClientGridConnect::canMessage(int canid,const char* msg, int dlc){
         //do the parse based on the extended or std frame
         if ((canid & CAN_EFF_FLAG) == CAN_EFF_FLAG){
             //extended frame
-            tempcanid = canid & CAN_SFF_MASK;            
+            tempcanid = canid & CAN_EFF_MASK;            
             tempcanid = tempcanid << 3;
             ss.clear();ss.str();
             ss << ":X";
@@ -116,7 +123,7 @@ void tcpClientGridConnect::canMessage(int canid,const char* msg, int dlc){
             ss << t;
 
             /* 
-             * second highest byte of the 4. we need to fix bit 12 and 13
+             * second highest byte of the 4. 
              */
             h1 = tempcanid >> 16;
             sprintf(t,"%02X",h1);
@@ -194,7 +201,13 @@ void tcpClientGridConnect::run(void *param){
         else if (nbytes>0){
             try{
                 logger->debug("[%d] Received from grid client:%s Bytes:%d",id, msg, nbytes);
-                handleClientGridMessage(msg,nbytes);
+                string message(msg);
+				msg_received++;
+				//logger->info("Put cangrid message to queue %d %s",msg_received , message.c_str());
+                pthread_mutex_lock(&m_mutex_in);                
+                in_grid_msgs.push(message);
+                pthread_mutex_unlock(&m_mutex_in);
+                pthread_cond_signal(&m_condv_in);
             }
             catch(const runtime_error &ex){
                 logger->debug("[%d] Grid client failed to process the client grid message\n%s",id,ex.what());
@@ -215,10 +228,27 @@ void tcpClientGridConnect::run(void *param){
     server->removeClient(this);
 }
 
-void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
+void tcpClientGridConnect::run_in_grid_msgs(void *param){
+    string msg;
+    while (running){
+	if (!in_grid_msgs.empty()){
+	   pthread_mutex_lock(&m_mutex_in);
+           msg = in_grid_msgs.front();
+           in_grid_msgs.pop();
+           pthread_mutex_unlock(&m_mutex_in);
+           handleClientGridMessage(msg);
+		   msg_processed++;
+		   //logger->info("Process cangrid message from queue %d %s", msg_processed, msg.c_str());
+           usleep(2000);
+        }
+    }
+    logger->debug("Stopping cangrid queue reader");
+}
+
+void tcpClientGridConnect::handleClientGridMessage(string msg){
     vector<string> messages;
     string message(msg);
-    messages = split(message,'\n', messages);
+    messages = split(message,';', messages);
     string canid;
     string data;
     bool stdframe = true;
@@ -226,14 +256,15 @@ void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
 
     int pos,delim;
 
-    logger->debug("[%d] Grid Processing message with size %d",id,message.size());
+    logger->debug("[%d] Grid Processing message with size %d %s",id,message.size(), message.c_str());
     vector<byte> vcanid;
     vector<byte> vdata;
     char candata[CAN_MSG_SIZE];
 
     for (auto const& a:messages){
-
+		
         string ms(a);
+		//logger->info("Processing grid %s ", ms.c_str());
         if (a.size()<4){
             continue;
         }
@@ -268,7 +299,8 @@ void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
             }
         }
         if (pos>0){
-            delim = ms.find(";");
+            //delim = ms.find(";");
+			delim = ms.size();
             if (delim <= pos){
                 logger->warn("[%d] Invalid grid string:[%s] no ; found",id,ms.c_str());
                 continue;
@@ -286,20 +318,30 @@ void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
                     logger->warn("[%d] Failed to parse the std grid header. Size is %d and should be 2",id,vcanid.size());
                     continue;
                 }
+                else{
+                    logger->debug("[%d] canid bytes %d %d",id,vcanid.at(0),vcanid.at(1));
+                }
             }
             else{
                 if (vcanid.size() != 4){
-                    logger->warn("[%d] Failed to parse the extended grid header. Size is %d and should be 2",id,vcanid.size());
+                    logger->warn("[%d] Failed to parse the extended grid header. Size is %d and should be 4",id,vcanid.size());
                     continue;
                 }
+                else{
+                    logger->debug("[%d] canid bytes %d %d %d %d",id,vcanid.at(0),vcanid.at(1),vcanid.at(2),vcanid.at(3));
+                }
             }
-
+            
             //create a can frame
             int icanid = vcanid.at(0);
             icanid = icanid << 8;
             icanid = icanid | vcanid.at(1);
             if (stdframe) icanid = icanid >> 5; //don't set the priority
             else{
+                //X00080004N000000000D040000
+                icanid = vcanid.at(0);
+                icanid = icanid << 8;
+                icanid = icanid | (vcanid.at(1) & 0xf7);//filter a crazy 8 that the FCU sends
                 icanid = icanid << 8;
                 icanid = icanid | vcanid.at(2);
                 icanid = icanid << 8;
@@ -317,13 +359,13 @@ void tcpClientGridConnect::handleClientGridMessage(char *msg,int size){
                 candata[i] = vdata.at(i);
             }
 
-            logger->debug("Grid parsed canid:%d data:%s", icanid, candata);
+            logger->debug("Grid parsed canid:%ld data:%s", icanid, candata);
             //put message to the wire
             can->put_to_out_queue(icanid,candata,j,clientType);
             //put message to other can clients
-            can->put_to_incoming_queue(icanid,candata,j,clientType);
+            //can->put_to_incoming_queue(icanid,candata,j,clientType);
             //send the message to other grid clients
-            server->postMessageToAllClients(id,icanid,candata,j,clientType);
+            //server->postMessageToAllClients(id,icanid,candata,j,clientType);
         }
     }
 }

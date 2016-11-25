@@ -136,12 +136,19 @@ reconfigure_if_pb_pressed(){
 }
 
 get_red_led_pin(){
-   ledpin=`grep red_led_pin ${config} |cut -d "=" -f 2` 
+   grep red_led_pin ${config}
+   if [[ $? -eq 0 ]];then
+      ledpin=`grep red_led_pin ${config} |cut -d "=" -f 2` 
+   else
+      ledpin=22 
+      echo "red_led_pin=${ledpin}" >> ${config}
+   fi
+
    if [[ $ledpin > 1 && $ledpin < 30 ]];then
       echo ${ledpin}
    else
       ledpin=22 
-      echo "red_led_pin=${ledpin}" >> ${config}
+      #echo "red_led_pin=${ledpin}" >> ${config}
       echo ${ledpin}
    fi
 }

@@ -16,6 +16,10 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <mutex>
+#include <condition_variable>
+#include <pthread.h>
+
 
 #define BUFFER_SIZE 1024
 /*
@@ -40,9 +44,20 @@ class tcpClientGridConnect:public Client
     protected:
     private:
         int running;
+        pthread_t queueReader;
         void run(void * param);
-        void handleClientGridMessage(char *msg,int size);
+        void handleClientGridMessage(string msg);
         vector<byte> getBytes(string hex_chars,vector<byte> *bytes);
+        std::queue<string> in_grid_msgs;
+        pthread_mutex_t m_mutex_in;
+        pthread_cond_t  m_condv_in;
+        void run_in_grid_msgs(void* param);
+        static void* thread_entry_grid_in(void *classPtr){
+            ((tcpClientGridConnect*)classPtr)->run_in_grid_msgs(nullptr);
+            return nullptr;
+        }
+		int msg_received;
+		int msg_processed;
 };
 
 #endif // TCPCLIENT_H
