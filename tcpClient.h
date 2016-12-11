@@ -6,6 +6,7 @@
 #include "opcodes.h"
 #include "msgdata.h"
 #include "Turnout.h"
+#include "sessionHandler.h"
 
 #include <sys/socket.h>
 #include <arpa/inet.h> //inet_addr
@@ -28,7 +29,9 @@ using namespace std;
 class tcpClient : public Client
 {
     public:
-        tcpClient(log4cpp::Category *logger, tcpServer *server, canHandler* can, int client_sock, struct sockaddr_in client_addr, int id, nodeConfigurator *config);
+        tcpClient(log4cpp::Category *logger, tcpServer *server, canHandler* can,
+                  int client_sock, struct sockaddr_in client_addr, int id,
+                  nodeConfigurator *config, sessionHandler *session_handler);
         virtual ~tcpClient();
         void start(void *param);
         void stop();
@@ -39,6 +42,7 @@ class tcpClient : public Client
         int running;
         edSession* edsession;
         std::map<int,edSession*> sessions; //the loco number is the key
+        sessionHandler *session_handler;
         Turnout *turnouts;
         std::queue<can_frame> in_msgs;
         pthread_mutex_t m_mutex_in_cli;

@@ -13,8 +13,16 @@ using namespace std;
 class edSession
 {
     public:
-        edSession(log4cpp::Category *logger);
+        edSession(log4cpp::Category *logger,int sessionuid);
         virtual ~edSession();
+
+        void setClientId(int client_id);
+        int getClientId();
+
+        void setClientIP(int client_ip);
+        int getClientIP();
+
+        int getSessionUid();
 
         void setLoco(int loco);
         int getLoco();
@@ -61,6 +69,9 @@ class edSession
         void getMomentaryFNs(int loco);
         string getMomentary();
 
+        bool isOrphan();
+        void setOrphan(bool orphan);
+
         void setSessionType(SESSION_TYPE stype);
         SESSION_TYPE getSessionType();
 
@@ -71,6 +82,10 @@ class edSession
         int loco;
         char sessionid;
         long last_keep_alive;
+        bool orphan;
+        int client_id;  //id from the tcp client. set by the session manager
+        int sessionuid; //unique number for the session set by the session manager
+        long client_ip;
         byte direction;
         byte ad_type;
         struct timespec cbus_time;

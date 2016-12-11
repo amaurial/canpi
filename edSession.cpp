@@ -1,9 +1,10 @@
 #include "edSession.h"
 #include "nodeConfigurator.h"
 
-edSession::edSession(log4cpp::Category *logger)
+edSession::edSession(log4cpp::Category *logger,int sessionuid)
 {
     //ctor
+    this->sessionuid = sessionuid;
     loco = -1;
     sessionid = 0;
     for (int i=0;i<FN_SIZE;i++){
@@ -109,6 +110,14 @@ vector<string> & edSession::split(const string &s, char delim, vector<string> &e
     return elems;
 }
 
+bool edSession::isOrphan(){
+    return orphan;
+}
+
+void edSession::setOrphan(bool orphan){
+    this->orphan = orphan;
+}
+
 void edSession::setNodeConfigurator(nodeConfigurator *config){
     this->config = config;
 }
@@ -118,6 +127,24 @@ void edSession::setLoco(int loco){
 }
 int edSession::getLoco(){
     return loco;
+}
+
+void edSession::setClientId(int client_id){
+    this->client_id = client_id;
+}
+int edSession::getClientId(){
+    return client_id;
+}
+
+void edSession::setClientIP(int client_ip){
+    this->client_ip = client_ip;
+}
+int edSession::getClientIP(){
+    return client_ip;
+}
+
+int edSession::getSessionUid(){
+    return sessionuid;
 }
 
 void edSession::setSpeed(byte val){

@@ -927,7 +927,7 @@ bool nodeConfigurator::setLogAppend(bool val){
     if (val) r = "True";
     else r = "False";
 
-    if (config.find(TAG_SERV_NAME) == config.end()) return false;
+    if (config.find(TAG_LOGAPPEND) == config.end()) return false;
     config[TAG_SERV_NAME] = r;
     return true;
 }
@@ -937,6 +937,30 @@ bool nodeConfigurator::getLogAppend(){
     if (ret.empty()){
         if (logger != nullptr) logger->error("Failed to get logappend . Default is false");
         else cout << "Failed to get logappend . Default is false" << endl;
+        return false;
+    }
+    if ((ret.compare("true") == 0) | (ret.compare("TRUE") == 0) | (ret.compare("True") == 0)){
+        return true;
+    }
+    return false;
+}
+
+bool nodeConfigurator::setLogConsole(bool val){
+    string r;
+    if (val) r = "True";
+    else r = "False";
+
+    if (config.find(TAG_LOGCONSOLE) == config.end()) return false;
+    config[TAG_SERV_NAME] = r;
+    return true;
+}
+
+bool nodeConfigurator::getLogConsole(){
+    string ret;
+    ret = getStringConfig(TAG_LOGCONSOLE);
+    if (ret.empty()){
+        if (logger != nullptr) logger->error("Failed to get log console . Default is false");
+        else cout << "Failed to get log console . Default is false" << endl;
         return false;
     }
     if ((ret.compare("true") == 0) | (ret.compare("TRUE") == 0) | (ret.compare("True") == 0)){
@@ -1177,7 +1201,7 @@ bool nodeConfigurator::setNodeMode(int val){
     ss << val;
     if (config.find(TAG_NODE_MODE) == config.end()){
        return setNewPair(TAG_NODE_MODE, ss.str(), false);
-    } 
+    }
     config[TAG_NODE_MODE] = ss.str();
     return saveConfig();
 }

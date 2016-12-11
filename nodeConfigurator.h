@@ -131,6 +131,9 @@ class nodeConfigurator
         bool setLogAppend(bool val);
         bool getLogAppend();
 
+        bool setLogConsole(bool val);
+        bool getLogConsole();
+
         bool setTurnoutFile(string val);
         string getTurnoutFile(bool fresh=true);
 

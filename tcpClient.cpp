@@ -1,7 +1,9 @@
 #include "tcpClient.h"
 #include <stdio.h>
 
-tcpClient::tcpClient(log4cpp::Category *logger, tcpServer *server, canHandler* can, int client_sock, struct sockaddr_in client_addr,int id, nodeConfigurator *config)
+tcpClient::tcpClient(log4cpp::Category *logger, tcpServer *server,
+                     canHandler* can, int client_sock, struct sockaddr_in client_addr,
+                     int id, nodeConfigurator *config, sessionHandler *session_handler)
 {
     //ctor
 
@@ -12,8 +14,9 @@ tcpClient::tcpClient(log4cpp::Category *logger, tcpServer *server, canHandler* c
     this->logger = logger;
     this->id = id;
     this->config = config;
+    this->session_handler= session_handler;
     logger->debug("Client %d created", id);
-    edsession = new edSession(logger);
+    edsession = new edSession(logger,0);
     edsession->setNodeConfigurator(config);
     edsession->getMomentaryFNs();
     this->re_speed = regex(RE_SPEED);
@@ -445,7 +448,7 @@ void tcpClient::handleCBUS(unsigned char *msg){
             ss << "s0\n";
             sendToEd(ss.str());
             //create new edsession object
-            edsession = new edSession(logger);
+            edsession = new edSession(logger,0);
             edsession->setNodeConfigurator(config);
             edsession->getMomentaryFNs();
 

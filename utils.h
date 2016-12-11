@@ -20,6 +20,7 @@
 #define TAG_LOGFILE      "logfile"
 #define TAG_SERV_NAME    "service_name"
 #define TAG_LOGAPPEND    "logappend"
+#define TAG_LOGCONSOLE   "log_console"
 #define TAG_TURNOUT      "turnout_file"
 #define TAG_CANDEVICE    "candevice"
 #define TAG_APCHANNEL    "ap_channel"

@@ -38,6 +38,7 @@
 #include "canHandler.h"
 #include "Turnout.h"
 #include "nodeConfigurator.h"
+#include "sessionHandler.h"
 
 using namespace std;
 //using namespace libconfig;
@@ -107,13 +108,16 @@ int main()
     //config the logger
     logger.setPriority(loglevel);
 
-    log4cpp::PatternLayout * layout1 = new log4cpp::PatternLayout();
-    layout1->setConversionPattern("%d [%p] %m%n");
+    if (config->getLogConsole()){
+        log4cpp::PatternLayout * layout1 = new log4cpp::PatternLayout();
+        layout1->setConversionPattern("%d [%p] %m%n");
 
-    log4cpp::Appender *appender1 = new log4cpp::OstreamAppender("console", &std::cout);
-    appender1->setLayout(new log4cpp::BasicLayout());
-    appender1->setLayout(layout1);
-    logger.addAppender(appender1);
+        log4cpp::Appender *appender1 = new log4cpp::OstreamAppender("console", &std::cout);
+        appender1->setLayout(new log4cpp::BasicLayout());
+        appender1->setLayout(layout1);
+        logger.addAppender(appender1);
+    }
+
 
     if (config->getCreateLogfile()){
 
@@ -150,8 +154,10 @@ int main()
         turnouts.load(turnoutfile);
     }
 
+    //start the session handler
+    sessionHandler session_handler = sessionHandler(&logger, config);
     //start the tcp server
-    tcpServer tcpserver = tcpServer(&logger,port,&can,CLIENT_TYPE::ED);
+    tcpServer tcpserver = tcpServer(&logger, port, &can, &session_handler, CLIENT_TYPE::ED);
     tcpserver.setTurnout(&turnouts);
     tcpserver.setNodeConfigurator(config);
     tcpserver.start();
@@ -160,7 +166,7 @@ int main()
     //start the grid tcp server
     tcpServer *gridserver;
     if (start_grid_server){
-        tcpServer tcpserverGrid = tcpServer(&logger,gridport,&can,CLIENT_TYPE::GRID);
+        tcpServer tcpserverGrid = tcpServer(&logger, gridport, &can, nullptr, CLIENT_TYPE::GRID);
         tcpserverGrid.setNodeConfigurator(config);
         tcpserverGrid.start();
         can.setTcpServer(&tcpserverGrid);
@@ -174,10 +180,10 @@ int main()
     logger.info("Stopping the tcp server");
     tcpserver.stop();
     gridserver->stop();
-    
+
     logger.info("Stopping CBUS reader");
     can.stop();
-    
+
     //give some time for the threads to finish
     long t = 2 * 1000000;
     usleep(t);
