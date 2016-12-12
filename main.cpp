@@ -155,7 +155,7 @@ int main()
     }
 
     //start the session handler
-    sessionHandler session_handler = sessionHandler(&logger, config);
+    sessionHandler session_handler = sessionHandler(&logger, config, &can);
     //start the tcp server
     tcpServer tcpserver = tcpServer(&logger, port, &can, &session_handler, CLIENT_TYPE::ED);
     tcpserver.setTurnout(&turnouts);

@@ -78,6 +78,18 @@ void tcpClient::start(void *param){
 
 void tcpClient::stop(){
     running = 0;
+    
+    /*
+     * mark the existing sessions as orphan
+     * the client disconnection was not proper done
+    */
+    std::map<int,edSession*>::iterator it = sessions.begin();
+    while(it != sessions.end())
+    {
+        it->second->setOrphan(true);
+        it++;
+    }
+    
     usleep(1000*1000);
     close(client_sock);
 }
