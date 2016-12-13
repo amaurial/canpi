@@ -170,6 +170,9 @@ class nodeConfigurator
         int getNodeMode();
         bool setNodeMode(int val);
 
+        int getOrphanTimeout();
+        bool setOrphanTimeout(int val);
+
         void printMemoryNVs();
         byte getNumberOfNVs(){return NVS_SIZE;};
         byte getNV(int idx);

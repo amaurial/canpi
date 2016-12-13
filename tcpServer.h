@@ -11,8 +11,8 @@
 #include "nodeConfigurator.h"
 #include "sessionHandler.h"
 
-
 class Client;
+class sessionHandler;
 
 class tcpServer
 {

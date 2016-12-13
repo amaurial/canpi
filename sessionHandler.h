@@ -10,21 +10,22 @@
 #include <vector>
 #include <utility>
 
+#include "canHandler.h"
 #include "edSession.h"
 #include "nodeConfigurator.h"
-#include "canHandler.h"
+#include "opcodes.h"
+#include "utils.h"
 
 class sessionHandler
 {
     public:
         sessionHandler(log4cpp::Category *logger,nodeConfigurator *config, canHandler *can);
-        virtual ~sessionHandler();
-        edSession* retrieveEDSession(int client_id, string edname, long client_ip);
+        virtual ~sessionHandler();        
         unsigned int retrieveAllEDSession(int client_id, string edname, long client_ip, vector<edSession*> *edsessions);
-        edSession* retrieveEDSession(int sessionid,int client_id, string edname, long client_ip);
+    	edSession* createEDSession(int client_id, string edname, long client_ip);
         bool deleteEDSession(int sessionuid);
         bool deleteAllEDSessions(int client_id);
-        void start(void *param);
+        void start();
         void stop();
     protected:
     private:
@@ -34,13 +35,14 @@ class sessionHandler
         canHandler *can;
         int sessionids;
         int running;     
+		int timeout_orphan;
         pthread_t sessionHandlerThread;
 
         vector<edSession*> getListEDSessions(int client_id);
-        unsigned int hasPendingSessions(int client_id,string edname, long client_ip);
-        edSession* createEDSession(int client_id, string edname, long client_ip);
+        unsigned int hasPendingSessions(int client_id,string edname, long client_ip);        
         void run(void *param);
         void sendKeepAliveForOrphanSessions();
+		void sendCbusMessage(byte b0, byte b1);
         
         static void* run_thread_entry(void *classPtr){
             ((sessionHandler*)classPtr)->run(classPtr);

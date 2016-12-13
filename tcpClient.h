@@ -19,7 +19,7 @@
 #include <regex>
 
 #define BUFFER_SIZE 1024
-#define CBUS_KEEP_ALIVE  4000 //ms
+
 #define ED_KEEP_ALIVE  9000 //ms
 #define BS  128
 #define ST  30 //ms
@@ -69,6 +69,11 @@ class tcpClient : public Client
         void sendFnMessages(edSession* session, int fn, string message);
         bool programmingFn(int fn, int loco,int onoff);
         int getLoco(string msg);
+		
+		void releaseAllSessions();
+		void retrieveRemainingSessions();
+		void ackEDSessionCreated(edSession *ed, bool sendSpeedMode);
+		bool sessions_retrieved;
 
         void setStartSessionTime();
 

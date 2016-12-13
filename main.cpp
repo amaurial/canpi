@@ -156,6 +156,7 @@ int main()
 
     //start the session handler
     sessionHandler session_handler = sessionHandler(&logger, config, &can);
+	session_handler.start();
     //start the tcp server
     tcpServer tcpserver = tcpServer(&logger, port, &can, &session_handler, CLIENT_TYPE::ED);
     tcpserver.setTurnout(&turnouts);
@@ -178,6 +179,7 @@ int main()
 
     //finishes
     logger.info("Stopping the tcp server");
+	session_handler.stop();
     tcpserver.stop();
     gridserver->stop();
 

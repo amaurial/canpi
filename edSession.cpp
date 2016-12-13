@@ -17,6 +17,8 @@ edSession::edSession(log4cpp::Category *logger,int sessionuid)
     ad_type = 'S';
     sessionType = SESSION_TYPE::MULTI_SESSION;
     this->logger = logger;
+	orphan = false;
+	session_set = false;
     //set inital time
     struct timespec spec;
     clock_gettime(CLOCK_REALTIME,&spec);
@@ -27,6 +29,10 @@ edSession::edSession(log4cpp::Category *logger,int sessionuid)
 edSession::~edSession()
 {
     //dtor
+}
+
+bool edSession::isSessionSet(){
+	return session_set;
 }
 
 void edSession::configChanged(){
@@ -156,6 +162,7 @@ byte edSession::getSpeed(){
 
 void edSession::setSession(byte session){
     this->sessionid = session;
+	session_set = true;
 }
 byte edSession::getSession(){
     return sessionid;

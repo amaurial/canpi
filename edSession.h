@@ -71,6 +71,8 @@ class edSession
 
         bool isOrphan();
         void setOrphan(bool orphan);
+		
+		bool isSessionSet();
 
         void setSessionType(SESSION_TYPE stype);
         SESSION_TYPE getSessionType();
@@ -83,6 +85,7 @@ class edSession
         char sessionid;
         long last_keep_alive;
         bool orphan;
+		bool session_set;
         int client_id;  //id from the tcp client. set by the session manager
         int sessionuid; //unique number for the session set by the session manager
         long client_ip;

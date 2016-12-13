@@ -1189,7 +1189,7 @@ int nodeConfigurator::getNodeMode(){
             }
         }
         else{
-            if (logger != nullptr) logger->error( "Node Mode.Failed to get the yellow_led_pin. Default is 0 SLIM");
+            if (logger != nullptr) logger->error( "Node Mode.Failed to get the node mode. Default is 0 SLIM");
             else cout << "Node Mode. Failed to get the node_mode. Default is 0 SLIM" << endl;
             ret = 0;
         }
@@ -1203,6 +1203,40 @@ bool nodeConfigurator::setNodeMode(int val){
        return setNewPair(TAG_NODE_MODE, ss.str(), false);
     }
     config[TAG_NODE_MODE] = ss.str();
+    return saveConfig();
+}
+
+int nodeConfigurator::getOrphanTimeout(){
+    int ret;
+    ret = getIntConfig(TAG_ORPHAN_TIMEOUT);
+    if (ret == INTERROR){
+        string r = getStringConfig(TAG_ORPHAN_TIMEOUT);
+        if (r.size() > 0){
+            //try to convert
+            try{
+                ret = atoi(r.c_str());
+            }
+            catch(...){
+                if (logger != nullptr) logger->error("Orphan timeout. Failed to convert %s to int",  r.c_str());
+                else cout << "Orphan timeout. Failed to convert " << r << " to int" << endl;
+                ret = 30;//seconds
+            }
+        }
+        else{
+            if (logger != nullptr) logger->error( "Orphan timeout.Failed to get the orphan timeout. Default is 30 s");
+            else cout << "Orphan timeout. Failed to get the the orphan timeout. Default is 30 s" << endl;
+            ret = 30;//seconds
+        }
+    }
+    return ret;
+}
+bool nodeConfigurator::setOrphanTimeout(int val){
+    stringstream ss;
+    ss << val;
+    if (config.find(TAG_ORPHAN_TIMEOUT) == config.end()){
+       return setNewPair(TAG_ORPHAN_TIMEOUT, ss.str(), false);
+    }
+    config[TAG_ORPHAN_TIMEOUT] = ss.str();
     return saveConfig();
 }
 
