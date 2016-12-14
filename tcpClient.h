@@ -69,8 +69,10 @@ class tcpClient : public Client
         void sendFnMessages(edSession* session, int fn, string message);
         bool programmingFn(int fn, int loco,int onoff);
         int getLoco(string msg);
-		
+
 		void releaseAllSessions();
+		void releaseActualSession();
+		void deleteUnsetSessions();
 		void retrieveRemainingSessions();
 		void ackEDSessionCreated(edSession *ed, bool sendSpeedMode);
 		bool sessions_retrieved;

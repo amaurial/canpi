@@ -35,6 +35,7 @@ bool sessionHandler::deleteEDSession(int sessionuid){
     while (it != sessions.end()){
         edSession *ed = *it;
         if (ed->getSessionUid() == sessionuid){
+            delete (ed);
             sessions.erase(it);
             return true;
         }
@@ -49,19 +50,19 @@ unsigned int sessionHandler::retrieveAllEDSession(int client_id, string edname, 
     logger->debug("[sessionHandler] Checking for all %d existing sessions for ed %s %d and ip %d",sessions.size(), edname.c_str(), client_id, client_ip);
 	std::vector<edSession*>::iterator it = sessions.begin();
     while (it != sessions.end()){
-		ed = *it;    
+		ed = *it;
         //if (sessions[i]->getClientIP() == client_ip && sessions[i]->getEdName() == edname){
 		logger->debug("[sessionHandler] Comparing ip %d and %d",ed->getClientIP(), client_ip);
 		if (ed->getClientIP() == client_ip){
             ed->setOrphan(false);
-            edsessions->push_back(ed); 
-			i++;           
+            edsessions->push_back(ed);
+			i++;
         }
 		it++;
     }
-	
+
 	logger->debug("[sessionHandler] Found %d existing sessions for %s %d", i, edname.c_str(), client_id);
-	
+
     return i;
 }
 
@@ -71,7 +72,8 @@ bool sessionHandler::deleteAllEDSessions(int client_id){
     while (it != sessions.end()){
         edSession *ed = *it;
         if (ed->getClientId() == client_id){
-            sessions.erase(it); 
+            delete (ed);
+            sessions.erase(it);
 			found = true;
         }
         it++;
@@ -104,7 +106,7 @@ void sessionHandler::sendKeepAliveForOrphanSessions(){
             while(it != sessions.end())
             {
 				ed = *it;
-                if (ed->isOrphan()){                    
+                if (ed->isOrphan()){
                     clock_gettime(CLOCK_REALTIME,&spec);
 
                     /*

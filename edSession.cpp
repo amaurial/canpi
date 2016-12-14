@@ -19,6 +19,7 @@ edSession::edSession(log4cpp::Category *logger,int sessionuid)
     this->logger = logger;
 	orphan = false;
 	session_set = false;
+	session_name = "";
     //set inital time
     struct timespec spec;
     clock_gettime(CLOCK_REALTIME,&spec);
