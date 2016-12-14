@@ -7,16 +7,24 @@ sessionHandler::sessionHandler(log4cpp::Category *logger,nodeConfigurator *confi
     this->config = config;
     this->can = can;
     sessionids = 0;
+    pthread_mutex_init(&m_mutex_in, NULL);
+    pthread_cond_init(&m_condv_in, NULL);
 }
 
 sessionHandler::~sessionHandler()
 {
     //dtor
     this->sessions.clear();
+    pthread_mutex_destroy(&m_mutex_in);
+    pthread_cond_destroy(&m_condv_in);
+}
 }
 
 edSession* sessionHandler::createEDSession(int client_id, string edname, long client_ip){
     logger->debug("[sessionHandler] Allocate a new session for ed %s %d and ip %d", edname.c_str(), client_id, client_ip);
+    //make the new sessions thread safe
+    pthread_mutex_lock(&m_mutex_in);
+        
     sessionids++;
     edSession *ed = new edSession(logger,sessionids);
     ed->setNodeConfigurator(config);
@@ -26,11 +34,18 @@ edSession* sessionHandler::createEDSession(int client_id, string edname, long cl
     ed->setClientId(client_id);
 	ed->setOrphan(false);
     sessions.push_back(ed);
+    
+    pthread_mutex_unlock(&m_mutex_in);
+    pthread_cond_signal(&m_condv_in);
+    
     return ed;
 }
 
 bool sessionHandler::deleteEDSession(int sessionuid){
 	logger->debug("[sessionHandler] Deleting session %d", sessionuid);
+    //make the new sessions thread safe
+    pthread_mutex_lock(&m_mutex_in);
+    
     std::vector<edSession*>::iterator it = sessions.begin();
     while (it != sessions.end()){
         edSession *ed = *it;
@@ -41,6 +56,10 @@ bool sessionHandler::deleteEDSession(int sessionuid){
         }
         it++;
     }
+    
+    pthread_mutex_unlock(&m_mutex_in);
+    pthread_cond_signal(&m_condv_in);
+    
     return false;
 }
 
@@ -68,6 +87,10 @@ unsigned int sessionHandler::retrieveAllEDSession(int client_id, string edname, 
 
 bool sessionHandler::deleteAllEDSessions(int client_id){
 	bool found = false;
+    
+    //make the new sessions thread safe
+    pthread_mutex_lock(&m_mutex_in);
+    
     std::vector<edSession*>::iterator it = sessions.begin();
     while (it != sessions.end()){
         edSession *ed = *it;
@@ -78,19 +101,11 @@ bool sessionHandler::deleteAllEDSessions(int client_id){
         }
         it++;
     }
+    
+    pthread_mutex_unlock(&m_mutex_in);
+    pthread_cond_signal(&m_condv_in);
+    
     return found;
-}
-
-/*return the index of the first found pending session*/
-unsigned int sessionHandler::hasPendingSessions(int client_id, string edname, long client_ip){
-
-    logger->debug("[sessionHandler] Checking for existing session for ed %s %d", edname.c_str(), client_id);
-    for (unsigned int i=0; i < sessions.size(); i++){
-        if (sessions[i]->getClientIP() == client_ip && sessions[i]->getEdName() == edname){
-            return i;
-        }
-    }
-    return -1;
 }
 
 void sessionHandler::sendKeepAliveForOrphanSessions(){
