@@ -118,6 +118,7 @@ id_btn_restart="btnRestart"
 id_btn_stop="btnStop"
 id_btn_restart_all="btnRestartAll"
 id_btn_update_file="btnUpdateFile"
+id_orphan_timeout="orphan_timeout"
 
 desc_apmode="AP mode"
 desc_apmode_no_passwd="No password in AP mode"
@@ -144,6 +145,7 @@ desc_btn_restart="btnRestart"
 desc_btn_stop="btnStop"
 desc_btn_restart_all="btnRestartAll"
 desc_btn_update_file="btnUpdateFile"
+desc_orphan_timeout="Orphan sessions timeout seconds"
 
 #validators
 ssid_length = form.Validator("SSID length should be between 1 and 8 characters", lambda p: p is None or len(p)>8)
@@ -209,7 +211,8 @@ class index:
             cm.setValue("canid", str(form[id_canid].value))
             cm.setValue("fn_momentary", str(form[id_fns_momentary].value))
             cm.setValue("turnout_file", str(form[id_turnout_file].value))
-            cm.setValue(id_start_event_id, str(form[id_start_event_id].value))
+            cm.setValue(id_start_event_id, str(form[id_start_event_id].value))            
+            cm.setValue(id_orphan_timeout, str(form[id_orphan_timeout].value))
             cm.saveFile()
             writeMessage("Save successful")
             raise web.seeother('/')
@@ -278,21 +281,28 @@ class index:
 
         if self.isint(form[id_canid].value):
             v = int(form[id_canid].value)
-            if v == 0 or v > 110:
+            if v <= 0 or v > 110:
                 return False, "The CANID should be between 1 and 110"
         else:
             return False, "The CANID should be between 1 and 110"
+        
+        if self.isint(form[id_orphan_timeout].value):
+            v = int(form[id_orphan_timeout].value)
+            if v <= 0 or v > 3600:
+                return False, "The orphan timeout should be between 1 and 3600 seconds"
+        else:
+            return False, "The orphan should be between 1 and 3600 seconds"
 
         if self.isint(form[id_ed_tcpport].value):
             v = int(form[id_ed_tcpport].value)
-            if v == 0 or v > portlimit or v in invalid_ports:
+            if v <= 0 or v > portlimit or v in invalid_ports:
                 return False, desc_ed_tcpport + "[" + str(v) + "] should be between 1 and " + str(portlimit) + " and not be " + str(invalid_ports)
         else:
             return False, desc_ed_tcpport + "[" + str(v) + "] should be between 1 and " + str(portlimit) + " and not be " + str(invalid_ports)
 
         if self.isint(form[id_grid_port].value):
             v1 = int(form[id_grid_port].value)
-            if v1 == 0 or v1 > portlimit or v1 in invalid_ports:
+            if v1 <= 0 or v1 > portlimit or v1 in invalid_ports:
                 return False, desc_grid_port + " should be between 1 and " + str(portlimit) + " and not be " + str(invalid_ports)
         else:
             return False, desc_grid_port + " should be between 1 and " + str(portlimit) + " and not be " + str(invalid_ports)
@@ -302,7 +312,7 @@ class index:
 
         if self.isint(form[id_start_event_id].value):
             v = int(form[id_start_event_id].value)
-            if v == 0 or v > portlimit:
+            if v <= 0 or v > portlimit:
                 print("Run validation\n")
                 return False, desc_start_event + "[" + str(v) + "] should be between 1 and " + str(portlimit)
         else:
@@ -365,6 +375,7 @@ class index:
             form.Textbox(id_grid_port,description=desc_grid_port,value=cm.getValueInsert("cangrid_port",4444),id="cangripport"),
             form.Textbox(id_canid,description=desc_canid,value=cm.getValueInsert("canid",100)),
             form.Textbox(id_start_event_id,description=desc_start_event,value=cm.getValueInsert(id_start_event_id,1)),
+            form.Textbox(id_orphan_timeout,description=desc_orphan_timeout,value=cm.getValueInsert(id_orphan_timeout,30)),
             form.Textbox(id_fns_momentary,description=desc_fns_momentary,value=cm.getValueInsert("fn_momentary","2")),
             form.Textbox(id_turnout_file,turnout_length,description=desc_turnout_file,value=cm.getValueInsert("turnout_file","turnout.txt")),
             form.Dropdown(id_loglevel,  ['INFO', 'WARN', 'DEBUG'],value=cm.getValueInsert("loglevel","INFO")),

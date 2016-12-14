@@ -26,6 +26,7 @@ $code:
         id_btn_stop="btnStop"
         id_btn_restart_all="btnRestartAll"
 	id_btn_update_file="btnUpdateFile"
+        id_orphan_timeout="orphan_timeout"
 
 <!DOCTYPE html>
 <html lang="en">
@@ -83,6 +84,9 @@ $code:
 	      <br>
               $:form[id_start_event_id].description : 
               $:form[id_start_event_id].render()
+              <br>
+              $:form[id_orphan_timeout].description :
+              $:form[id_orphan_timeout].render()
 	      <br>
               $:form[id_turnout_file].description : 
               $:form[id_turnout_file].render()
