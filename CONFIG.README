@@ -26,6 +26,11 @@ iface can0 can static
       bitrate 125000 restart-ms 1000
 #to here
 
+######### Virtual CAN for test #######
+
+sudo modprobe vcan
+sudo ip link add dev vcan0 type vcan
+sudo ip link set up vcan0
 
 ######## Canpi automatic start #######
 

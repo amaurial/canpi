@@ -21,7 +21,6 @@
 #define BUFFER_SIZE 1024
 
 #define ED_KEEP_ALIVE  9000 //ms
-#define BS  128
 #define ST  30 //ms
 
 using namespace std;

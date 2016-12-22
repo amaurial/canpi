@@ -37,10 +37,11 @@ class sessionHandler
         int running;
 		int timeout_orphan;
         pthread_t sessionHandlerThread;
-        
+
         void run(void *param);
         void sendKeepAliveForOrphanSessions();
 		void sendCbusMessage(byte b0, byte b1);
+		void sendCbusMessage(byte b0, byte b1, byte b2);
 
         pthread_mutex_t m_mutex_in;
         pthread_cond_t  m_condv_in;

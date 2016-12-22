@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <string>
+#include <time.h>
 
 //################# Config files tag definitions
 #define TAG_CANID        "canid"
@@ -66,6 +67,10 @@ static inline void togle_bit(int32_t *x, int bitNum) {
 static inline bool check_bit(int32_t *x, int bitNum) {
     int8_t bit = (*x >> bitNum) & 1;
     return (bit == 1);
+}
+
+static inline long elapsed_millis(struct timespec t, struct timespec t1){
+    return t.tv_sec*1000 + t.tv_nsec/1.0e6 - t1.tv_sec*1000 - t1.tv_nsec/1.0e6;
 }
 
 //custom exception class

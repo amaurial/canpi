@@ -128,6 +128,7 @@ void tcpClient::run(void *param){
 			std::map<int,edSession*>::iterator it = sessions.begin();
 			while(it != sessions.end())
 			{
+                logger->debug("[%d] [tcpClient] Setting session %d for loco %d as orphan",id, it->second->getSession(), it->second->getLoco());
 				it->second->setOrphan(true);
 				it++;
 			}
@@ -152,6 +153,7 @@ void tcpClient::run(void *param){
 			std::map<int,edSession*>::iterator it = sessions.begin();
 			while(it != sessions.end())
 			{
+                logger->debug("[%d] [tcpClient] Setting session %d for loco %d as orphan",id, it->second->getSession(), it->second->getLoco());
 				it->second->setOrphan(true);
 				it++;
 			}
@@ -190,7 +192,8 @@ void tcpClient::sendKeepAlive(void *param){
                 //logger->debug("[%d] Keep alive 0 sessions",id);
                 clock_gettime(CLOCK_REALTIME,&spec);
                 t = edsession->getEDTime();
-                millis = spec.tv_sec*1000 + spec.tv_nsec/1.0e6 - t.tv_sec*1000 - t.tv_nsec/1.0e6;
+                millis = elapsed_millis(spec, t);
+                //millis = spec.tv_sec*1000 + spec.tv_nsec/1.0e6 - t.tv_sec*1000 - t.tv_nsec/1.0e6;
                 if (millis > ED_KEEP_ALIVE ){
                     //send to ED
                     logger->debug("[%d] [tcpClient] Send ED keep alive",id);
@@ -207,7 +210,8 @@ void tcpClient::sendKeepAlive(void *param){
                     //logger->debug("[%d] Keep alive %d loco",id,it->second->getLoco());
                     clock_gettime(CLOCK_REALTIME,&spec);
                     t = it->second->getEDTime();
-                    millis = spec.tv_sec*1000 + spec.tv_nsec/1.0e6 - t.tv_sec*1000 - t.tv_nsec/1.0e6;
+                    millis = elapsed_millis(spec, t);
+                    //millis = spec.tv_sec*1000 + spec.tv_nsec/1.0e6 - t.tv_sec*1000 - t.tv_nsec/1.0e6;
                     if (millis > ED_KEEP_ALIVE ){
                         it->second->setEDTime(spec);
                         //send to ED
@@ -217,7 +221,8 @@ void tcpClient::sendKeepAlive(void *param){
                     }
                     if (it->second->getLoco()>-1){
                         t = it->second->getCbusTime();
-                        millis = spec.tv_sec*1000 + spec.tv_nsec/1.0e6 - t.tv_sec*1000 - t.tv_nsec/1.0e6;
+                        millis = elapsed_millis(spec, t);
+                        //millis = spec.tv_sec*1000 + spec.tv_nsec/1.0e6 - t.tv_sec*1000 - t.tv_nsec/1.0e6;
                         if (millis > CBUS_KEEP_ALIVE ){
                             it->second->setCbusTime(spec);
                             //send keep alive
