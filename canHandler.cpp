@@ -600,7 +600,8 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
     char sendframe[CAN_MSG_SIZE];
     memset(sendframe,0,CAN_MSG_SIZE);
     byte Hb,Lb;
-    int tnn, status;
+    int tnn;
+    SCRIPT_ACTIONS status = NONE;
     struct can_frame frame = canframe.getFrame();
     print_frame(&frame,"[canHandler] Handling CBUS config event");
 
@@ -724,14 +725,15 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
         }
 
         //1 error, 2 reconfigure , 3 restart the service
-        status = config->setNV(frame.data[3],frame.data[4]);
-        if (status == 1){
+        int st = config->setNV(frame.data[3],frame.data[4]);
+        if (st == 1){
             sendframe[0] = OPC_CMDERR;
             sendframe[1] = Hb;
             sendframe[2] = Lb;
             sendframe[3] = 9;
             put_to_out_queue(sendframe, 4, CLIENT_TYPE::CBUS);
             logger->debug("[canHandler] NVSET failed. Sent Err");
+            status = NONE;
         }
         else{
             sendframe[0] = OPC_WRACK;
@@ -741,7 +743,9 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
             logger->debug("[canHandler] NVSET ok. Sent wrack");
         }
 
-        if (status == 2 || status == 3){
+        if (st == 2 || st == 3){
+            if (st == 2) status = CONFIGURE;
+            if (st == 3) status = RESTART;
             restart_module(status);
         }
 
@@ -817,6 +821,21 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
 
     break;
 
+    case OPC_ASON:
+        if (setup_mode) return;
+        logger->debug("[canHandler] Received set ASON.");
+        Lb = frame.data[4];
+        Hb = frame.data[3];
+        tnn = Hb;
+        tnn = (tnn << 8) | Lb;
+        if (tnn != config->getShutdownCode()){
+            logger->debug("[canHandler] Shuting down the node.Received ASON %d", tnn);
+            restart_module(SHUTDOWN);
+            return;
+        }
+
+    break;
+
     case OPC_ENUM:
         if (setup_mode) return;
         //get node number
@@ -853,22 +872,25 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
  * 2 reconfigure the module. It also forces a reboot.
  * 3 restarts the canpi and webserver services
  */
-void canHandler::restart_module(int status){
+void canHandler::restart_module(SCRIPT_ACTIONS action){
     string command;
     //MTA*<;>*
 
-    if (status == 2){
+    if (action == CONFIGURE){
         command = "/etc/init.d/start_canpi.sh configure";
     }
-    else if (status == 3){
+    else if (action == RESTART){
         command = "/etc/init.d/start_canpi.sh restart";
+    }
+    else if (action == SHUTDOWN){
+        command = "/etc/init.d/start_canpi.sh shutdown";
     }
     else{
         return;
     }
     //all parameters saved, we can restart or reconfigure the module
-    logger->debug("[canHandler] Restart after new configuration %d", status);
-    logger->debug("[canHandler] Stoping all servers");
+    logger->debug("[canHandler] Restart after new configuration %d", action);
+    logger->debug("[canHandler] Stopping all servers");
     vector<tcpServer*>::iterator server;
     if (servers.size() > 0){
         for (server = servers.begin();server != servers.end(); server++){
@@ -931,7 +953,7 @@ void canHandler::doPbLogic(){
         nnReleaseTime = time(0)*1000;
         pb_pressed = false;
         logger->debug("[canHandler] Button released. Timer end [%le] difference [%lf]",nnReleaseTime, nnReleaseTime - nnPressTime );
-        
+
         char sendframe[CAN_MSG_SIZE];
         memset(sendframe,0,CAN_MSG_SIZE);
 
@@ -941,13 +963,13 @@ void canHandler::doPbLogic(){
 
         //check if node number request
         if ((nnReleaseTime - nnPressTime) >= NN_PB_TIME){
-            
+
             if (config->getNodeMode() == 1){//change from FLIM to SSLIM
                 logger->info("Node was in FLIM. Setting to SLIM");
             	config->setNodeMode(0); //SLIM
             	gl.setval_gpio("1");
             	yl.setval_gpio("0");
-            	
+
             	sendframe[0] = OPC_NNREL;
             	sendframe[1] = Hb;
             	sendframe[2] = Lb;

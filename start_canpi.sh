@@ -48,7 +48,7 @@ else
         echo "'upgrade' directory created successfully"
     else
         echo "Failed to create 'upgrade' directory"
-    fi 
+    fi
 fi
 
 #Bonjour files
@@ -99,7 +99,7 @@ is_pb_pressed(){
       sleep 1
       v=`cat /sys/class/gpio/gpio${p}/value`
    fi
-   echo $v 
+   echo $v
 }
 
 blink_red_led(){
@@ -123,7 +123,7 @@ reconfigure_if_pb_pressed(){
       blink_red_led
       unset_red_led
       echo "Push button pressed. Reconfiguring"
-      ap_no_password="true" 
+      ap_no_password="true"
       sed -i 's/ap_mode="false"/ap_mode="true"/Ig' $config
       sed -i 's/ap_no_password=false/ap_no_password="true"/Ig' $config
       setup_ap_mode
@@ -138,16 +138,16 @@ reconfigure_if_pb_pressed(){
 get_red_led_pin(){
    grep red_led_pin ${config}
    if [[ $? -eq 0 ]];then
-      ledpin=`grep red_led_pin ${config} |cut -d "=" -f 2` 
+      ledpin=`grep red_led_pin ${config} |cut -d "=" -f 2`
    else
-      ledpin=22 
+      ledpin=22
       echo "red_led_pin=${ledpin}" >> ${config}
    fi
 
    if [[ $ledpin > 1 && $ledpin < 30 ]];then
       echo ${ledpin}
    else
-      ledpin=22 
+      ledpin=22
       #echo "red_led_pin=${ledpin}" >> ${config}
       echo ${ledpin}
    fi
@@ -183,9 +183,9 @@ get_web_pid() {
 
 is_wifi_running(){
    #the wifi is running if we have and ip address
-   ipaddr=`ip addr | grep -A2 'wlan0:' |grep -A2 'state UP' -A2 | tail -n1 | awk '{print $2}'` 
+   ipaddr=`ip addr | grep -A2 'wlan0:' |grep -A2 'state UP' -A2 | tail -n1 | awk '{print $2}'`
    [[ $ipaddr =~ [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\/[0-9]+ ]]
-   echo $?   
+   echo $?
 }
 
 is_web_running() {
@@ -672,10 +672,10 @@ case "$1" in
         #reconfigure if the push button is pressed
         reconfigure_if_pb_pressed
         setup_red_led
-        unset_red_led 
+        unset_red_led
         if [[ is_wifi_running -eq 0 ]] ; then
            echo "We found a valid ip. Wifi is running"
-           set_red_led 
+           set_red_led
         fi
         setup_bonjour
         start_webserver
@@ -761,8 +761,12 @@ case "$1" in
             exit 1
         fi
     ;;
+    shutdown)
+        echo "Shutting down"
+        #sudo shutdown --poweroff
+    ;;
     *)
-    echo "Usage: $0 {start|stop|restart|status|configure|startcanpi|stopcanpi|restartcanpi}"
+    echo "Usage: $0 {start|stop|restart|status|configure|startcanpi|stopcanpi|restartcanpi|shutdown|upgrade}"
     exit 1
     ;;
 esac

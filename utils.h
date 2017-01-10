@@ -38,6 +38,7 @@
 #define TAG_START_EVENT  "start_event_id"
 #define TAG_NODE_MODE    "node_mode"
 #define TAG_ORPHAN_TIMEOUT "orphan_timeout"
+#define TAG_SHUTDOWN_CODE "shutdown_code"
 
 using namespace std;
 
@@ -49,6 +50,7 @@ enum TURNOUT_STATE {CLOSED,THROWN,UNKNOWN};
 enum SESSION_TYPE {MULTI_SESSION, MULTI_THROTTLE};
 enum FN_STATE {OFF=0,ON};
 enum FN_TYPE {MOMENTARY=0,SWITCH};
+enum SCRIPT_ACTIONS {NONE=0, CONFIGURE=1, RESTART=2, SHUTDOWN=3};
 
 #define INTERROR 323232
 

@@ -173,6 +173,9 @@ class nodeConfigurator
         int getOrphanTimeout();
         bool setOrphanTimeout(int val);
 
+        /*ASON code for remote shutdown*/
+        int getShutdownCode();
+
         void printMemoryNVs();
         byte getNumberOfNVs(){return NVS_SIZE;};
         byte getNV(int idx);

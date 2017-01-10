@@ -17,6 +17,10 @@ nodeConfigurator::~nodeConfigurator()
 }
 
 void nodeConfigurator::setNotQuotedConfigKeys(){
+    /*
+    * used to inform these keys should be
+    * quoted when written to the config file
+    */
     not_quoted_config.push_back(TAG_APCHANNEL);
     not_quoted_config.push_back(TAG_NN);
     not_quoted_config.push_back(TAG_CANID);
@@ -28,8 +32,12 @@ void nodeConfigurator::setNotQuotedConfigKeys(){
     not_quoted_config.push_back(TAG_YL);
     not_quoted_config.push_back(TAG_RL);
     not_quoted_config.push_back(TAG_NODE_MODE);
+    not_quoted_config.push_back(TAG_SHUTDOWN_CODE);
 }
 
+/*print the nv variables to output
+* used for debug
+*/
 void nodeConfigurator::printMemoryNVs(){
     int i;
     cout << "NVs: ";
@@ -55,6 +63,7 @@ void nodeConfigurator::setNodeParams(byte p1,byte p2, byte p3,byte p4,byte p5, b
     NODEPARAMS[19] = 1;
 
 }
+
 byte nodeConfigurator::getNodeParameter(byte idx){
     //idx starts at 1
     if (idx < NODE_PARAMS_SIZE){
@@ -1168,6 +1177,31 @@ bool nodeConfigurator::setYellowLed(int val){
     config[TAG_YL] = ss.str();
     return true;
 }
+
+int nodeConfigurator::getShutdownCode(){
+    int ret;
+    ret = getIntConfig(TAG_SHUTDOWN_CODE);
+    if (ret == INTERROR){
+        string r = getStringConfig(TAG_SHUTDOWN_CODE);
+        if (r.size() > 0){
+            //try to convert
+            try{
+                ret = atoi(r.c_str());
+            }
+            catch(...){
+                if (logger != nullptr) logger->error("Failed to convert %s to int",  r.c_str());
+                else  cout << "Failed to convert " << r << " to int" << endl;
+            }
+        }
+        else{
+            if (logger != nullptr) logger->error("Failed to get the shutdown code. Default is -1");
+            else cout << "Failed to get the shutdown code. Default is -1" << endl;
+        }
+        ret = -1;
+    }
+    return ret;
+}
+
 /* 0 is SLIM mode 1 is FLIM
 * default is SLIM
 */

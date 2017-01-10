@@ -27,6 +27,7 @@ $code:
         id_btn_restart_all="btnRestartAll"
 	id_btn_update_file="btnUpdateFile"
         id_orphan_timeout="orphan_timeout"
+        id_btn_shutdown="btnShutdown"
 
 <!DOCTYPE html>
 <html lang="en">
@@ -42,10 +43,12 @@ $code:
 <body>
            <img src="/static/merg_logo.png" />      
 <div class="container-fluid">
-           <header><h3>CANPiWi 1.1 Configuration<br/></h3></header>
+           <header><h3>CANPiWi 1.2 Configuration<br/></h3></header>
            <header><h4>$msg<br/></h4></header>
   <div class="row-fluid">
            <form class="form" method="post"> 
+              $:form[id_btn_shutdown].render()              
+              <br><br>
               $:form[id_apmode].description : 
 	      $:form[id_apmode].render()
 	      <br><br>

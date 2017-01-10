@@ -118,6 +118,7 @@ id_btn_restart="btnRestart"
 id_btn_stop="btnStop"
 id_btn_restart_all="btnRestartAll"
 id_btn_update_file="btnUpdateFile"
+id_btn_shutdown="btnShutdown"
 id_orphan_timeout="orphan_timeout"
 
 desc_apmode="AP mode"
@@ -145,6 +146,7 @@ desc_btn_restart="btnRestart"
 desc_btn_stop="btnStop"
 desc_btn_restart_all="btnRestartAll"
 desc_btn_update_file="btnUpdateFile"
+desc_btn_shutdown="btnShutdown"
 desc_orphan_timeout="Orphan sessions timeout seconds"
 
 #validators
@@ -156,13 +158,17 @@ turnout_length = form.Validator("Turnout name length should less than 11 charact
 service_name_length = form.Validator("Service name length should less than 8 characters", lambda p: p is None or len(p)>8)
 
 
-def restartPi():
+def configurePi():
     #time.sleep(3)
     os.system("/etc/init.d/start_canpi.sh configure")
 
 def restartAll():
     #time.sleep(3)
     os.system("/etc/init.d/start_canpi.sh restart")
+
+def shutdownPi():
+    #time.sleep(3)
+    os.system("/etc/init.d/start_canpi.sh shutdown")
 
 class index:
 
@@ -211,7 +217,7 @@ class index:
             cm.setValue("canid", str(form[id_canid].value))
             cm.setValue("fn_momentary", str(form[id_fns_momentary].value))
             cm.setValue("turnout_file", str(form[id_turnout_file].value))
-            cm.setValue(id_start_event_id, str(form[id_start_event_id].value))            
+            cm.setValue(id_start_event_id, str(form[id_start_event_id].value))
             cm.setValue(id_orphan_timeout, str(form[id_orphan_timeout].value))
             cm.saveFile()
             writeMessage("Save successful")
@@ -222,7 +228,7 @@ class index:
             writeMessage("")
             cpid = os.fork()
             if cpid == 0:
-                restartPi()
+                configurePi()
             return render.reboot("Applying changes and rebooting",myuri)
 
         if id_btn_update_file in userData:
@@ -262,7 +268,16 @@ class index:
                 restartAll()
             return render.reboot("Restarting the webpage and canpi",myuri)
 
+        if id_btn_shutdown in userData:
+            print("Shutdown button pressed")
+            writeMessage("")
+            cpid = os.fork()
+            if cpid == 0:
+                shutdownPi()
+            return render.reboot("Shuting down the pi",myuri)
+
         return render.index(form,"Canpi Configuration","")
+
     def validate_form(self,form):
         global desc_ed_tcpport
         global desc_grid_port
@@ -285,7 +300,7 @@ class index:
                 return False, "The CANID should be between 1 and 110"
         else:
             return False, "The CANID should be between 1 and 110"
-        
+
         if self.isint(form[id_orphan_timeout].value):
             v = int(form[id_orphan_timeout].value)
             if v <= 0 or v > 3600:
@@ -348,7 +363,7 @@ class index:
         gridenable = True
         apmode_no_passwd = True
         create_logfile = True
-        logappend = True 
+        logappend = True
 
         if cm.getValueInsert("ap_mode", "True").lower() != "true":
             apmode = False
@@ -362,6 +377,7 @@ class index:
             logappend = False
 
         myform = form.Form(
+            form.Button(desc_btn_shutdown, id=id_btn_shutdown, value="shutdown", html="Shutdown"),
             form.Checkbox(id_apmode,description=desc_apmode,checked=apmode,value="apmode",id="tapmode"),
             form.Checkbox(id_apmode_no_passwd,description=desc_apmode_no_passwd,checked=apmode_no_passwd,value="apmode_no_passwd",id="tapmode_no_passwd"),
             form.Textbox(id_ssid,ssid_length,description=desc_ssid,value=cm.getValueInsert("ap_ssid","canpiwi"),id="apssid"),
