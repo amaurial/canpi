@@ -763,7 +763,7 @@ case "$1" in
     ;;
     shutdown)
         echo "Shutting down"
-        #sudo shutdown --poweroff
+        sudo halt 
     ;;
     *)
     echo "Usage: $0 {start|stop|restart|status|configure|startcanpi|stopcanpi|restartcanpi|shutdown|upgrade}"

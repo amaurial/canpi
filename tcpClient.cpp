@@ -1220,6 +1220,12 @@ void tcpClient::handleTurnout(string message){
     logger->debug("[%d] [tcpClient] Extracted turnout code: %s" ,id,message.substr(i+3,j-i-3).c_str());
     int tcode = atoi(message.substr(i+3,j-i-3).c_str());
 
+    //shutdown the module based on the turnout table
+    if (tcode == config->getShutdownCode()){
+        shutdown();
+        return;
+    }
+
     //sanity checkings
     string scode = message.substr(i+3,j-i-3).c_str();
     if (turnouts->size() == 0){
@@ -1257,6 +1263,23 @@ void tcpClient::handleTurnout(string message){
     msg[3] = Hb;
     msg[4] = Lb;
     server->postMessageToAllClients(id,can->getCanId(),msg,5,CLIENT_TYPE::ED);
+}
+
+void tcpClient::shutdown(){
+
+    logger->debug("[tcpClient] Shutting down the module");
+    string command = "/etc/init.d/start_canpi.sh shutdown";
+
+    usleep(1000*1000);
+    if(fork() == 0){
+        logger->info("[tcpClient] Restarting the module. [%s]", command.c_str());
+        system(command.c_str());
+        exit(0);
+    }
+    else{
+        logger->info("[tcpClient] Main module stopping the services");
+    }
+
 }
 
 void tcpClient::handleTurnoutGeneric(string message){

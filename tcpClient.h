@@ -77,6 +77,7 @@ class tcpClient : public Client
 		bool sessions_retrieved;
 
         void setStartSessionTime();
+        void shutdown();
 
         regex re_speed;
         regex re_session;

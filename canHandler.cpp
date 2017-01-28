@@ -425,8 +425,8 @@ void canHandler::run_queue_reader(void* param){
                         opc == OPC_CANID ||
                         opc == OPC_NVSET ||
                         opc == OPC_RQNPN ||
-                        opc == OPC_NVRD){
-                        //handleCBUSEvents(frame);
+                        opc == OPC_NVRD ||
+                        opc == OPC_ASON){
                         handleCBUSEvents(canframe);
                     }
                 }
@@ -603,10 +603,11 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
     int tnn;
     SCRIPT_ACTIONS status = NONE;
     struct can_frame frame = canframe.getFrame();
-    print_frame(&frame,"[canHandler] Handling CBUS config event");
+    print_frame(&frame,"[canHandler] Handling CBUS event");
 
     switch (frame.data[0]){
     case OPC_QNN:
+    {
         if (setup_mode) return;
         Lb = node_number & 0xff;
         Hb = (node_number >> 8) & 0xff;
@@ -618,8 +619,11 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
         sendframe[4] = MID;
         sendframe[5] = MFLAGS;
         put_to_out_queue(sendframe, 6, CLIENT_TYPE::CBUS);
-    break;
+
+        break;
+    }
     case OPC_RQNP:
+    {
         if (!setup_mode) return;
         logger->debug("[canHandler] Sending response for RQNP.");
         sendframe[0] = OPC_PARAMS;
@@ -631,8 +635,11 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
         sendframe[6] = config->getNumberOfNVs();//TODO
         sendframe[7] = MSOFT_VERSION;
         put_to_out_queue(sendframe, 8, CLIENT_TYPE::CBUS);
-    break;
+
+        break;
+    }
     case OPC_RQMN:
+    {
         if (!setup_mode) return;
         logger->debug("[canHandler] Sending response for NAME.");
         sendframe[0] = OPC_NAME;
@@ -644,8 +651,10 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
         sendframe[6] = ' ';
         sendframe[7] = ' ';
         put_to_out_queue(sendframe, 8, CLIENT_TYPE::CBUS);
-    break;
+        break;
+    }
     case OPC_RQNPN:
+    {
         Lb = frame.data[2];
         Hb = frame.data[1];
         tnn = Hb;
@@ -674,9 +683,10 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
         sendframe[3] = frame.data[3];
         sendframe[4] = p;
         put_to_out_queue(sendframe, 5, CLIENT_TYPE::CBUS);
-    break;
-
+        break;
+    }
     case OPC_NVRD:
+    {
         Lb = frame.data[2];
         Hb = frame.data[1];
         tnn = Hb;
@@ -702,9 +712,11 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
         sendframe[4] = config->getNV(frame.data[3]);
         put_to_out_queue(sendframe, 5, CLIENT_TYPE::CBUS);
         logger->debug("[canHandler] NVRD processed. Sent NVANS");
-    break;
+        break;
+    }
 
     case OPC_NVSET:
+    {
         Lb = frame.data[2];
         Hb = frame.data[1];
         tnn = Hb;
@@ -749,10 +761,13 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
             restart_module(status);
         }
 
-    break;
-
+        break;
+    }
     case OPC_SNN:
+    {
+
         if (!setup_mode) return;
+
         Lb = frame.data[2];
         Hb = frame.data[1];
         tnn = Hb;
@@ -787,9 +802,10 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
         config->setNodeMode(1); //FLIM
         logger->info("[canHandler] Finished setup. New node number is %d" , node_number);
 
-    break;
-
+        break;
+    }
     case OPC_CANID:
+    {
         if (setup_mode) return;
         logger->debug("[canHandler] Received set CANID.");
         Lb = frame.data[2];
@@ -819,24 +835,25 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
             logger->error("[canHandler] Failed to save canid %d",canId);
         }
 
-    break;
-
+        break;
+    }
     case OPC_ASON:
-        if (setup_mode) return;
-        logger->debug("[canHandler] Received set ASON.");
+    {
         Lb = frame.data[4];
         Hb = frame.data[3];
         tnn = Hb;
         tnn = (tnn << 8) | Lb;
-        if (tnn != config->getShutdownCode()){
-            logger->debug("[canHandler] Shuting down the node.Received ASON %d", tnn);
+        logger->debug("[canHandler] Received set ASON %d", tnn);
+        if (tnn == config->getShutdownCode()){
+            logger->debug("[canHandler] Shuting down the node.");
             restart_module(SHUTDOWN);
             return;
         }
 
-    break;
-
+        break;
+    }
     case OPC_ENUM:
+    {
         if (setup_mode) return;
         //get node number
         int nn;
@@ -844,26 +861,35 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
         nn = (nn << 8) | frame.data[2];
         logger->debug("[canHandler] OPC_ENUM node number %d",nn);
         doSelfEnum();
-    break;
+        break;
+    }
     case OPC_HLT:
+    {
         if (setup_mode) return;
         logger->info("[canHandler] Stopping CBUS");
         cbus_stopped = true;
-    break;
+        break;
+    }
     case OPC_BON:
+    {
         if (setup_mode) return;
         logger->info("[canHandler] Enabling CBUS");
         cbus_stopped = false;
-    break;
+        break;
+    }
     case OPC_ARST:
+    {
         if (setup_mode) return;
         logger->info("[canHandler] Enabling CBUS");
         cbus_stopped = false;
-    break;
+        break;
+    }
     case OPC_BOOT:
+    {
         if (setup_mode) return;
         logger->info("[canHandler] Rebooting");
-    break;
+        break;
+    }
     }
 }
 /**CAN_EFF_FLAG
