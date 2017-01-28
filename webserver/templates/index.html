@@ -28,6 +28,7 @@ $code:
 	id_btn_update_file="btnUpdateFile"
         id_orphan_timeout="orphan_timeout"
         id_btn_shutdown="btnShutdown"
+        id_shutdown_code="shutdown_code"
 
 <!DOCTYPE html>
 <html lang="en">
@@ -90,6 +91,9 @@ $code:
               <br>
               $:form[id_orphan_timeout].description :
               $:form[id_orphan_timeout].render()
+              <br>
+              $:form[id_shutdown_code].description :
+              $:form[id_shutdown_code].render()
 	      <br>
               $:form[id_turnout_file].description : 
               $:form[id_turnout_file].render()

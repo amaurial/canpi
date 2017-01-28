@@ -78,7 +78,7 @@ class configManager:
             for k,v in self.config.iteritems():
                 line = ""
                 #dont put quotes on numbers
-                if k in ["tcpport","cangrid_port","ap_channel","node_number","canid","button_pin","green_led_pin","yellow_led_pin","red_led_pin","start_event_id"]:
+                if k in ["tcpport","cangrid_port","ap_channel","node_number","canid","button_pin","green_led_pin","yellow_led_pin","red_led_pin","start_event_id","orphan_timeout","shutdown_code"]:
                      line = k + "=" + v + "\n"
                 else:
                      line = k + "=\"" + v + "\"\n"
@@ -120,6 +120,7 @@ id_btn_restart_all="btnRestartAll"
 id_btn_update_file="btnUpdateFile"
 id_btn_shutdown="btnShutdown"
 id_orphan_timeout="orphan_timeout"
+id_shutdown_code="shutdown_code"
 
 desc_apmode="AP mode"
 desc_apmode_no_passwd="No password in AP mode"
@@ -148,6 +149,7 @@ desc_btn_restart_all="btnRestartAll"
 desc_btn_update_file="btnUpdateFile"
 desc_btn_shutdown="btnShutdown"
 desc_orphan_timeout="Orphan sessions timeout seconds"
+desc_shutdown_code="Shutdown code"
 
 #validators
 ssid_length = form.Validator("SSID length should be between 1 and 8 characters", lambda p: p is None or len(p)>8)
@@ -219,6 +221,7 @@ class index:
             cm.setValue("turnout_file", str(form[id_turnout_file].value))
             cm.setValue(id_start_event_id, str(form[id_start_event_id].value))
             cm.setValue(id_orphan_timeout, str(form[id_orphan_timeout].value))
+            cm.setValue(id_shutdown_code, str(form[id_shutdown_code].value))
             cm.saveFile()
             writeMessage("Save successful")
             raise web.seeother('/')
@@ -332,7 +335,22 @@ class index:
                 return False, desc_start_event + "[" + str(v) + "] should be between 1 and " + str(portlimit)
         else:
             return False, desc_start_event + "[" + str(v) + "] should be between 1 and " + str(portlimit)
+  
+        if self.isint(form[id_shutdown_code].value):
+            v = int(form[id_shutdown_code].value)
+            if v <= -1 or v > portlimit:
+                print("Run validation\n")
+                return False, desc_shutdown_code + "[" + str(v) + "] should be between -1 and " + str(portlimit)
+            return False, desc_shutdown_code + "[" + form[id_shutdown_code].value + "] should be between -1 and " + str(portlimit)
 
+
+        if self.isint(form[id_orphan_timeout].value):
+            v = int(form[id_orphan_timeout].value)
+            if v <= 0 or v > 120:
+                print("Run validation\n")
+                return False, desc_orphan_timeout + "[" + str(v) + "] should be between 1 and 120 seconds"
+        else:
+            return False, desc_orphan_timeout + "[" + str(v) + "] should be between 1 and and 120 seconds"
 
         if len(form[id_turnout_file].value) == 0 or len(form[id_turnout_file].value) > 11 :
             return False, "Turnout file name length should be between 1 and 11"
@@ -392,6 +410,7 @@ class index:
             form.Textbox(id_canid,description=desc_canid,value=cm.getValueInsert("canid",100)),
             form.Textbox(id_start_event_id,description=desc_start_event,value=cm.getValueInsert(id_start_event_id,1)),
             form.Textbox(id_orphan_timeout,description=desc_orphan_timeout,value=cm.getValueInsert(id_orphan_timeout,30)),
+            form.Textbox(id_shutdown_code,description=desc_shutdown_code,value=cm.getValueInsert(id_shutdown_code,-1)),
             form.Textbox(id_fns_momentary,description=desc_fns_momentary,value=cm.getValueInsert("fn_momentary","2")),
             form.Textbox(id_turnout_file,turnout_length,description=desc_turnout_file,value=cm.getValueInsert("turnout_file","turnout.txt")),
             form.Dropdown(id_loglevel,  ['INFO', 'WARN', 'DEBUG'],value=cm.getValueInsert("loglevel","INFO")),
