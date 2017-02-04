@@ -638,6 +638,19 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
 
         break;
     }
+    case OPC_RQEVN:
+    {
+        Lb = node_number & 0xff;
+        Hb = (node_number >> 8) & 0xff;
+        logger->debug("[canHandler] Sending response for RQEVN.");
+        sendframe[0] = OPC_NUMEV;
+        sendframe[1] = Hb;
+        sendframe[2] = Lb;
+        sendframe[3] = 0;
+        put_to_out_queue(sendframe, 4, CLIENT_TYPE::CBUS);
+
+        break;
+    }
     case OPC_RQMN:
     {
         if (!setup_mode) return;
