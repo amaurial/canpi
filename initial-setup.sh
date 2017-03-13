@@ -107,8 +107,9 @@ git clone https://github.com/amaurial/canpi.git
 cd canpi
 #make clean
 #make all
+
 echo "########### CREATE CONFIG ###############"
-create_default_canpi_config
+#create_default_canpi_config
 #change the router ssid and password
 sed -i 's/SSID/'"$wssid"'/' "$canpidir/canpi.cfg"
 sed -i 's/PASSWORD/'"$wpassword"'/' "$canpidir/canpi.cfg"
