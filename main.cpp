@@ -132,7 +132,7 @@ int main()
     }
     logger.info("Logger initated");
 
-    config->printMemoryNVs();
+    //config->printMemoryNVs();
 
     //start the CAN
     canHandler can = canHandler(&logger,canid);
