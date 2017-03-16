@@ -609,6 +609,7 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
     case OPC_QNN:
     {
         if (setup_mode) return;
+        
         Lb = node_number & 0xff;
         Hb = (node_number >> 8) & 0xff;
         logger->debug("[canHandler] Sending response for QNN.");
@@ -625,6 +626,17 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
     case OPC_RQNP:
     {
         if (!setup_mode) return;
+
+        Lb = frame.data[2];
+        Hb = frame.data[1];
+        tnn = Hb;
+        tnn = (tnn << 8) | Lb;
+        byte p;
+        if (tnn != node_number){
+            logger->debug("[canHandler] RQNP is for another node. My nn: %d received nn: %d", node_number,tnn);
+            return;
+        }                                                                             
+
         logger->debug("[canHandler] Sending response for RQNP.");
         sendframe[0] = OPC_PARAMS;
         sendframe[1] = MANU_MERG;
@@ -640,6 +652,15 @@ void canHandler::handleCBUSEvents(frameCAN canframe){
     }
     case OPC_RQEVN:
     {
+         Lb = frame.data[2];
+         Hb = frame.data[1];
+         tnn = Hb;
+         tnn = (tnn << 8) | Lb;
+         byte p;
+         if (tnn != node_number){
+             logger->debug("[canHandler] RQEVN is for another node. My nn: %d received nn: %d", node_number,tnn);
+             return;
+         }
         Lb = node_number & 0xff;
         Hb = (node_number >> 8) & 0xff;
         logger->debug("[canHandler] Sending response for RQEVN.");

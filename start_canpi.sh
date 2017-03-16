@@ -663,6 +663,18 @@ stop_webserver(){
     return 0
 }
 
+is_reset_enabled(){
+    #check if the property reset_enabled exists and is set to true
+    #the variable is used to check if the pb is pushed while booting
+    grep -i "reset_enabled=\"true\"" $config
+    if [ $? -eq 0 ];then
+        return 1
+    else
+        return 0
+    fi  
+}
+
+
 #setup the push button
 echo "Setting push button"
 set_push_button
@@ -670,7 +682,12 @@ set_push_button
 case "$1" in
     start)
         #reconfigure if the push button is pressed
-        reconfigure_if_pb_pressed
+        
+        is_reset_enabled
+        if [ $? -eq 1 ];then
+            reconfigure_if_pb_pressed
+        fi
+
         setup_red_led
         unset_red_led
         if [[ is_wifi_running -eq 0 ]] ; then
