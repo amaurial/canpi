@@ -39,6 +39,7 @@
 #define TAG_NODE_MODE    "node_mode"
 #define TAG_ORPHAN_TIMEOUT "orphan_timeout"
 #define TAG_SHUTDOWN_CODE "shutdown_code"
+#define TAG_ED_SERVER     "edserver"
 
 using namespace std;
 

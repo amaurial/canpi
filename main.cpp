@@ -71,6 +71,7 @@ int main()
     string candevice = "can0";
     bool append = false;
     bool start_grid_server = false;
+    bool start_ed_server = false;
     int gridport = 5555;
     int canid = 100;
     int pb_pin=4;
@@ -99,6 +100,7 @@ int main()
     gridport = config->getcanGridPort();
     append = config->getLogAppend();
     start_grid_server = config->isCanGridEnabled();
+    start_ed_server = config->getEdserver();
     turnoutfile = config->getTurnoutFile();
     pb_pin = config->getPB();
     gled_pin = config->getGreenLed();
@@ -132,7 +134,7 @@ int main()
     }
     logger.info("Logger initated");
 
-    config->printMemoryNVs();
+    //config->printMemoryNVs();
 
     //start the CAN
     canHandler can = canHandler(&logger,canid);
@@ -148,40 +150,51 @@ int main()
         return 1;
     };
 
-    //load the turnout file
-    Turnout turnouts=Turnout(&logger);
-    if (file_exists(turnoutfile)){
-        turnouts.load(turnoutfile);
-    }
 
     //start the session handler
     sessionHandler session_handler = sessionHandler(&logger, config, &can);
 	session_handler.start();
     //start the tcp server
-    tcpServer tcpserver = tcpServer(&logger, port, &can, &session_handler, CLIENT_TYPE::ED);
-    tcpserver.setTurnout(&turnouts);
-    tcpserver.setNodeConfigurator(config);
-    tcpserver.start();
-    can.setTcpServer(&tcpserver);
+
+    tcpServer *edserver;
+    if (start_ed_server){
+        //load the turnout file
+        Turnout *turnouts=new Turnout(&logger);
+        if (file_exists(turnoutfile)){
+           turnouts->load(turnoutfile);
+        }
+
+        edserver = new tcpServer(&logger, port, &can, &session_handler, CLIENT_TYPE::ED);
+        edserver->setTurnout(turnouts);
+        edserver->setNodeConfigurator(config);
+        edserver->start();
+        can.setTcpServer(edserver);
+    }
 
     //start the grid tcp server
     tcpServer *gridserver;
     if (start_grid_server){
-        tcpServer tcpserverGrid = tcpServer(&logger, gridport, &can, nullptr, CLIENT_TYPE::GRID);
-        tcpserverGrid.setNodeConfigurator(config);
-        tcpserverGrid.start();
-        can.setTcpServer(&tcpserverGrid);
-        gridserver = &tcpserverGrid;
+        gridserver = new tcpServer(&logger, gridport, &can, nullptr, CLIENT_TYPE::GRID);
+        gridserver->setNodeConfigurator(config);
+        gridserver->start();
+        can.setTcpServer(gridserver);
     }
 
     //keep looping forever
     while (running == 1){usleep(1000000);};
 
     //finishes
-    logger.info("Stopping the tcp server");
-	session_handler.stop();
-    tcpserver.stop();
-    gridserver->stop();
+    logger.info("Stopping the session handler");
+    session_handler.stop();
+    if (start_ed_server){
+        logger.info("Stopping the ed server");
+        edserver->stop();
+    }
+
+    if (start_grid_server){
+        logger.info("Stopping the grid server");
+        gridserver->stop();
+    }
 
     logger.info("Stopping CBUS reader");
     can.stop();
