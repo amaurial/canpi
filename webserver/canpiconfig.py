@@ -121,6 +121,7 @@ id_btn_update_file="btnUpdateFile"
 id_btn_shutdown="btnShutdown"
 id_orphan_timeout="orphan_timeout"
 id_shutdown_code="shutdown_code"
+id_edserver="edserver"
 
 desc_apmode="AP mode"
 desc_apmode_no_passwd="No password in AP mode"
@@ -150,6 +151,7 @@ desc_btn_update_file="btnUpdateFile"
 desc_btn_shutdown="btnShutdown"
 desc_orphan_timeout="Orphan sessions timeout seconds"
 desc_shutdown_code="Shutdown code"
+desc_edserver_code="Enable Engine Drive tcp server"
 
 #validators
 ssid_length = form.Validator("SSID length should be between 1 and 8 characters", lambda p: p is None or len(p)>8)
@@ -210,6 +212,7 @@ class index:
             cm.setValue("router_ssid", str(form[id_router_ssid].value))
             cm.setValue("router_password", str(form[id_router_password].value))
             cm.setValue("can_grid", str(form[id_grid_enable].checked))
+	    cm.setValue(id_edserver, str(form[id_edserver].checked))
             cm.setValue("cangrid_port", str(form[id_grid_port].value))
             cm.setValue("service_name", str(form[id_bonjour_name].value))
             cm.setValue("tcpport", str(form[id_ed_tcpport].value))
@@ -382,6 +385,7 @@ class index:
         apmode_no_passwd = True
         create_logfile = True
         logappend = True
+        edserver=True
 
         if cm.getValueInsert("ap_mode", "True").lower() != "true":
             apmode = False
@@ -393,6 +397,8 @@ class index:
             create_logfile = False
         if cm.getValueInsert(id_logappend, "True").lower() != "true":
             logappend = False
+        if cm.getValueInsert(id_edserver, "True").lower() != "true":
+            edserver = False
 
         myform = form.Form(
             form.Button(desc_btn_shutdown, id=id_btn_shutdown, value="shutdown", html="Shutdown"),
@@ -406,6 +412,7 @@ class index:
             form.Textbox(id_bonjour_name,service_name_length,description=desc_bonjour_name,value=cm.getValueInsert("service_name","MyLayout"),id="servicename"),
             form.Textbox(id_ed_tcpport,description=desc_ed_tcpport,value=cm.getValueInsert("tcpport",5555),id="tcpport"),
             form.Checkbox(id_grid_enable,description=desc_grid_enable,checked=gridenable,value="gridenable",id="cangrid"),
+            form.Checkbox(id_edserver,description=desc_edserver_code,checked=edserver,value="edserver",id="edserver"),
             form.Textbox(id_grid_port,description=desc_grid_port,value=cm.getValueInsert("cangrid_port",4444),id="cangripport"),
             form.Textbox(id_canid,description=desc_canid,value=cm.getValueInsert("canid",100)),
             form.Textbox(id_start_event_id,description=desc_start_event,value=cm.getValueInsert(id_start_event_id,1)),

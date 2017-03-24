@@ -29,6 +29,7 @@ $code:
         id_orphan_timeout="orphan_timeout"
         id_btn_shutdown="btnShutdown"
         id_shutdown_code="shutdown_code"
+	id_edserver="edserver"
 
 <!DOCTYPE html>
 <html lang="en">
@@ -76,7 +77,10 @@ $code:
 	      <br>
               $:form[id_grid_enable].description : 
               $:form[id_grid_enable].render()
-              <br><br>
+              <br><br>	      
+              $:form[id_edserver].description : 
+              $:form[id_edserver].render()
+              <br>
               $:form[id_ed_tcpport].description : 
               $:form[id_ed_tcpport].render()
 	      <br>
