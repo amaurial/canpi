@@ -135,6 +135,29 @@ reconfigure_if_pb_pressed(){
    fi
 }
 
+is_edserver_not_enabled(){
+
+   grep -i "edserver=\"false\"" ${config}
+   #if [[ $? -eq 0 ]];then
+   #   echo 0
+   #else 
+      #true
+   #   echo 1
+   #fi
+}
+
+set_avahi_daemon(){
+   
+   is_edserver_not_enabled
+   if [ $? -eq 1 ];then
+      echo "Starting bonjour service"
+      /etc/init.d/avahi-daemon start
+   else
+      echo "Stoping bonjour service"
+      /etc/init.d/avahi-daemon stop 
+   fi
+}
+
 get_red_led_pin(){
    grep red_led_pin ${config}
    if [[ $? -eq 0 ]];then
@@ -231,9 +254,9 @@ setup_bonjour() {
     mv -f "${bonjour_template}.tmp" $bonjour_file
 
     #restart the service
-    #echo "Restarting the bonjour service"
-    #/etc/init.d/avahi-daemon restart
-    #sleep 1
+    echo "Restarting the bonjour service"
+    /etc/init.d/avahi-daemon restart
+    sleep 1
     #r=`/etc/init.d/avahi-daemon status`
     #echo $r | grep "active (running)"
     if is_avahi_running;
@@ -695,15 +718,19 @@ case "$1" in
            set_red_led
         fi
         setup_bonjour
+
         start_webserver
         start_canpi
         if [[ $? -eq 1 ]]; then
             exit 1
         fi
+        set_avahi_daemon
     ;;
     stop)
         stop_webserver
         stop_canpi
+        echo "Stoping bonjour service"
+        /etc/init.d/avahi-daemon stop
         #kill the rest
         kill_all_processes "canpi"
     ;;
@@ -711,12 +738,16 @@ case "$1" in
         setup_red_led
         setup_bonjour
         start_canpi
+        set_avahi_daemon
+
         if [[ $? -eq 1 ]]; then
             exit 1
         fi
     ;;
     stopcanpi)
         stop_canpi
+        echo "Stoping bonjour service"
+        /etc/init.d/avahi-daemon stop
         if [[ $? -eq 1 ]]; then
             exit 1
         fi
@@ -736,6 +767,8 @@ case "$1" in
         if [[ $? -eq 1 ]]; then
             exit 1
         fi
+
+        set_avahi_daemon
     ;;
     restart)
         $0 stop

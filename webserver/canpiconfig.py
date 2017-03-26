@@ -341,9 +341,10 @@ class index:
   
         if self.isint(form[id_shutdown_code].value):
             v = int(form[id_shutdown_code].value)
-            if v <= -1 or v > portlimit:
+            if v < -1 or v > portlimit:
                 print("Run validation\n")
                 return False, desc_shutdown_code + "[" + str(v) + "] should be between -1 and " + str(portlimit)
+        else:
             return False, desc_shutdown_code + "[" + form[id_shutdown_code].value + "] should be between -1 and " + str(portlimit)
 
 
